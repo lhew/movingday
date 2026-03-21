@@ -1,4 +1,26 @@
 {
+  "emulators": {
+    "auth": {
+      "port": 9099
+    },
+    "firestore": {
+      "port": 8080
+    },
+    "functions": {
+      "port": 5001
+    },
+    "storage": {
+      "port": 9199
+    },
+    "hosting": {
+      "port": 5002
+    },
+    "ui": {
+      "enabled": true,
+      "port": 4000
+    },
+    "singleProjectMode": true
+  },
   "hosting": {
     "public": "dist/movingday/browser",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],

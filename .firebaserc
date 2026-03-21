@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "YOUR_FIREBASE_PROJECT_ID"
+    "default": "demo-movingday",
+    "production": "YOUR_REAL_FIREBASE_PROJECT_ID"
   }
 }

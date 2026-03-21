@@ -1,0 +1,32 @@
+[
+  {
+    "id": "update-1",
+    "emoji": "🚚",
+    "title": "We found a moving company!",
+    "summary": "After weeks of searching, we finally booked a crew for April 15th.",
+    "content": "After calling what felt like every moving company in the city, we finally found a crew we trust — MoveRight Logistics. Moving day is locked in for April 15th.",
+    "author": "Leo",
+    "pinned": true,
+    "publishedAt": "2026-03-18T00:00:00.000Z"
+  },
+  {
+    "id": "update-2",
+    "emoji": "📦",
+    "title": "Packing has begun",
+    "summary": "Room by room, box by box. The kitchen took three days.",
+    "content": "Day 1 of packing: I thought I was a minimalist. Day 3: I found four sets of placemats I've never used and a fondue kit from 2019. The kitchen alone filled 14 boxes.",
+    "author": "Leo",
+    "pinned": false,
+    "publishedAt": "2026-03-14T00:00:00.000Z"
+  },
+  {
+    "id": "update-3",
+    "emoji": "🏠",
+    "title": "Found the new place",
+    "summary": "Signed the lease! Here's what the new neighbourhood is like.",
+    "content": "After three months of searching, I signed a lease! South-facing, huge windows, a balcony big enough for my remaining plants. The neighbourhood has a great bakery 200 metres away.",
+    "author": "Leo",
+    "pinned": false,
+    "publishedAt": "2026-03-05T00:00:00.000Z"
+  }
+]

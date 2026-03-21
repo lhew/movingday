@@ -24,6 +24,10 @@ src/environments/environment.local.ts
 firebase-debug.log*
 firestore-debug.log*
 ui-debug.log*
+storage-debug.log*
+
+# Firebase emulator data (persisted between sessions)
+.emulator-data/
 
 # Cloud Functions build output
 functions/lib/

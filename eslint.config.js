@@ -6,7 +6,7 @@ const templateParser = require('@angular-eslint/template-parser');
 
 module.exports = tseslint.config(
   {
-    ignores: ['dist/', 'coverage/', '.nx/', 'node_modules/', 'functions/lib/'],
+    ignores: ['dist/', 'coverage/', '.nx/', '.angular/', 'node_modules/', 'functions/lib/'],
   },
   // TypeScript source files
   {

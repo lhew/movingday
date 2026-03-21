@@ -1,0 +1,86 @@
+[
+  {
+    "id": "item-1",
+    "name": "IKEA Billy Bookcase",
+    "description": "Classic white bookcase, 80cm wide. Two small scratches on the side panel, barely noticeable. Great for books, plants, or displaying things.",
+    "condition": "good",
+    "status": "available",
+    "category": "Furniture",
+    "tags": ["bookcase", "ikea", "white", "furniture"],
+    "createdAt": "2026-03-15T00:00:00.000Z"
+  },
+  {
+    "id": "item-2",
+    "name": "Sony 32\" TV",
+    "description": "Works perfectly, includes remote. HDMI x 3, USB x 2. Selling because I upgraded. Bought 2 years ago.",
+    "condition": "good",
+    "status": "claimed",
+    "category": "Electronics",
+    "tags": ["tv", "sony", "electronics"],
+    "claimedBy": { "uid": "user-demo-1", "name": "Maria S.", "email": "maria@example.com" },
+    "claimedAt": "2026-03-18T00:00:00.000Z",
+    "createdAt": "2026-03-15T00:00:00.000Z"
+  },
+  {
+    "id": "item-3",
+    "name": "Standing Desk Lamp",
+    "description": "Adjustable arm, 3 brightness levels, warm + cool light. Barely used. Bulb included.",
+    "condition": "like-new",
+    "status": "available",
+    "category": "Furniture",
+    "tags": ["lamp", "lighting", "desk"],
+    "createdAt": "2026-03-16T00:00:00.000Z"
+  },
+  {
+    "id": "item-4",
+    "name": "Box of Cooking Books",
+    "description": "~20 cookbooks including Ottolenghi, Samin Nosrat, and a few Portuguese classics. Take the whole box or pick and choose.",
+    "condition": "good",
+    "status": "available",
+    "category": "Books",
+    "tags": ["books", "cooking", "kitchen"],
+    "createdAt": "2026-03-16T00:00:00.000Z"
+  },
+  {
+    "id": "item-5",
+    "name": "Vintage Coffee Table",
+    "description": "Solid wood, mid-century style, some wear on top. Legs are sturdy. 90 x 50cm.",
+    "condition": "fair",
+    "status": "available",
+    "category": "Furniture",
+    "tags": ["table", "coffee-table", "wood", "vintage"],
+    "createdAt": "2026-03-17T00:00:00.000Z"
+  },
+  {
+    "id": "item-6",
+    "name": "Ergonomic Office Chair",
+    "description": "IKEA Markus, black, adjustable lumbar support and armrests. Very comfortable for long work sessions.",
+    "condition": "good",
+    "status": "available",
+    "category": "Furniture",
+    "tags": ["chair", "office", "ikea", "ergonomic"],
+    "createdAt": "2026-03-17T00:00:00.000Z"
+  },
+  {
+    "id": "item-7",
+    "name": "Board Game Collection",
+    "description": "Includes Catan, Ticket to Ride, Pandemic, Codenames, and 6 others. All complete sets.",
+    "condition": "like-new",
+    "status": "available",
+    "category": "Games",
+    "tags": ["games", "board-games", "catan"],
+    "createdAt": "2026-03-18T00:00:00.000Z"
+  },
+  {
+    "id": "item-8",
+    "name": "Monstera Deliciosa (Large)",
+    "description": "About 1.2m tall, very healthy, lots of new growth. Come with a car - she's massive!",
+    "condition": "new",
+    "status": "claimed",
+    "category": "Plants",
+    "tags": ["plant", "monstera", "indoor"],
+    "claimedBy": { "uid": "user-demo-2", "name": "Joao M.", "email": "joao@example.com" },
+    "claimedAt": "2026-03-19T00:00:00.000Z",
+    "createdAt": "2026-03-18T00:00:00.000Z"
+  }
+]
