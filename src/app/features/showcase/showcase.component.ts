@@ -1,24 +1,28 @@
 import { Component, inject, signal } from '@angular/core';
-import { AsyncPipe, NgFor, NgIf, NgClass } from '@angular/common';
+import { AsyncPipe, NgClass } from '@angular/common';
 import { Auth, user } from '@angular/fire/auth';
 import { ItemsService } from '../../shared/services/items.service';
 import { Item, CONDITION_LABELS, CONDITION_BADGE_CLASS } from '../../shared/models/item.model';
+import { combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-showcase',
   standalone: true,
-  imports: [AsyncPipe, NgFor, NgIf, NgClass],
+  imports: [AsyncPipe, NgClass],
   templateUrl: './showcase.component.html',
 })
 export class ShowcaseComponent {
   private itemsService = inject(ItemsService);
   private auth = inject(Auth);
 
-  readonly items$ = this.itemsService.getItems();
-  readonly currentUser$ = user(this.auth);
-  readonly isSignedIn$ = this.currentUser$.pipe(map((u) => !!u));
-  readonly currentUid$ = this.currentUser$.pipe(map((u) => u?.uid));
+  private readonly currentUser$ = user(this.auth);
+
+  readonly vm$ = combineLatest({
+    items: this.itemsService.getItems(),
+    uid: this.currentUser$.pipe(map((u) => u?.uid ?? null)),
+    isSignedIn: this.currentUser$.pipe(map((u) => !!u)),
+  });
 
   readonly conditionLabels = CONDITION_LABELS;
   readonly conditionBadge = CONDITION_BADGE_CLASS;

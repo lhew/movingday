@@ -1,5 +1,5 @@
 import { Component, inject, signal, ViewChild, ElementRef, AfterViewChecked } from '@angular/core';
-import { AsyncPipe, NgFor, NgIf, DatePipe } from '@angular/common';
+import { AsyncPipe, SlicePipe, JsonPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgentService } from '../../shared/services/agent.service';
 import { ItemsService } from '../../shared/services/items.service';
@@ -16,7 +16,7 @@ const QUICK_PROMPTS = [
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [AsyncPipe, NgFor, NgIf, DatePipe, FormsModule],
+  imports: [AsyncPipe, SlicePipe, JsonPipe, FormsModule],
   templateUrl: './admin.component.html',
 })
 export class AdminComponent implements AfterViewChecked {

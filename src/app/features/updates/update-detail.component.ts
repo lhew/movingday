@@ -19,7 +19,7 @@ import { UpdatesService } from '../../shared/services/updates.service';
           <div class="text-4xl mb-2">{{ update.emoji ?? '📌' }}</div>
           <h1 class="not-prose text-3xl font-bold mb-2">{{ update.title }}</h1>
           <p class="not-prose text-sm text-base-content/50 mb-8">
-            Posted {{ update.publishedAt?.toDate() | date:'MMMM d, y \'at\' h:mm a' }}
+            Posted {{ update.publishedAt?.toDate() | date:'MMMM d, y, h:mm a' }}
           </p>
           <div [innerHTML]="update.content" class="leading-relaxed text-base-content/80"></div>
         </article>

@@ -18,8 +18,7 @@
   </div>
 
   <!-- ── Agent tab ──────────────────────────────────────────────── -->
-  <div *ngIf="activeTab() === 'agent'">
-
+  @if (activeTab() === 'agent') {
     <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
 
       <!-- Quick prompts sidebar -->
@@ -28,11 +27,12 @@
           <div class="card-body p-4">
             <h3 class="font-semibold text-sm mb-3">Quick prompts</h3>
             <div class="flex flex-col gap-2">
-              <button *ngFor="let prompt of quickPrompts"
-                      (click)="useQuickPrompt(prompt)"
-                      class="btn btn-ghost btn-sm text-left justify-start text-xs h-auto py-2 normal-case whitespace-normal">
-                {{ prompt }}
-              </button>
+              @for (prompt of quickPrompts; track prompt) {
+                <button (click)="useQuickPrompt(prompt)"
+                        class="btn btn-ghost btn-sm text-left justify-start text-xs h-auto py-2 normal-case whitespace-normal">
+                  {{ prompt }}
+                </button>
+              }
             </div>
           </div>
         </div>
@@ -45,45 +45,51 @@
         <div #chatContainer
              class="bg-base-200 rounded-2xl p-4 h-[500px] overflow-y-auto flex flex-col gap-3">
 
-          <!-- Empty state -->
-          <ng-container *ngIf="(messages$ | async)?.length === 0">
-            <div class="flex-1 flex items-center justify-center text-center">
-              <div>
-                <p class="text-4xl mb-3">🤖</p>
-                <p class="text-base-content/60 font-medium">Your Claude agent is ready.</p>
-                <p class="text-base-content/40 text-sm mt-1">
-                  Ask it to add items, write updates, or manage the showcase for you.
-                </p>
-              </div>
-            </div>
-          </ng-container>
-
-          <!-- Messages -->
-          <ng-container *ngFor="let msg of messages$ | async">
-            <div [class]="msg.role === 'user' ? 'chat chat-end' : 'chat chat-start'">
-              <div class="chat-image avatar">
-                <div class="w-8 rounded-full bg-base-300 flex items-center justify-center text-sm">
-                  {{ msg.role === 'user' ? '👤' : '🤖' }}
+          @if (messages$ | async; as messages) {
+            <!-- Empty state -->
+            @if (messages.length === 0) {
+              <div class="flex-1 flex items-center justify-center text-center">
+                <div>
+                  <p class="text-4xl mb-3">🤖</p>
+                  <p class="text-base-content/60 font-medium">Your Claude agent is ready.</p>
+                  <p class="text-base-content/40 text-sm mt-1">
+                    Ask it to add items, write updates, or manage the showcase for you.
+                  </p>
                 </div>
               </div>
-              <div class="chat-bubble"
-                   [class.chat-bubble-primary]="msg.role === 'user'"
-                   [class.chat-bubble-neutral]="msg.role === 'assistant'">
-                {{ msg.content }}
+            }
+
+            <!-- Messages -->
+            @for (msg of messages; track msg.timestamp) {
+              <div [class]="msg.role === 'user' ? 'chat chat-end' : 'chat chat-start'">
+                <div class="chat-image avatar">
+                  <div class="w-8 rounded-full bg-base-300 flex items-center justify-center text-sm">
+                    {{ msg.role === 'user' ? '👤' : '🤖' }}
+                  </div>
+                </div>
+                <div class="chat-bubble"
+                     [class.chat-bubble-primary]="msg.role === 'user'"
+                     [class.chat-bubble-neutral]="msg.role === 'assistant'">
+                  {{ msg.content }}
+                </div>
+                <!-- Tool use summary -->
+                @if (msg.toolUse?.length) {
+                  <div class="chat-footer text-xs opacity-50 mt-1">
+                    Used tools: {{ msg.toolUse | json }}
+                  </div>
+                }
               </div>
-              <!-- Tool use summary -->
-              <div *ngIf="msg.toolUse?.length" class="chat-footer text-xs opacity-50 mt-1">
-                Used tools: {{ msg.toolUse | json }}
-              </div>
-            </div>
-          </ng-container>
+            }
+          }
 
           <!-- Loading indicator -->
-          <div *ngIf="loading$ | async" class="chat chat-start">
-            <div class="chat-bubble chat-bubble-neutral">
-              <span class="loading loading-dots loading-sm"></span>
+          @if (loading$ | async) {
+            <div class="chat chat-start">
+              <div class="chat-bubble chat-bubble-neutral">
+                <span class="loading loading-dots loading-sm"></span>
+              </div>
             </div>
-          </div>
+          }
         </div>
 
         <!-- Input -->
@@ -112,11 +118,11 @@
       </div>
 
     </div>
-  </div>
+  }
 
   <!-- ── Items tab ──────────────────────────────────────────────── -->
-  <div *ngIf="activeTab() === 'items'">
-    <ng-container *ngIf="items$ | async as items; else loading">
+  @if (activeTab() === 'items') {
+    @if (items$ | async; as items) {
       <div class="overflow-x-auto">
         <table class="table table-zebra w-full">
           <thead>
@@ -129,38 +135,37 @@
             </tr>
           </thead>
           <tbody>
-            <tr *ngFor="let item of items">
-              <td>
-                <div class="font-medium">{{ item.name }}</div>
-                <div class="text-xs text-base-content/50">{{ item.description | slice:0:60 }}...</div>
-              </td>
-              <td><span class="badge badge-sm">{{ item.condition }}</span></td>
-              <td>
-                <span class="badge badge-sm"
-                      [class.badge-success]="item.status === 'available'"
-                      [class.badge-warning]="item.status === 'claimed'"
-                      [class.badge-neutral]="item.status === 'gone'">
-                  {{ item.status }}
-                </span>
-              </td>
-              <td class="text-sm">{{ item.claimedBy?.name ?? '—' }}</td>
-              <td>
-                <button (click)="deleteItem(item.id)"
-                        class="btn btn-ghost btn-xs text-error">
-                  Delete
-                </button>
-              </td>
-            </tr>
+            @for (item of items; track item.id) {
+              <tr>
+                <td>
+                  <div class="font-medium">{{ item.name }}</div>
+                  <div class="text-xs text-base-content/50">{{ item.description | slice:0:60 }}...</div>
+                </td>
+                <td><span class="badge badge-sm">{{ item.condition }}</span></td>
+                <td>
+                  <span class="badge badge-sm"
+                        [class.badge-success]="item.status === 'available'"
+                        [class.badge-warning]="item.status === 'claimed'"
+                        [class.badge-neutral]="item.status === 'gone'">
+                    {{ item.status }}
+                  </span>
+                </td>
+                <td class="text-sm">{{ item.claimedBy?.name ?? '—' }}</td>
+                <td>
+                  <button (click)="deleteItem(item.id)" class="btn btn-ghost btn-xs text-error">
+                    Delete
+                  </button>
+                </td>
+              </tr>
+            }
           </tbody>
         </table>
       </div>
-    </ng-container>
-
-    <ng-template #loading>
+    } @else {
       <div class="flex justify-center py-20">
         <span class="loading loading-dots loading-lg text-primary"></span>
       </div>
-    </ng-template>
-  </div>
+    }
+  }
 
 </div>
