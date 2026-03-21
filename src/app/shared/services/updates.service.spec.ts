@@ -1,0 +1,154 @@
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { of, firstValueFrom } from 'rxjs';
+
+vi.mock('@angular/fire/firestore', () => ({
+  Firestore: class MockFirestore {},
+  collection: vi.fn().mockReturnValue('mock-collection'),
+  collectionData: vi.fn().mockReturnValue(of([])),
+  doc: vi.fn().mockReturnValue('mock-doc'),
+  docData: vi.fn().mockReturnValue(of(undefined)),
+  addDoc: vi.fn().mockResolvedValue({ id: 'new-id' }),
+  updateDoc: vi.fn().mockResolvedValue(undefined),
+  deleteDoc: vi.fn().mockResolvedValue(undefined),
+  query: vi.fn().mockReturnValue('mock-query'),
+  orderBy: vi.fn().mockReturnValue('mock-orderby'),
+  serverTimestamp: vi.fn().mockReturnValue('SERVER_TS'),
+}));
+
+import { UpdatesService } from './updates.service';
+import { Firestore } from '@angular/fire/firestore';
+import * as fs from '@angular/fire/firestore';
+
+describe('UpdatesService', () => {
+  let service: UpdatesService;
+
+  beforeEach(() => {
+    vi.clearAllMocks();
+    vi.mocked(fs.collection).mockReturnValue('mock-collection' as any);
+    vi.mocked(fs.query).mockReturnValue('mock-query' as any);
+    vi.mocked(fs.doc).mockReturnValue('mock-doc' as any);
+    vi.mocked(fs.orderBy).mockReturnValue('mock-orderby' as any);
+    vi.mocked(fs.serverTimestamp).mockReturnValue('SERVER_TS' as any);
+
+    TestBed.configureTestingModule({
+      providers: [
+        UpdatesService,
+        { provide: Firestore, useValue: {} },
+      ],
+    });
+
+    service = TestBed.inject(UpdatesService);
+  });
+
+  describe('getUpdates()', () => {
+    it('should return updates ordered by publishedAt desc', async () => {
+      const updates = [
+        { id: '1', title: 'We found a mover!', content: 'Content', author: 'Leo' },
+        { id: '2', title: 'Packing day', content: 'Content 2', author: 'Leo' },
+      ];
+      vi.mocked(fs.collectionData).mockReturnValue(of(updates) as any);
+
+      const result = await firstValueFrom(service.getUpdates());
+
+      expect(result).toEqual(updates);
+      expect(fs.orderBy).toHaveBeenCalledWith('publishedAt', 'desc');
+    });
+
+    it('should return empty array when no updates exist', async () => {
+      vi.mocked(fs.collectionData).mockReturnValue(of([]) as any);
+
+      const result = await firstValueFrom(service.getUpdates());
+
+      expect(result).toEqual([]);
+    });
+  });
+
+  describe('getUpdate()', () => {
+    it('should return a single update by id', async () => {
+      const update = { id: 'u-1', title: 'Hello World', content: 'Content', author: 'Leo' };
+      vi.mocked(fs.docData).mockReturnValue(of(update) as any);
+
+      const result = await firstValueFrom(service.getUpdate('u-1'));
+
+      expect(result).toEqual(update);
+      expect(fs.doc).toHaveBeenCalledWith({}, 'updates', 'u-1');
+    });
+
+    it('should return undefined for a missing update', async () => {
+      vi.mocked(fs.docData).mockReturnValue(of(undefined) as any);
+
+      const result = await firstValueFrom(service.getUpdate('missing'));
+
+      expect(result).toBeUndefined();
+    });
+  });
+
+  describe('createUpdate()', () => {
+    it('should call addDoc with update data and publishedAt timestamp', async () => {
+      vi.mocked(fs.addDoc).mockResolvedValue({ id: 'new-update-id' } as any);
+
+      const id = await service.createUpdate({
+        title: 'New update',
+        content: 'Content here',
+        author: 'Leo',
+      });
+
+      expect(id).toBe('new-update-id');
+      expect(fs.addDoc).toHaveBeenCalledWith(
+        'mock-collection',
+        expect.objectContaining({
+          title: 'New update',
+          content: 'Content here',
+          author: 'Leo',
+          publishedAt: 'SERVER_TS',
+        }),
+      );
+    });
+
+    it('should preserve optional fields like emoji and pinned', async () => {
+      vi.mocked(fs.addDoc).mockResolvedValue({ id: 'update-2' } as any);
+
+      await service.createUpdate({
+        title: 'Pinned post',
+        content: 'Important!',
+        author: 'Leo',
+        emoji: '📌',
+        pinned: true,
+      });
+
+      expect(fs.addDoc).toHaveBeenCalledWith(
+        'mock-collection',
+        expect.objectContaining({ emoji: '📌', pinned: true }),
+      );
+    });
+  });
+
+  describe('updateUpdate()', () => {
+    it('should call updateDoc with the data and updatedAt timestamp', async () => {
+      vi.mocked(fs.updateDoc).mockResolvedValue(undefined);
+
+      await service.updateUpdate('u-1', { title: 'Updated title' });
+
+      expect(fs.doc).toHaveBeenCalledWith({}, 'updates', 'u-1');
+      expect(fs.updateDoc).toHaveBeenCalledWith(
+        'mock-doc',
+        expect.objectContaining({
+          title: 'Updated title',
+          updatedAt: 'SERVER_TS',
+        }),
+      );
+    });
+  });
+
+  describe('deleteUpdate()', () => {
+    it('should call deleteDoc with the update doc ref', async () => {
+      vi.mocked(fs.deleteDoc).mockResolvedValue(undefined);
+
+      await service.deleteUpdate('u-1');
+
+      expect(fs.doc).toHaveBeenCalledWith({}, 'updates', 'u-1');
+      expect(fs.deleteDoc).toHaveBeenCalledWith('mock-doc');
+    });
+  });
+});

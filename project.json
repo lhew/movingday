@@ -63,7 +63,7 @@
     },
     "test": {
       "executor": "@nx/vite:test",
-      "outputs": ["{workspaceRoot}/coverage/{projectRoot}"],
+      "outputs": ["{workspaceRoot}/coverage/movingday"],
       "options": {
         "passWithNoTests": true,
         "reportsDirectory": "../../coverage/movingday"
