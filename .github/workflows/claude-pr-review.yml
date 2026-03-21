@@ -1,0 +1,55 @@
+name: Claude PR Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  review:
+    name: Claude Code Review
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          allowed_tools: "Bash,Read,Glob,Grep"
+          direct_prompt: |
+            Review this pull request for the Moving Day app (Angular 19 + Firebase + DaisyUI 4).
+
+            Focus on these areas in priority order:
+
+            ## 1. Security (CRITICAL — flag as blocking)
+            - Is auth still commented out in `functions/src/index.ts` lines ~96-107?
+            - Are there any hardcoded secrets, API keys, or placeholder values like YOUR_ADMIN_EMAIL@gmail.com being committed?
+            - Do Firestore rule changes maintain the principle of least privilege?
+            - Does the Cloud Function still validate that only the admin can perform write operations?
+
+            ## 2. Angular Template Correctness
+            - For every `*ngFor trackBy: fn`, does `fn` exist as a method on the component class?
+            - For every `(click)="method()"`, does `method` exist?
+            - Are signals accessed with `()` call syntax in templates?
+
+            ## 3. DaisyUI Consistency
+            - Are new components using the `movingday` theme tokens (primary, secondary, accent, base-*)?
+            - Are hardcoded hex colors used where theme tokens should be?
+            - Is the `animate-fade-in` class applied to new page-level wrappers?
+
+            ## 4. Cloud Function / Agentic Loop
+            - If new tools were added to `executeTool`, do they have matching tool definitions?
+            - Are Firestore operations using `serverTimestamp()` for timestamps?
+            - Are new tools safe from injection (no unsanitized user input passed directly to Firestore)?
+
+            ## 5. General Code Quality
+            - No unnecessary comments or dead code
+            - TypeScript types are explicit (no implicit `any`)
+
+            Post a review comment summarizing findings. Use ✅ for passes, ❌ for blocking issues, ⚠️ for warnings.
+            If there are blocking security issues, request changes. Otherwise approve or comment.

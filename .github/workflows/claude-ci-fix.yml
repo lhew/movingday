@@ -1,0 +1,82 @@
+name: Claude — CI Auto-Fix
+
+on:
+  # Trigger when the CI workflow completes with a failure
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
+    branches: [main, develop]
+
+jobs:
+  auto-fix:
+    name: Attempt Claude fix
+    # Only run when CI failed (not on success or cancellation)
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      checks: read
+      actions: read
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Use a PAT so the commit can trigger CI again
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Functions dependencies
+        run: npm ci
+        working-directory: functions
+
+      - uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Allow reading, editing files, and running nx tasks to verify fixes
+          allowed_tools: "Bash,Read,Write,Edit,Glob,Grep"
+          # Prevent Claude from touching security-sensitive or infrastructure files
+          disallowed_tools: ""
+          direct_prompt: |
+            The CI workflow just failed on branch "${{ github.event.workflow_run.head_branch }}".
+            Failed run: ${{ github.event.workflow_run.html_url }}
+            Commit: ${{ github.event.workflow_run.head_sha }}
+
+            Your job: identify and fix the failure, then verify the fix.
+
+            ## Steps
+
+            1. Run `npx nx affected -t lint --parallel=3` to check for lint errors. Fix any found.
+            2. Run `npx nx affected -t test --parallel=3` to check for test failures. Fix any found.
+            3. Run `npx nx build --configuration=production` to check for build errors. Fix any found.
+
+            ## Rules
+
+            - Fix ROOT CAUSES. Do not suppress lint rules, skip checks, or weaken types to silence errors.
+            - Do NOT touch these files (security-critical):
+              - `functions/src/index.ts` auth block (lines ~96-107)
+              - `firestore.rules`
+              - `storage.rules`
+              - `.github/workflows/`
+            - Do NOT modify test assertions to make tests pass — fix the source code instead.
+            - Do NOT use `--no-verify`, `--force`, or `any` type casts as a workaround.
+            - Keep all changes minimal and focused on the failing task.
+            - If the failure is in `functions/`, run `npm run build` inside the `functions/` directory to verify.
+
+            ## After fixing
+
+            If you made changes, run `git diff --stat` and summarize what you changed and why.
+            If the failure cannot be safely auto-fixed (e.g., it requires a design decision,
+            touches security-critical code, or has an ambiguous root cause), explain clearly
+            what is failing and what Leo needs to do manually.
+
+            Do NOT commit or push — the action handles that automatically.

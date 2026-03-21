@@ -1,0 +1,51 @@
+name: Claude — On-Demand Assistant
+
+on:
+  issue_comment:
+    types: [created]
+  pull_request_review_comment:
+    types: [created]
+
+jobs:
+  respond:
+    name: Respond to @claude
+    # Only run when the comment contains @claude
+    if: |
+      contains(github.event.comment.body, '@claude') &&
+      github.event.comment.user.login != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Let Claude read files, run commands, and write fixes
+          allowed_tools: "Bash,Read,Write,Edit,Glob,Grep"
+          # Context about this repo so Claude can answer precisely
+          system_prompt: |
+            You are a coding assistant for the Moving Day app — a personal Angular 19 + Firebase app
+            that lets Leo give away items and share moving updates. Stack: Angular 19 standalone
+            components, AngularFire, DaisyUI 4 with the 'movingday' theme, Firebase (Hosting,
+            Firestore, Auth, Functions), Anthropic Claude via a Cloud Function agentic loop.
+
+            Key files:
+            - Frontend: src/app/features/ (showcase, updates, admin, not-found)
+            - Services: src/app/shared/services/
+            - Cloud Function: functions/src/index.ts
+            - Theme: tailwind.config.js (movingday theme)
+            - Rules: firestore.rules, storage.rules
+
+            Known production blockers (do NOT commit fixes for these without explicit instruction):
+            - Cloud Function auth is commented out (functions/src/index.ts ~line 96)
+            - firestore.rules has YOUR_ADMIN_EMAIL@gmail.com placeholder
+
+            When making code changes, follow existing patterns. Use DaisyUI theme tokens,
+            not hardcoded hex colors. Keep Angular components standalone.

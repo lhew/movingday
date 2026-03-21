@@ -1,0 +1,77 @@
+<div class="min-h-screen flex flex-col">
+
+  <!-- ── Navbar ──────────────────────────────────────────────── -->
+  <nav class="navbar bg-base-100 shadow-sm sticky top-0 z-50">
+    <div class="navbar-start">
+      <div class="dropdown lg:hidden">
+        <label tabindex="0" class="btn btn-ghost btn-circle">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h7" />
+          </svg>
+        </label>
+        <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-52">
+          <li><a routerLink="/showcase" routerLinkActive="font-semibold">📦 Free Stuff</a></li>
+          <li><a routerLink="/updates" routerLinkActive="font-semibold">📰 Updates</a></li>
+        </ul>
+      </div>
+      <a routerLink="/" class="btn btn-ghost text-xl gap-2 font-bold">
+        📦 Moving Day
+      </a>
+    </div>
+
+    <div class="navbar-center hidden lg:flex">
+      <ul class="menu menu-horizontal px-1 gap-1">
+        <li>
+          <a routerLink="/showcase" routerLinkActive="active" class="rounded-lg">
+            📦 Free Stuff
+          </a>
+        </li>
+        <li>
+          <a routerLink="/updates" routerLinkActive="active" class="rounded-lg">
+            📰 Updates
+          </a>
+        </li>
+      </ul>
+    </div>
+
+    <div class="navbar-end gap-2">
+      <ng-container *ngIf="isSignedIn$ | async; else signInBtn">
+        <div class="dropdown dropdown-end">
+          <label tabindex="0" class="btn btn-ghost btn-circle avatar">
+            <div class="w-9 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2">
+              <img [src]="userPhoto$ | async" alt="Profile" />
+            </div>
+          </label>
+          <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-48">
+            <li class="menu-title text-xs opacity-60">Hey, {{ userName$ | async }}!</li>
+            <li><a routerLink="/admin">⚙️ Admin panel</a></li>
+            <li><a (click)="signOut()">🚪 Sign out</a></li>
+          </ul>
+        </div>
+      </ng-container>
+
+      <ng-template #signInBtn>
+        <button (click)="signIn()" class="btn btn-primary btn-sm gap-2">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor">
+            <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+            <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+            <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+            <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+          </svg>
+          Sign in
+        </button>
+      </ng-template>
+    </div>
+  </nav>
+
+  <!-- ── Main content ─────────────────────────────────────────── -->
+  <main class="flex-1">
+    <router-outlet></router-outlet>
+  </main>
+
+  <!-- ── Footer ───────────────────────────────────────────────── -->
+  <footer class="footer footer-center p-6 bg-base-200 text-base-content text-sm opacity-70">
+    <p>Made with ❤️ to make moving a little less overwhelming.</p>
+  </footer>
+
+</div>

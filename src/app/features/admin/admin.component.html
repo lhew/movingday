@@ -1,0 +1,166 @@
+<div class="max-w-6xl mx-auto px-4 py-8 animate-fade-in">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-3xl font-bold">⚙️ Admin Panel</h1>
+      <p class="text-base-content/60 text-sm mt-1">Give instructions to your agents, or manage items directly.</p>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="tabs tabs-bordered mb-6">
+    <a class="tab tab-lg" [class.tab-active]="activeTab() === 'agent'" (click)="setTab('agent')">
+      🤖 AI Agent
+    </a>
+    <a class="tab tab-lg" [class.tab-active]="activeTab() === 'items'" (click)="setTab('items')">
+      📦 Items
+    </a>
+  </div>
+
+  <!-- ── Agent tab ──────────────────────────────────────────────── -->
+  <div *ngIf="activeTab() === 'agent'">
+
+    <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+
+      <!-- Quick prompts sidebar -->
+      <div class="lg:col-span-1">
+        <div class="card bg-base-200 shadow-sm">
+          <div class="card-body p-4">
+            <h3 class="font-semibold text-sm mb-3">Quick prompts</h3>
+            <div class="flex flex-col gap-2">
+              <button *ngFor="let prompt of quickPrompts"
+                      (click)="useQuickPrompt(prompt)"
+                      class="btn btn-ghost btn-sm text-left justify-start text-xs h-auto py-2 normal-case whitespace-normal">
+                {{ prompt }}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat interface -->
+      <div class="lg:col-span-3 flex flex-col gap-4">
+
+        <!-- Messages -->
+        <div #chatContainer
+             class="bg-base-200 rounded-2xl p-4 h-[500px] overflow-y-auto flex flex-col gap-3">
+
+          <!-- Empty state -->
+          <ng-container *ngIf="(messages$ | async)?.length === 0">
+            <div class="flex-1 flex items-center justify-center text-center">
+              <div>
+                <p class="text-4xl mb-3">🤖</p>
+                <p class="text-base-content/60 font-medium">Your Claude agent is ready.</p>
+                <p class="text-base-content/40 text-sm mt-1">
+                  Ask it to add items, write updates, or manage the showcase for you.
+                </p>
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Messages -->
+          <ng-container *ngFor="let msg of messages$ | async">
+            <div [class]="msg.role === 'user' ? 'chat chat-end' : 'chat chat-start'">
+              <div class="chat-image avatar">
+                <div class="w-8 rounded-full bg-base-300 flex items-center justify-center text-sm">
+                  {{ msg.role === 'user' ? '👤' : '🤖' }}
+                </div>
+              </div>
+              <div class="chat-bubble"
+                   [class.chat-bubble-primary]="msg.role === 'user'"
+                   [class.chat-bubble-neutral]="msg.role === 'assistant'">
+                {{ msg.content }}
+              </div>
+              <!-- Tool use summary -->
+              <div *ngIf="msg.toolUse?.length" class="chat-footer text-xs opacity-50 mt-1">
+                Used tools: {{ msg.toolUse | json }}
+              </div>
+            </div>
+          </ng-container>
+
+          <!-- Loading indicator -->
+          <div *ngIf="loading$ | async" class="chat chat-start">
+            <div class="chat-bubble chat-bubble-neutral">
+              <span class="loading loading-dots loading-sm"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Input -->
+        <div class="flex gap-2">
+          <textarea
+            class="textarea textarea-bordered flex-1 resize-none text-sm"
+            rows="2"
+            placeholder="Tell the agent what to do... (Enter to send, Shift+Enter for new line)"
+            [value]="inputText()"
+            (input)="inputText.set($any($event.target).value)"
+            (keydown)="onKeydown($event)"
+            [disabled]="loading$ | async">
+          </textarea>
+          <div class="flex flex-col gap-2">
+            <button (click)="send()"
+                    [disabled]="!inputText().trim() || (loading$ | async)"
+                    class="btn btn-primary flex-1">
+              Send
+            </button>
+            <button (click)="clearHistory()"
+                    class="btn btn-ghost btn-sm text-xs">
+              Clear
+            </button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── Items tab ──────────────────────────────────────────────── -->
+  <div *ngIf="activeTab() === 'items'">
+    <ng-container *ngIf="items$ | async as items; else loading">
+      <div class="overflow-x-auto">
+        <table class="table table-zebra w-full">
+          <thead>
+            <tr>
+              <th>Item</th>
+              <th>Condition</th>
+              <th>Status</th>
+              <th>Claimed by</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let item of items">
+              <td>
+                <div class="font-medium">{{ item.name }}</div>
+                <div class="text-xs text-base-content/50">{{ item.description | slice:0:60 }}...</div>
+              </td>
+              <td><span class="badge badge-sm">{{ item.condition }}</span></td>
+              <td>
+                <span class="badge badge-sm"
+                      [class.badge-success]="item.status === 'available'"
+                      [class.badge-warning]="item.status === 'claimed'"
+                      [class.badge-neutral]="item.status === 'gone'">
+                  {{ item.status }}
+                </span>
+              </td>
+              <td class="text-sm">{{ item.claimedBy?.name ?? '—' }}</td>
+              <td>
+                <button (click)="deleteItem(item.id)"
+                        class="btn btn-ghost btn-xs text-error">
+                  Delete
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </ng-container>
+
+    <ng-template #loading>
+      <div class="flex justify-center py-20">
+        <span class="loading loading-dots loading-lg text-primary"></span>
+      </div>
+    </ng-template>
+  </div>
+
+</div>

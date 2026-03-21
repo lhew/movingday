@@ -1,0 +1,63 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Build outputs
+dist/
+build/
+.angular/
+coverage/
+
+# Nx cache
+.nx/cache
+.nx/workspace-data
+
+# Environment files
+.env
+.env.local
+.env.*.local
+src/environments/environment.local.ts
+
+# Firebase
+.firebase/
+firebase-debug.log*
+firestore-debug.log*
+ui-debug.log*
+
+# Cloud Functions build output
+functions/lib/
+
+# Editor
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Cypress
+cypress/videos
+cypress/screenshots
+cypress/downloads
+
+# Test coverage
+coverage/
+*.lcov
+
+# Misc
+.tmp/
+tmp/
+
+.nx/polygraph
+.claude/worktrees
+.claude/settings.local.json

@@ -1,0 +1,88 @@
+name: Claude — Security Gate
+
+on:
+  # Block deploys if security issues are found
+  pull_request:
+    branches: [main]
+    paths:
+      # Only run when security-relevant files change
+      - 'functions/src/**'
+      - 'firestore.rules'
+      - 'storage.rules'
+      - 'src/environments/**'
+      - '.github/workflows/deploy.yml'
+
+jobs:
+  security-check:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          allowed_tools: "Read,Glob,Grep"
+          direct_prompt: |
+            Run a security audit on this PR before it merges to main (production deploy branch).
+            Check ONLY the changed files that are security-relevant.
+
+            ## Checks
+
+            ### 1. Cloud Function Authentication — BLOCKING
+            Read `functions/src/index.ts`.
+            FAIL if the `verifyIdToken` block (around lines 96-107) is still commented out.
+            This means ANY caller can invoke the Claude agent without authentication.
+
+            ### 2. Placeholder Secrets — BLOCKING
+            Scan ALL changed files for these strings:
+            - `YOUR_ADMIN_EMAIL@gmail.com`
+            - `YOUR_API_KEY`
+            - `YOUR_PROJECT_ID`
+            - `YOUR_SENDER_ID`
+            - `YOUR_APP_ID`
+            - `%%FIREBASE_` (unexpanded deploy tokens)
+            FAIL if any are found — they must never reach main.
+
+            ### 3. Firestore Admin Email — BLOCKING
+            Read `firestore.rules`.
+            FAIL if `isAdmin()` function still contains `YOUR_ADMIN_EMAIL@gmail.com`.
+
+            ### 4. CORS Policy — WARNING (non-blocking)
+            In `functions/src/index.ts`, flag if `Access-Control-Allow-Origin: *` is present.
+            Warn that this should be locked to the Firebase Hosting domain in production.
+
+            ### 5. Firestore Rules Integrity — BLOCKING
+            Confirm the dibs `allow update` rule still restricts affected keys to
+            `['status', 'claimedBy', 'claimedAt']` only. FAIL if this check is weakened or removed.
+
+            ### 6. Sensitive Data in Environment Files — BLOCKING
+            Read `src/environments/environment.ts` and `environment.prod.ts`.
+            FAIL if `environment.ts` contains any real API key (pattern: `AIza[A-Za-z0-9_-]{35}`).
+            FAIL if `environment.prod.ts` does NOT use `%%PLACEHOLDER%%` tokens for secrets.
+
+            ## Output Format
+
+            Post a comment with this structure:
+            ```
+            ## Security Gate Results
+
+            | Check | Status | Detail |
+            |---|---|---|
+            | Cloud Function Auth | ✅/❌ | ... |
+            | Placeholder Secrets | ✅/❌ | ... |
+            | Firestore Admin Email | ✅/❌ | ... |
+            | CORS Policy | ✅/⚠️ | ... |
+            | Firestore Rules Integrity | ✅/❌ | ... |
+            | Environment Files | ✅/❌ | ... |
+
+            **VERDICT: SAFE TO MERGE** or **BLOCKED — N issue(s) must be fixed**
+            ```
+
+            If ANY check marked BLOCKING fails, the PR must NOT merge.
+            Use `gh pr review --request-changes` for failures, `gh pr review --approve` if all pass.

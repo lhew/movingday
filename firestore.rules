@@ -1,0 +1,44 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Items available for donation
+    match /items/{itemId} {
+      // Anyone can read items (public showcase)
+      allow read: if true;
+
+      // Only authenticated users can call dibs
+      allow update: if request.auth != null
+        && request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['status', 'claimedBy', 'claimedAt'])
+        && request.resource.data.status == 'claimed'
+        && resource.data.status == 'available';
+
+      // Only admin can create/delete/fully update items
+      allow create, delete: if isAdmin();
+      allow update: if isAdmin();
+    }
+
+    // Moving updates / blog posts
+    match /updates/{updateId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+
+    // Agent conversation history
+    match /agent-sessions/{sessionId} {
+      allow read, write: if isAdmin();
+    }
+
+    // User profiles (for display names next to dibs)
+    match /users/{userId} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.token.email in ['YOUR_ADMIN_EMAIL@gmail.com'];
+    }
+  }
+}

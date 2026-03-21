@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="movingday">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Moving Day — Preview</title>
+  <link href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      daisyui: { themes: false }
+    }
+  </script>
+  <style>
+    body { font-family: 'Inter', sans-serif; }
+
+    /* Custom DaisyUI theme injected via CSS variables */
+    [data-theme="movingday"] {
+      --p: 38 92% 50%;
+      --pf: 38 92% 40%;
+      --pc: 20 14% 10%;
+      --s: 199 89% 48%;
+      --sf: 199 89% 38%;
+      --sc: 0 0% 100%;
+      --a: 160 84% 39%;
+      --af: 160 84% 29%;
+      --ac: 0 0% 100%;
+      --n: 218 11% 32%;
+      --nf: 218 11% 22%;
+      --nc: 214 12% 96%;
+      --b1: 0 0% 98%;
+      --b2: 240 5% 96%;
+      --b3: 240 6% 90%;
+      --bc: 20 14% 10%;
+      --in: 217 91% 60%;
+      --su: 142 71% 45%;
+      --wa: 38 92% 50%;
+      --er: 0 84% 60%;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+    .animate-fade-in { animation: fadeIn 0.3s ease-out; }
+
+    .item-card {
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+    .item-card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 30px rgba(0,0,0,0.12);
+    }
+
+    .page { display: none; }
+    .page.active { display: block; }
+
+    .tab-btn { cursor: pointer; transition: all 0.15s; }
+
+    /* Chat bubble animation */
+    .chat-bubble-new {
+      animation: fadeIn 0.25s ease-out;
+    }
+
+    /* Typing indicator */
+    @keyframes blink { 0%,100% { opacity:.2 } 50% { opacity:1 } }
+    .dot { animation: blink 1.2s infinite; }
+    .dot:nth-child(2) { animation-delay:.2s; }
+    .dot:nth-child(3) { animation-delay:.4s; }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col bg-base-100 text-base-content">
+
+<!-- ═══════════════════════════════════════════════════
+     NAVBAR
+════════════════════════════════════════════════════ -->
+<nav class="navbar bg-base-100 shadow-sm sticky top-0 z-50">
+  <div class="navbar-start">
+    <span class="btn btn-ghost text-xl font-bold gap-2 cursor-pointer" onclick="navigate('showcase')">
+      📦 Moving Day
+    </span>
+  </div>
+  <div class="navbar-center hidden sm:flex">
+    <ul class="menu menu-horizontal px-1 gap-1">
+      <li><a id="nav-showcase" class="rounded-lg font-medium bg-base-200" onclick="navigate('showcase')">📦 Free Stuff</a></li>
+      <li><a id="nav-updates" class="rounded-lg" onclick="navigate('updates')">📰 Updates</a></li>
+    </ul>
+  </div>
+  <div class="navbar-end gap-2">
+    <div id="signed-out-btn">
+      <button onclick="signIn()" class="btn btn-primary btn-sm gap-2">
+        <svg viewBox="0 0 24 24" class="w-4 h-4" fill="currentColor">
+          <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
+          <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
+          <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
+          <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
+        </svg>
+        Sign in
+      </button>
+    </div>
+    <div id="signed-in-btn" class="hidden">
+      <div class="dropdown dropdown-end">
+        <label tabindex="0" class="btn btn-ghost btn-circle avatar">
+          <div class="w-9 rounded-full ring ring-primary ring-offset-base-100 ring-offset-2 overflow-hidden bg-amber-100 flex items-center justify-center text-xl">
+            🧑
+          </div>
+        </label>
+        <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-48">
+          <li class="menu-title text-xs opacity-60">Hey, Leo!</li>
+          <li><a onclick="navigate('admin')">⚙️ Admin panel</a></li>
+          <li><a onclick="signOut()">🚪 Sign out</a></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══════════════════════════════════════════════════
+     PAGE: SHOWCASE
+════════════════════════════════════════════════════ -->
+<div id="page-showcase" class="page active flex-1">
+  <div class="max-w-7xl mx-auto px-4 py-10 animate-fade-in">
+    <div class="text-center mb-10">
+      <h1 class="text-4xl font-bold mb-3">📦 Free Stuff</h1>
+      <p class="text-base-content/70 text-lg max-w-xl mx-auto">
+        Leo is moving and wants these things to go to good homes.
+        Sign in with Google and call dibs on anything you want — first come, first served!
+      </p>
+    </div>
+
+    <!-- Filter tabs -->
+    <div class="flex justify-center mb-8">
+      <div class="tabs tabs-boxed">
+        <a class="tab tab-active" id="filter-all" onclick="setFilter('all', this)">All</a>
+        <a class="tab" id="filter-available" onclick="setFilter('available', this)">✅ Available</a>
+        <a class="tab" id="filter-claimed" onclick="setFilter('claimed', this)">🤝 Claimed</a>
+      </div>
+    </div>
+
+    <!-- Items grid -->
+    <div id="items-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     PAGE: UPDATES
+════════════════════════════════════════════════════ -->
+<div id="page-updates" class="page flex-1">
+  <div class="max-w-3xl mx-auto px-4 py-10 animate-fade-in">
+    <div class="text-center mb-10">
+      <h1 class="text-4xl font-bold mb-3">📰 What's Happening</h1>
+      <p class="text-base-content/70 text-lg">
+        Follow along as Leo navigates the chaos of moving.
+      </p>
+    </div>
+    <div class="flex flex-col gap-6" id="updates-list"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     PAGE: UPDATE DETAIL
+════════════════════════════════════════════════════ -->
+<div id="page-update-detail" class="page flex-1">
+  <div class="max-w-2xl mx-auto px-4 py-10 animate-fade-in">
+    <a class="btn btn-ghost btn-sm mb-6 gap-2 cursor-pointer" onclick="navigate('updates')">← Back to updates</a>
+    <div id="update-detail-content"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     PAGE: ADMIN
+════════════════════════════════════════════════════ -->
+<div id="page-admin" class="page flex-1">
+  <div class="max-w-6xl mx-auto px-4 py-8 animate-fade-in">
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-3xl font-bold">⚙️ Admin Panel</h1>
+        <p class="text-base-content/60 text-sm mt-1">Give instructions to your Claude agent, or manage items directly.</p>
+      </div>
+    </div>
+
+    <!-- Tabs -->
+    <div class="tabs tabs-bordered mb-6">
+      <a class="tab tab-lg tab-active" id="admin-tab-agent" onclick="setAdminTab('agent')">🤖 AI Agent</a>
+      <a class="tab tab-lg" id="admin-tab-items" onclick="setAdminTab('items')">📦 Items</a>
+    </div>
+
+    <!-- Agent panel -->
+    <div id="admin-agent-panel">
+      <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <!-- Quick prompts -->
+        <div class="lg:col-span-1">
+          <div class="card bg-base-200 shadow-sm">
+            <div class="card-body p-4">
+              <h3 class="font-semibold text-sm mb-3">Quick prompts</h3>
+              <div class="flex flex-col gap-2" id="quick-prompts"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Chat -->
+        <div class="lg:col-span-3 flex flex-col gap-4">
+          <div id="chat-messages"
+               class="bg-base-200 rounded-2xl p-4 h-[440px] overflow-y-auto flex flex-col gap-3">
+            <div id="chat-empty" class="flex-1 flex items-center justify-center text-center">
+              <div>
+                <p class="text-4xl mb-3">🤖</p>
+                <p class="text-base-content/60 font-medium">Your Claude agent is ready.</p>
+                <p class="text-base-content/40 text-sm mt-1">Ask it to add items, write updates, or manage the showcase for you.</p>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex gap-2">
+            <textarea id="chat-input"
+                      class="textarea textarea-bordered flex-1 resize-none text-sm"
+                      rows="2"
+                      placeholder="Tell the agent what to do... (Enter to send)"
+                      onkeydown="handleChatKey(event)"></textarea>
+            <div class="flex flex-col gap-2">
+              <button onclick="sendMessage()" class="btn btn-primary flex-1 px-6">Send</button>
+              <button onclick="clearChat()" class="btn btn-ghost btn-sm text-xs">Clear</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Items panel -->
+    <div id="admin-items-panel" class="hidden">
+      <div class="overflow-x-auto">
+        <table class="table table-zebra w-full">
+          <thead>
+            <tr>
+              <th>Item</th><th>Condition</th><th>Status</th><th>Claimed by</th><th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="admin-items-table"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     FOOTER
+════════════════════════════════════════════════════ -->
+<footer class="footer footer-center p-6 bg-base-200 text-base-content text-sm opacity-70 mt-auto">
+  <p>Made with ❤️ to make moving a little less overwhelming.</p>
+</footer>
+
+<!-- Dibs toast -->
+<div id="toast" class="toast toast-top toast-center z-50 hidden">
+  <div id="toast-inner" class="alert alert-success">
+    <span id="toast-msg"></span>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════
+     JAVASCRIPT
+════════════════════════════════════════════════════ -->
+<script>
+// ── State ────────────────────────────────────────────────────
+let signedIn = false;
+let currentFilter = 'all';
+let chatMessages = [];
+
+const ITEMS = [
+  { id:1, name:'IKEA Billy Bookcase', desc:'Classic white bookcase, 80cm wide. Two small scratches on the side panel, barely noticeable. Great for books, plants, or displaying things.', condition:'good', status:'available', category:'Furniture', emoji:'📚', imageEmoji:'📚' },
+  { id:2, name:'Sony 32" TV', desc:'Works perfectly, includes remote. HDMI × 3, USB × 2. Selling because I upgraded to a bigger screen. Bought 2 years ago.', condition:'good', status:'claimed', claimedBy:'Maria S.', category:'Electronics', emoji:'📺', imageEmoji:'📺' },
+  { id:3, name:'Standing Desk Lamp', desc:'Adjustable arm, 3 brightness levels, warm + cool light. Barely used — I prefer natural light. Bulb included.', condition:'like-new', status:'available', category:'Furniture', emoji:'💡', imageEmoji:'💡' },
+  { id:4, name:'Box of Cooking Books', desc:'~20 cookbooks including Ottolenghi, Samin Nosrat, and a few Portuguese classics. Take the whole box or pick and choose.', condition:'good', status:'available', category:'Books', emoji:'🍳', imageEmoji:'🍳' },
+  { id:5, name:'Vintage Coffee Table', desc:'Solid wood, mid-century style, some wear on top that gives it character. Legs are sturdy. 90 × 50cm.', condition:'fair', status:'available', category:'Furniture', emoji:'☕', imageEmoji:'☕' },
+  { id:6, name:'Office Chair (Ergonomic)', desc:'IKEA Markus, black, adjustable lumbar support and armrests. Very comfortable for long work sessions. Minor scuff on the base.', condition:'good', status:'available', category:'Furniture', emoji:'🪑', imageEmoji:'🪑' },
+  { id:7, name:'Board Game Collection', desc:'Includes Catan, Ticket to Ride, Pandemic, Codenames, and 6 others. All complete sets with instructions. Perfect for a game night host.', condition:'like-new', status:'available', category:'Games', emoji:'🎲', imageEmoji:'🎲' },
+  { id:8, name:'Monstera Deliciosa (Large)', desc:'About 1.2m tall, very healthy, lots of new growth. Needs a big pot and indirect light. Come with a car — she\'s massive!', condition:'new', status:'claimed', claimedBy:'João M.', category:'Plants', emoji:'🌿', imageEmoji:'🌿' },
+];
+
+const UPDATES = [
+  { id:1, emoji:'🚚', title:'We found a moving company!', summary:'After weeks of searching, we finally booked a crew for April 15th.', content:`<p class="mb-4">After calling what felt like every moving company in the city, we finally found a crew we trust — <strong>MoveRight Logistics</strong>. They had great reviews, came recommended by three separate people, and didn't try to upsell us on bubble wrap for our pillows.</p><p class="mb-4">Moving day is locked in for <strong>April 15th</strong>. If you want to come help (or just watch the chaos), you're welcome. I'll have coffee and snacks.</p><p>I'll post pickup windows for the free items in the next update. If you've called dibs on something, expect a message from me next week.</p>`, date:'March 18, 2026', pinned:true },
+  { id:2, emoji:'📦', title:'Packing has begun', summary:'Room by room, box by box. The kitchen took three days.', content:`<p class="mb-4">Day 1 of packing: I thought I was a minimalist. Day 3: I found four sets of placemats I've never used and a fondue kit from 2019.</p><p class="mb-4">The kitchen alone filled <strong>14 boxes</strong>. I have been living off delivery since Tuesday because every pot and pan is wrapped in newspaper somewhere in the living room.</p><p>The books went quickly. The cables drawer… did not. I respect anyone who has ever untangled a drawer full of mystery cables without losing their mind.</p>`, date:'March 14, 2026', pinned:false },
+  { id:3, emoji:'🏠', title:'Found the new place', summary:'Signed the lease! Here's what the new neighbourhood is like.', content:`<p class="mb-4">After three months of searching, viewings, rejections, and one very memorable apartment that smelled like a fish market, I signed a lease!</p><p class="mb-4">It's a bit smaller than I'd like but the light is incredible — south-facing, huge windows, a balcony big enough for my remaining plants (the ones I'm not giving away). The neighbourhood has a great bakery 200 metres away and that was genuinely a deciding factor.</p><p>New address goes out via email to close friends and family. If you're reading this you probably already have it. 😄</p>`, date:'March 5, 2026', pinned:false },
+];
+
+const QUICK_PROMPTS = [
+  '📦 Add item: IKEA Kallax shelf, white, 4 cubes, good condition',
+  '📰 Write update: boxes are all packed!',
+  '📋 List all items and their status',
+  '✅ Mark the TV as gone — it was picked up',
+  '📣 Write a pinned update with pickup instructions',
+];
+
+const AGENT_REPLIES = {
+  default: [
+    (msg) => `Got it! I'll take care of that. I've processed your request and updated the database accordingly. Is there anything else you'd like me to do with the showcase or updates?`,
+    (msg) => `Done! I've made the changes you asked for. Everything is live on the site now. Anything else?`,
+    (msg) => `On it! I've updated the Moving Day showcase as requested. Let me know if you'd like to tweak anything.`,
+  ],
+  add: (msg) => {
+    const name = msg.match(/:\s*(.+?)(?:,|$)/)?.[1] || 'the item';
+    return `✅ Created! I've added **"${name.trim()}"** to the showcase. It's now live and available for people to call dibs. Do you want to add a photo or any additional tags?`;
+  },
+  update: (msg) => {
+    const title = msg.match(/:\s*[""]?(.+?)[""]?$/)?.[1] || 'your update';
+    return `✅ Published! I've posted the update **"${title.trim()}"** to the moving updates page. Your followers will see it right away. Want me to pin it to the top?`;
+  },
+  list: () => {
+    const available = ITEMS.filter(i => i.status === 'available').length;
+    const claimed = ITEMS.filter(i => i.status === 'claimed').length;
+    return `📋 Here's the current status:\n\n• **${available} items available** — bookcase, lamp, cookbooks, coffee table, office chair, board games\n• **${claimed} items claimed** — Sony TV (Maria S.), Monstera plant (João M.)\n• **0 items gone**\n\nTotal: ${ITEMS.length} items in the showcase. Want me to do anything with these?`;
+  },
+  mark: () => `✅ Done! I've updated the item's status to "gone". It's been removed from the available pool but still shows in the full list. Want me to send a thank-you note template for the person who picked it up?`,
+};
+
+// ── Navigation ────────────────────────────────────────────────
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+
+  // Update nav active state
+  document.querySelectorAll('[id^="nav-"]').forEach(el => {
+    el.classList.remove('bg-base-200', 'font-medium');
+  });
+  const navEl = document.getElementById('nav-' + page);
+  if (navEl) {
+    navEl.classList.add('bg-base-200', 'font-medium');
+  }
+
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+// ── Auth ──────────────────────────────────────────────────────
+function signIn() {
+  signedIn = true;
+  document.getElementById('signed-out-btn').classList.add('hidden');
+  document.getElementById('signed-in-btn').classList.remove('hidden');
+  renderItems();
+  showToast('success', '👋 Signed in as Leo!');
+}
+
+function signOut() {
+  signedIn = false;
+  document.getElementById('signed-out-btn').classList.remove('hidden');
+  document.getElementById('signed-in-btn').classList.add('hidden');
+  renderItems();
+}
+
+// ── Showcase ──────────────────────────────────────────────────
+const CONDITION_LABELS = {
+  'new': '✨ Brand new', 'like-new': '💫 Like new',
+  'good': '👍 Good', 'fair': '🙂 Fair', 'worn': '😅 Worn',
+};
+const CONDITION_CLASS = {
+  'new': 'badge-success', 'like-new': 'badge-success',
+  'good': 'badge-info', 'fair': 'badge-warning', 'worn': 'badge-neutral',
+};
+
+function setFilter(filter, el) {
+  currentFilter = filter;
+  document.querySelectorAll('[id^="filter-"]').forEach(t => t.classList.remove('tab-active'));
+  el.classList.add('tab-active');
+  renderItems();
+}
+
+function renderItems() {
+  const grid = document.getElementById('items-grid');
+  const filtered = ITEMS.filter(i => {
+    if (currentFilter === 'all') return true;
+    return i.status === currentFilter;
+  });
+
+  if (filtered.length === 0) {
+    grid.innerHTML = `<div class="col-span-full text-center py-20 text-base-content/50">
+      <p class="text-5xl mb-4">🎉</p>
+      <p class="text-xl">Nothing here — try a different filter!</p>
+    </div>`;
+    return;
+  }
+
+  grid.innerHTML = filtered.map(item => {
+    const isClaimed = item.status === 'claimed';
+    const conditionBadge = CONDITION_CLASS[item.condition] || 'badge-neutral';
+    const conditionLabel = CONDITION_LABELS[item.condition] || item.condition;
+
+    let actionBtn = '';
+    if (!signedIn) {
+      actionBtn = `<p class="text-xs text-base-content/50 w-full text-center pt-1">Sign in to call dibs</p>`;
+    } else if (isClaimed && item.claimedBy === 'You') {
+      actionBtn = `<button onclick="releaseDibs(${item.id})" class="btn btn-sm btn-outline btn-error w-full">Release my dibs</button>`;
+    } else if (isClaimed) {
+      actionBtn = `<button disabled class="btn btn-sm btn-disabled w-full">Already claimed</button>`;
+    } else {
+      actionBtn = `<button onclick="callDibs(${item.id})" class="btn btn-sm btn-primary w-full">🙋 Call dibs!</button>`;
+    }
+
+    return `
+    <div class="card bg-base-100 shadow-md item-card ${isClaimed ? 'opacity-70' : ''}" data-item="${item.id}" data-status="${item.status}">
+      <figure class="relative h-44 bg-base-200 flex items-center justify-center text-7xl overflow-hidden rounded-t-2xl select-none">
+        ${item.imageEmoji}
+        ${isClaimed ? `<div class="absolute inset-0 bg-base-300/60 flex items-center justify-center">
+          <span class="badge badge-lg badge-warning font-bold">🤝 Claimed</span>
+        </div>` : ''}
+      </figure>
+      <div class="card-body p-4 gap-2">
+        <div class="flex items-start justify-between gap-2">
+          <h2 class="card-title text-sm leading-tight">${item.name}</h2>
+          <span class="badge badge-sm shrink-0 ${conditionBadge}">${conditionLabel}</span>
+        </div>
+        <p class="text-xs text-base-content/70 leading-relaxed line-clamp-3">${item.desc}</p>
+        ${isClaimed && item.claimedBy ? `<div class="text-xs text-base-content/50">🤝 Claimed by ${item.claimedBy}</div>` : ''}
+        <div class="card-actions mt-1">${actionBtn}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function callDibs(id) {
+  const item = ITEMS.find(i => i.id === id);
+  if (!item || item.status !== 'available') return;
+  item.status = 'claimed';
+  item.claimedBy = 'You';
+  renderItems();
+  renderAdminTable();
+  showToast('success', `🎉 You called dibs on "${item.name}"!`);
+}
+
+function releaseDibs(id) {
+  const item = ITEMS.find(i => i.id === id);
+  if (!item) return;
+  item.status = 'available';
+  delete item.claimedBy;
+  renderItems();
+  renderAdminTable();
+  showToast('info', `Released your dibs on "${item.name}".`);
+}
+
+// ── Updates ───────────────────────────────────────────────────
+function renderUpdates() {
+  const list = document.getElementById('updates-list');
+  list.innerHTML = UPDATES.map(u => `
+    <div class="card bg-base-100 shadow hover:shadow-lg transition-shadow duration-200 cursor-pointer"
+         onclick="showUpdateDetail(${u.id})">
+      <div class="card-body">
+        <div class="flex items-center gap-3 mb-1">
+          <span class="text-3xl">${u.emoji}</span>
+          ${u.pinned ? '<span class="badge badge-primary badge-sm">Pinned</span>' : ''}
+        </div>
+        <h2 class="card-title text-xl">${u.title}</h2>
+        <p class="text-base-content/70 text-sm">${u.summary}</p>
+        <div class="text-xs text-base-content/40 mt-2">${u.date}</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+function showUpdateDetail(id) {
+  const u = UPDATES.find(u => u.id === id);
+  if (!u) return;
+  document.getElementById('update-detail-content').innerHTML = `
+    <div class="text-4xl mb-2">${u.emoji}</div>
+    <h1 class="text-3xl font-bold mb-2">${u.title}</h1>
+    <p class="text-sm text-base-content/50 mb-8">Posted ${u.date}</p>
+    <div class="leading-relaxed text-base-content/80 text-base space-y-4">${u.content}</div>
+  `;
+  navigate('update-detail');
+}
+
+// ── Admin ─────────────────────────────────────────────────────
+function setAdminTab(tab) {
+  document.querySelectorAll('[id^="admin-tab-"]').forEach(t => t.classList.remove('tab-active'));
+  document.getElementById('admin-tab-' + tab).classList.add('tab-active');
+  document.getElementById('admin-agent-panel').classList.toggle('hidden', tab !== 'agent');
+  document.getElementById('admin-items-panel').classList.toggle('hidden', tab !== 'items');
+  if (tab === 'items') renderAdminTable();
+}
+
+function renderAdminTable() {
+  document.getElementById('admin-items-table').innerHTML = ITEMS.map(item => `
+    <tr>
+      <td>
+        <div class="font-medium text-sm">${item.name}</div>
+        <div class="text-xs text-base-content/50">${item.desc.slice(0, 55)}…</div>
+      </td>
+      <td><span class="badge badge-sm">${item.condition}</span></td>
+      <td>
+        <span class="badge badge-sm ${item.status==='available'?'badge-success':item.status==='claimed'?'badge-warning':'badge-neutral'}">
+          ${item.status}
+        </span>
+      </td>
+      <td class="text-sm">${item.claimedBy ?? '—'}</td>
+      <td>
+        <button onclick="adminDeleteItem(${item.id})" class="btn btn-ghost btn-xs text-error">Delete</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function adminDeleteItem(id) {
+  if (!confirm('Delete this item from the showcase?')) return;
+  const idx = ITEMS.findIndex(i => i.id === id);
+  if (idx !== -1) ITEMS.splice(idx, 1);
+  renderAdminTable();
+  renderItems();
+  showToast('warning', 'Item deleted.');
+}
+
+// ── Agent Chat ────────────────────────────────────────────────
+function renderQuickPrompts() {
+  document.getElementById('quick-prompts').innerHTML = QUICK_PROMPTS.map(p => `
+    <button onclick="useQuickPrompt(this.dataset.prompt)" data-prompt="${p.replace(/"/g,'&quot;')}"
+            class="btn btn-ghost btn-sm text-left justify-start text-xs h-auto py-2 normal-case whitespace-normal leading-relaxed">
+      ${p}
+    </button>
+  `).join('');
+}
+
+function useQuickPrompt(prompt) {
+  document.getElementById('chat-input').value = prompt;
+  document.getElementById('chat-input').focus();
+}
+
+function handleChatKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chat-input');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+
+  const container = document.getElementById('chat-messages');
+  document.getElementById('chat-empty')?.remove();
+
+  // User bubble
+  const userDiv = document.createElement('div');
+  userDiv.className = 'chat chat-end chat-bubble-new';
+  userDiv.innerHTML = `
+    <div class="chat-image avatar"><div class="w-8 h-8 rounded-full bg-base-300 flex items-center justify-center text-sm">👤</div></div>
+    <div class="chat-bubble chat-bubble-primary text-sm">${text}</div>`;
+  container.appendChild(userDiv);
+
+  // Loading bubble
+  const loadingDiv = document.createElement('div');
+  loadingDiv.className = 'chat chat-start';
+  loadingDiv.innerHTML = `
+    <div class="chat-image avatar"><div class="w-8 h-8 rounded-full bg-base-300 flex items-center justify-center text-sm">🤖</div></div>
+    <div class="chat-bubble chat-bubble-neutral text-sm flex gap-1 items-center">
+      <span class="dot w-2 h-2 bg-current rounded-full inline-block"></span>
+      <span class="dot w-2 h-2 bg-current rounded-full inline-block"></span>
+      <span class="dot w-2 h-2 bg-current rounded-full inline-block"></span>
+    </div>`;
+  container.appendChild(loadingDiv);
+  container.scrollTop = container.scrollHeight;
+
+  // Simulate agent response
+  const delay = 1200 + Math.random() * 800;
+  await new Promise(r => setTimeout(r, delay));
+
+  let reply;
+  const lower = text.toLowerCase();
+  if (lower.includes('add') || lower.includes('create item') || lower.includes('new item')) {
+    reply = AGENT_REPLIES.add(text);
+  } else if (lower.includes('update') || lower.includes('post') || lower.includes('write')) {
+    reply = AGENT_REPLIES.update(text);
+  } else if (lower.includes('list') || lower.includes('status') || lower.includes('show')) {
+    reply = AGENT_REPLIES.list();
+  } else if (lower.includes('mark') || lower.includes('gone') || lower.includes('delete')) {
+    reply = AGENT_REPLIES.mark();
+  } else {
+    const replies = AGENT_REPLIES.default;
+    reply = replies[Math.floor(Math.random() * replies.length)](text);
+  }
+
+  // Replace loading with actual reply
+  loadingDiv.innerHTML = `
+    <div class="chat-image avatar"><div class="w-8 h-8 rounded-full bg-base-300 flex items-center justify-center text-sm">🤖</div></div>
+    <div class="chat-bubble chat-bubble-neutral text-sm" style="white-space:pre-line">${reply}</div>`;
+  container.scrollTop = container.scrollHeight;
+}
+
+function clearChat() {
+  const container = document.getElementById('chat-messages');
+  container.innerHTML = `
+    <div id="chat-empty" class="flex-1 flex items-center justify-center text-center">
+      <div>
+        <p class="text-4xl mb-3">🤖</p>
+        <p class="text-base-content/60 font-medium">Your Claude agent is ready.</p>
+        <p class="text-base-content/40 text-sm mt-1">Ask it to add items, write updates, or manage the showcase for you.</p>
+      </div>
+    </div>`;
+}
+
+// ── Toast ──────────────────────────────────────────────────────
+function showToast(type, msg) {
+  const toast = document.getElementById('toast');
+  const inner = document.getElementById('toast-inner');
+  const msgEl = document.getElementById('toast-msg');
+  inner.className = `alert alert-${type}`;
+  msgEl.textContent = msg;
+  toast.classList.remove('hidden');
+  setTimeout(() => toast.classList.add('hidden'), 3000);
+}
+
+// ── Init ──────────────────────────────────────────────────────
+renderItems();
+renderUpdates();
+renderQuickPrompts();
+</script>
+</body>
+</html>
