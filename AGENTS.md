@@ -45,6 +45,48 @@ Specialized agents live in `.github/agents/`. Use them for their designated task
 | Cypress E2E Writer | `cypress-e2e-writer.agent.md` | When writing E2E tests for the showcase, updates, or admin flows |
 | CI Monitor | `ci-monitor-subagent.agent.md` | CI status checks and auto-fix of lint/type/test failures |
 
+## Commit Messages
+
+This project enforces **Conventional Commits** via commitlint + husky. Every commit message must follow this format:
+
+```
+<type>(<optional scope>): <subject>
+
+<optional body>
+```
+
+### Allowed types
+
+| Type | Use for |
+|---|---|
+| `feat` | New feature or capability |
+| `fix` | Bug fix |
+| `chore` | Deps, tooling, config, maintenance |
+| `docs` | Documentation only |
+| `style` | CSS/DaisyUI/formatting changes, no logic change |
+| `refactor` | Code restructure, no feature or fix |
+| `test` | Adding or updating tests |
+| `ci` | GitHub Actions / CI-CD changes |
+| `revert` | Reverting a previous commit |
+
+### Rules (enforced by commitlint)
+
+- Subject must be **lowercase** and no trailing period
+- Header max **72 characters**
+- Body lines max **100 characters**
+
+### Examples
+
+```
+feat(showcase): add image upload support to item cards
+fix(admin): add missing trackById method to showcase component
+chore: add commitlint and husky hooks
+style(showcase): replace hardcoded amber color with primary token
+test(items-service): add unit tests for callDibs and releaseDibs
+ci: add claude security gate workflow for main branch PRs
+docs: update README with local dev quickstart
+```
+
 ## Key Conventions
 
 - **DaisyUI theme**: Always use the `movingday` theme tokens (`primary`, `secondary`, `accent`, `base-*`). Never hardcode hex colors.
