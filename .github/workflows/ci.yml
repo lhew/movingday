@@ -39,7 +39,8 @@ jobs:
         uses: codecov/codecov-action@v4
         if: always()
         with:
-          directory: ./coverage
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/movingday/lcov.info
 
   # ── Build ────────────────────────────────────────────────────
   build:
@@ -78,7 +79,7 @@ jobs:
   e2e:
     name: E2E Tests
     runs-on: ubuntu-latest
-    needs: build
+    needs: test
 
     steps:
       - uses: actions/checkout@v4
@@ -92,15 +93,24 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Download build artifact
-        uses: actions/download-artifact@v4
+      - name: Setup Java (required by Firebase Emulators)
+        uses: actions/setup-java@v4
         with:
-          name: dist
-          path: dist/
+          distribution: temurin
+          java-version: '17'
+
+      - name: Start Firebase emulators
+        run: npx firebase emulators:start --only auth,firestore --project demo-movingday &
+
+      - name: Wait for emulators
+        run: npx --yes wait-on tcp:8080 tcp:9099 --timeout 60000
+
+      - name: Seed E2E data
+        run: npm run e2e:seed
 
       - name: Start server and run Cypress
         uses: cypress-io/github-action@v6
         with:
-          start: npx nx serve --configuration=production
+          start: npx nx serve
           wait-on: 'http://localhost:4200'
           wait-on-timeout: 60

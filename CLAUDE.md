@@ -1,7 +1,7 @@
 # Moving Day — Claude Rules
 
 ## Stack
-Angular 19 standalone, Nx, Firebase/Firestore, Tailwind + DaisyUI, Vitest, Cypress.
+Angular 21 standalone, Nx 22, Firebase/Firestore, Tailwind 4 + DaisyUI 5, Vitest, Cypress.
 
 ## Conventions
 - Always use `inject()` for dependency injection, never constructor injection

@@ -5,7 +5,7 @@
 [![Angular](https://img.shields.io/badge/Angular-19-red?logo=angular&logoColor=white)](https://angular.dev)
 [![Nx](https://img.shields.io/badge/Nx-20-143055?logo=nx&logoColor=white)](https://nx.dev)
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-3-38bdf8?logo=tailwindcss&logoColor=white)](https://tailwindcss.com)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.6-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.9-3178c6?logo=typescript&logoColor=white)](https://www.typescriptlang.org)
 
 Personal app for Leo's move. Lets people browse and claim free items, and follow along with moving updates.
 
