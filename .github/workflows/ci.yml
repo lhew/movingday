@@ -32,7 +32,7 @@ jobs:
         run: npx nx affected -t lint --parallel=3
 
       - name: Unit tests
-        run: npx nx affected -t test --parallel=3 --coverage
+        run: npx nx run-many -t test --all --parallel=3 --coverage
 
       - name: Upload coverage
         uses: codecov/codecov-action@v4
@@ -40,6 +40,7 @@ jobs:
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: ./coverage/lcov.info
+          fail_ci_if_error: false
 
   # ── Build ────────────────────────────────────────────────────
   build:
