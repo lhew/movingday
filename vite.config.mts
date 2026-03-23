@@ -12,7 +12,7 @@ export default defineConfig(({ mode }) => ({
     reporters: ['verbose'],
     server: {
       deps: {
-        inline: ['rxfire', '@angular/fire'],
+        inline: ['rxfire', '@angular/fire', '@ngneat/spectator'],
       },
     },
     coverage: {

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TestBed } from '@angular/core/testing';
+import { createServiceFactory, SpectatorService } from '@ngneat/spectator/vitest';
 import { of, firstValueFrom } from 'rxjs';
 
 vi.mock('@angular/fire/firestore', () => ({
@@ -21,7 +21,12 @@ import { Firestore } from '@angular/fire/firestore';
 import * as fs from '@angular/fire/firestore';
 
 describe('UpdatesService', () => {
-  let service: UpdatesService;
+  let spectator: SpectatorService<UpdatesService>;
+
+  const createService = createServiceFactory({
+    service: UpdatesService,
+    providers: [{ provide: Firestore, useValue: {} }],
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -31,14 +36,7 @@ describe('UpdatesService', () => {
     vi.mocked(fs.orderBy).mockReturnValue('mock-orderby' as any);
     vi.mocked(fs.serverTimestamp).mockReturnValue('SERVER_TS' as any);
 
-    TestBed.configureTestingModule({
-      providers: [
-        UpdatesService,
-        { provide: Firestore, useValue: {} },
-      ],
-    });
-
-    service = TestBed.inject(UpdatesService);
+    spectator = createService();
   });
 
   describe('getUpdates()', () => {
@@ -49,7 +47,7 @@ describe('UpdatesService', () => {
       ];
       vi.mocked(fs.collectionData).mockReturnValue(of(updates) as any);
 
-      const result = await firstValueFrom(service.getUpdates());
+      const result = await firstValueFrom(spectator.service.getUpdates());
 
       expect(result).toEqual(updates);
       expect(fs.orderBy).toHaveBeenCalledWith('publishedAt', 'desc');
@@ -58,7 +56,7 @@ describe('UpdatesService', () => {
     it('should return empty array when no updates exist', async () => {
       vi.mocked(fs.collectionData).mockReturnValue(of([]) as any);
 
-      const result = await firstValueFrom(service.getUpdates());
+      const result = await firstValueFrom(spectator.service.getUpdates());
 
       expect(result).toEqual([]);
     });
@@ -69,7 +67,7 @@ describe('UpdatesService', () => {
       const update = { id: 'u-1', title: 'Hello World', content: 'Content', author: 'Leo' };
       vi.mocked(fs.docData).mockReturnValue(of(update) as any);
 
-      const result = await firstValueFrom(service.getUpdate('u-1'));
+      const result = await firstValueFrom(spectator.service.getUpdate('u-1'));
 
       expect(result).toEqual(update);
       expect(fs.doc).toHaveBeenCalledWith({}, 'updates', 'u-1');
@@ -78,7 +76,7 @@ describe('UpdatesService', () => {
     it('should return undefined for a missing update', async () => {
       vi.mocked(fs.docData).mockReturnValue(of(undefined) as any);
 
-      const result = await firstValueFrom(service.getUpdate('missing'));
+      const result = await firstValueFrom(spectator.service.getUpdate('missing'));
 
       expect(result).toBeUndefined();
     });
@@ -88,7 +86,7 @@ describe('UpdatesService', () => {
     it('should call addDoc with update data and publishedAt timestamp', async () => {
       vi.mocked(fs.addDoc).mockResolvedValue({ id: 'new-update-id' } as any);
 
-      const id = await service.createUpdate({
+      const id = await spectator.service.createUpdate({
         title: 'New update',
         content: 'Content here',
         author: 'Leo',
@@ -109,7 +107,7 @@ describe('UpdatesService', () => {
     it('should preserve optional fields like emoji and pinned', async () => {
       vi.mocked(fs.addDoc).mockResolvedValue({ id: 'update-2' } as any);
 
-      await service.createUpdate({
+      await spectator.service.createUpdate({
         title: 'Pinned post',
         content: 'Important!',
         author: 'Leo',
@@ -128,7 +126,7 @@ describe('UpdatesService', () => {
     it('should call updateDoc with the data and updatedAt timestamp', async () => {
       vi.mocked(fs.updateDoc).mockResolvedValue(undefined);
 
-      await service.updateUpdate('u-1', { title: 'Updated title' });
+      await spectator.service.updateUpdate('u-1', { title: 'Updated title' });
 
       expect(fs.doc).toHaveBeenCalledWith({}, 'updates', 'u-1');
       expect(fs.updateDoc).toHaveBeenCalledWith(
@@ -145,7 +143,7 @@ describe('UpdatesService', () => {
     it('should call deleteDoc with the update doc ref', async () => {
       vi.mocked(fs.deleteDoc).mockResolvedValue(undefined);
 
-      await service.deleteUpdate('u-1');
+      await spectator.service.deleteUpdate('u-1');
 
       expect(fs.doc).toHaveBeenCalledWith({}, 'updates', 'u-1');
       expect(fs.deleteDoc).toHaveBeenCalledWith('mock-doc');

@@ -77,7 +77,13 @@
             }
 
             <!-- Actions -->
-            <div class="card-actions mt-2">
+            <div class="card-actions mt-2 flex-col">
+              @if (claimError()?.itemId === item.id) {
+                <app-inline-alert
+                  [message]="claimError()!.message"
+                  (dismiss)="claimError.set(null)"
+                />
+              }
               @if (vm.isSignedIn) {
                 <!-- Release my own claim -->
                 @if (isClaimedByMe(item, vm.uid)) {

@@ -3,7 +3,7 @@
   "version": "0.0.1",
   "license": "MIT",
   "scripts": {
-    "start": "npm run dev",
+    "start": "nx serve",
     "build": "nx build",
     "test": "nx test",
     "e2e": "nx e2e",
@@ -15,7 +15,7 @@
     "emulator:start": "firebase emulators:start --import=.emulator-data --export-on-exit",
     "emulator:start:fresh": "firebase emulators:start",
     "emulator:seed": "node scripts/seed-emulator.mjs",
-    "dev": "concurrently \"npm run emulator:start\" \"npm run start\" --names \"firebase,angular\" --prefix-colors \"yellow,cyan\""
+    "dev": "concurrently \"npm run emulator:start\" \"nx serve\" --names \"firebase,angular\" --prefix-colors \"yellow,cyan\""
   },
   "private": true,
   "dependencies": {
@@ -44,6 +44,7 @@
     "@angular/compiler-cli": "^19.0.0",
     "@commitlint/cli": "^20.5.0",
     "@commitlint/config-conventional": "^20.5.0",
+    "@ngneat/spectator": "^19.6.2",
     "@nx/angular": "^20.0.0",
     "@nx/cypress": "^20.0.0",
     "@nx/eslint": "^20.0.0",

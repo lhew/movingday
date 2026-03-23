@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/vitest';
 import { TestBed } from '@angular/core/testing';
 import { of, firstValueFrom } from 'rxjs';
 
@@ -25,10 +26,15 @@ function mockItem(overrides: Partial<Item> = {}): Item {
 }
 
 describe('ShowcaseComponent', () => {
-  let component: ShowcaseComponent;
+  let spectator: Spectator<ShowcaseComponent>;
   let mockItemsService: Partial<ItemsService>;
 
-  beforeEach(async () => {
+  const createComponent = createComponentFactory({
+    component: ShowcaseComponent,
+    overrideComponents: [[ShowcaseComponent, { set: { template: '<div></div>' } }]],
+  });
+
+  beforeEach(() => {
     vi.clearAllMocks();
 
     mockItemsService = {
@@ -37,18 +43,12 @@ describe('ShowcaseComponent', () => {
       releaseDibs: vi.fn().mockResolvedValue(undefined),
     };
 
-    await TestBed.configureTestingModule({
-      imports: [ShowcaseComponent],
+    spectator = createComponent({
       providers: [
         { provide: ItemsService, useValue: mockItemsService },
         { provide: Auth, useValue: {} },
       ],
-    })
-      .overrideTemplate(ShowcaseComponent, '<div></div>')
-      .compileComponents();
-
-    const fixture = TestBed.createComponent(ShowcaseComponent);
-    component = fixture.componentInstance;
+    });
   });
 
   describe('vm$', () => {
@@ -64,12 +64,12 @@ describe('ShowcaseComponent', () => {
     });
 
     it('should emit uid as null when user is not signed in', async () => {
-      const vm = await firstValueFrom(component.vm$);
+      const vm = await firstValueFrom(spectator.component.vm$);
       expect(vm.uid).toBeNull();
     });
 
     it('should emit isSignedIn as false when user is not signed in', async () => {
-      const vm = await firstValueFrom(component.vm$);
+      const vm = await firstValueFrom(spectator.component.vm$);
       expect(vm.isSignedIn).toBe(false);
     });
   });
@@ -81,9 +81,9 @@ describe('ShowcaseComponent', () => {
         mockItem({ id: '2', status: 'claimed' }),
         mockItem({ id: '3', status: 'gone' }),
       ];
-      component.filter.set('all');
+      spectator.component.filter.set('all');
 
-      expect(component.filterItems(items)).toHaveLength(3);
+      expect(spectator.component.filterItems(items)).toHaveLength(3);
     });
 
     it('should return only available items when filter is "available"', () => {
@@ -91,9 +91,9 @@ describe('ShowcaseComponent', () => {
         mockItem({ status: 'available' }),
         mockItem({ id: '2', status: 'claimed' }),
       ];
-      component.filter.set('available');
+      spectator.component.filter.set('available');
 
-      const result = component.filterItems(items);
+      const result = spectator.component.filterItems(items);
 
       expect(result).toHaveLength(1);
       expect(result[0].status).toBe('available');
@@ -105,9 +105,9 @@ describe('ShowcaseComponent', () => {
         mockItem({ id: '2', status: 'claimed' }),
         mockItem({ id: '3', status: 'claimed' }),
       ];
-      component.filter.set('claimed');
+      spectator.component.filter.set('claimed');
 
-      const result = component.filterItems(items);
+      const result = spectator.component.filterItems(items);
 
       expect(result).toHaveLength(2);
       result.forEach((i) => expect(i.status).toBe('claimed'));
@@ -115,66 +115,66 @@ describe('ShowcaseComponent', () => {
 
     it('should return empty array when no items match filter', () => {
       const items = [mockItem({ status: 'available' })];
-      component.filter.set('claimed');
+      spectator.component.filter.set('claimed');
 
-      expect(component.filterItems(items)).toHaveLength(0);
+      expect(spectator.component.filterItems(items)).toHaveLength(0);
     });
   });
 
   describe('setFilter()', () => {
     it('should update the filter signal to "available"', () => {
-      component.setFilter('available');
-      expect(component.filter()).toBe('available');
+      spectator.component.setFilter('available');
+      expect(spectator.component.filter()).toBe('available');
     });
 
     it('should update the filter signal to "claimed"', () => {
-      component.setFilter('claimed');
-      expect(component.filter()).toBe('claimed');
+      spectator.component.setFilter('claimed');
+      expect(spectator.component.filter()).toBe('claimed');
     });
 
     it('should update the filter signal to "all"', () => {
-      component.setFilter('claimed');
-      component.setFilter('all');
-      expect(component.filter()).toBe('all');
+      spectator.component.setFilter('claimed');
+      spectator.component.setFilter('all');
+      expect(spectator.component.filter()).toBe('all');
     });
   });
 
   describe('isClaimedByMe()', () => {
     it('should return true when the item claimedBy uid matches the given uid', () => {
       const item = mockItem({ claimedBy: { uid: 'user-1', name: 'Leo', email: 'l@t.com' } });
-      expect(component.isClaimedByMe(item, 'user-1')).toBe(true);
+      expect(spectator.component.isClaimedByMe(item, 'user-1')).toBe(true);
     });
 
     it('should return false when uid does not match', () => {
       const item = mockItem({ claimedBy: { uid: 'user-1', name: 'Leo', email: 'l@t.com' } });
-      expect(component.isClaimedByMe(item, 'other-user')).toBe(false);
+      expect(spectator.component.isClaimedByMe(item, 'other-user')).toBe(false);
     });
 
     it('should return false when item has no claimedBy', () => {
       const item = mockItem();
-      expect(component.isClaimedByMe(item, 'user-1')).toBe(false);
+      expect(spectator.component.isClaimedByMe(item, 'user-1')).toBe(false);
     });
 
     it('should return false when uid is null', () => {
       const item = mockItem({ claimedBy: { uid: 'user-1', name: 'Leo', email: 'l@t.com' } });
-      expect(component.isClaimedByMe(item, null)).toBe(false);
+      expect(spectator.component.isClaimedByMe(item, null)).toBe(false);
     });
 
     it('should return false when uid is undefined', () => {
       const item = mockItem({ claimedBy: { uid: 'user-1', name: 'Leo', email: 'l@t.com' } });
-      expect(component.isClaimedByMe(item, undefined)).toBe(false);
+      expect(spectator.component.isClaimedByMe(item, undefined)).toBe(false);
     });
   });
 
   describe('trackById()', () => {
     it('should return the item id', () => {
       const item = mockItem({ id: 'test-123' });
-      expect(component.trackById(0, item)).toBe('test-123');
+      expect(spectator.component.trackById(0, item)).toBe('test-123');
     });
 
     it('should ignore the index parameter', () => {
       const item = mockItem({ id: 'abc' });
-      expect(component.trackById(99, item)).toBe('abc');
+      expect(spectator.component.trackById(99, item)).toBe('abc');
     });
   });
 
@@ -182,7 +182,7 @@ describe('ShowcaseComponent', () => {
     it('should not call the service if item status is not available', async () => {
       const item = mockItem({ status: 'claimed' });
 
-      await component.callDibs(item);
+      await spectator.component.callDibs(item);
 
       expect(mockItemsService.callDibs).not.toHaveBeenCalled();
     });
@@ -190,7 +190,7 @@ describe('ShowcaseComponent', () => {
     it('should not call the service if item status is "gone"', async () => {
       const item = mockItem({ status: 'gone' });
 
-      await component.callDibs(item);
+      await spectator.component.callDibs(item);
 
       expect(mockItemsService.callDibs).not.toHaveBeenCalled();
     });
@@ -198,7 +198,7 @@ describe('ShowcaseComponent', () => {
     it('should call the service with the item id for available items', async () => {
       const item = mockItem({ status: 'available' });
 
-      await component.callDibs(item);
+      await spectator.component.callDibs(item);
 
       expect(mockItemsService.callDibs).toHaveBeenCalledWith('item-1');
     });
@@ -206,18 +206,28 @@ describe('ShowcaseComponent', () => {
     it('should clear claimingId after the call resolves', async () => {
       const item = mockItem({ status: 'available' });
 
-      await component.callDibs(item);
+      await spectator.component.callDibs(item);
 
-      expect(component.claimingId()).toBeNull();
+      expect(spectator.component.claimingId()).toBeNull();
     });
 
-    it('should clear claimingId even if the service call throws', async () => {
+    it('should clear claimingId and set claimError when the service throws', async () => {
       vi.mocked(mockItemsService.callDibs!).mockRejectedValue(new Error('Not signed in'));
+      const item = mockItem({ id: 'item-1', status: 'available' });
+
+      await spectator.component.callDibs(item);
+
+      expect(spectator.component.claimingId()).toBeNull();
+      expect(spectator.component.claimError()).toEqual({ itemId: 'item-1', message: 'Not signed in' });
+    });
+
+    it('should clear claimError at the start of a new call', async () => {
+      spectator.component.claimError.set({ itemId: 'item-1', message: 'previous error' });
       const item = mockItem({ status: 'available' });
 
-      await expect(component.callDibs(item)).rejects.toThrow();
+      await spectator.component.callDibs(item);
 
-      expect(component.claimingId()).toBeNull();
+      expect(spectator.component.claimError()).toBeNull();
     });
   });
 
@@ -225,7 +235,7 @@ describe('ShowcaseComponent', () => {
     it('should call the service with the item id', async () => {
       const item = mockItem();
 
-      await component.releaseDibs(item);
+      await spectator.component.releaseDibs(item);
 
       expect(mockItemsService.releaseDibs).toHaveBeenCalledWith('item-1');
     });
@@ -233,18 +243,18 @@ describe('ShowcaseComponent', () => {
     it('should clear claimingId after the call resolves', async () => {
       const item = mockItem();
 
-      await component.releaseDibs(item);
+      await spectator.component.releaseDibs(item);
 
-      expect(component.claimingId()).toBeNull();
+      expect(spectator.component.claimingId()).toBeNull();
     });
 
     it('should clear claimingId even if the service call throws', async () => {
       vi.mocked(mockItemsService.releaseDibs!).mockRejectedValue(new Error('fail'));
       const item = mockItem();
 
-      await expect(component.releaseDibs(item)).rejects.toThrow();
+      await expect(spectator.component.releaseDibs(item)).rejects.toThrow();
 
-      expect(component.claimingId()).toBeNull();
+      expect(spectator.component.claimingId()).toBeNull();
     });
   });
 });

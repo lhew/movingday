@@ -10,7 +10,7 @@ service cloud.firestore {
       // Only authenticated users can call dibs
       allow update: if request.auth != null
         && request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['status', 'claimedBy', 'claimedAt'])
+            .hasOnly(['status', 'claimedBy', 'claimedAt', 'updatedAt'])
         && request.resource.data.status == 'claimed'
         && resource.data.status == 'available';
 

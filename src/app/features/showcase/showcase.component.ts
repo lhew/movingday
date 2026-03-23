@@ -3,13 +3,14 @@ import { AsyncPipe, NgClass } from '@angular/common';
 import { Auth, user } from '@angular/fire/auth';
 import { ItemsService } from '../../shared/services/items.service';
 import { Item, CONDITION_LABELS, CONDITION_BADGE_CLASS } from '../../shared/models/item.model';
+import { InlineAlertComponent } from '../../shared/components/inline-alert/inline-alert.component';
 import { combineLatest } from 'rxjs';
 import { map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-showcase',
   standalone: true,
-  imports: [AsyncPipe, NgClass],
+  imports: [AsyncPipe, NgClass, InlineAlertComponent],
   templateUrl: './showcase.component.html',
 })
 export class ShowcaseComponent {
@@ -28,13 +29,20 @@ export class ShowcaseComponent {
   readonly conditionBadge = CONDITION_BADGE_CLASS;
 
   readonly claimingId = signal<string | null>(null);
+  readonly claimError = signal<{ itemId: string; message: string } | null>(null);
   readonly filter = signal<'all' | 'available' | 'claimed'>('all');
 
   async callDibs(item: Item) {
     if (item.status !== 'available') return;
     this.claimingId.set(item.id);
+    this.claimError.set(null);
     try {
       await this.itemsService.callDibs(item.id);
+    } catch (err) {
+      this.claimError.set({
+        itemId: item.id,
+        message: err instanceof Error ? err.message : 'Failed to call dibs. Please try again.',
+      });
     } finally {
       this.claimingId.set(null);
     }

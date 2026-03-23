@@ -22,7 +22,12 @@ export class AppComponent {
     signInWithPopup(this.auth, new GoogleAuthProvider());
   }
 
-  signOut() {
-    signOut(this.auth);
+  async signOut() {
+    await signOut(this.auth);
+    this.reload();
+  }
+
+  protected reload() {
+    location.reload();
   }
 }

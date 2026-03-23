@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { TestBed } from '@angular/core/testing';
+import { createServiceFactory, SpectatorService } from '@ngneat/spectator/vitest';
 import { of, firstValueFrom } from 'rxjs';
 
 // Mock AngularFire Firestore module — must be before any service imports
@@ -28,8 +28,13 @@ import { Auth } from '@angular/fire/auth';
 import * as fs from '@angular/fire/firestore';
 
 describe('ItemsService', () => {
-  let service: ItemsService;
+  let spectator: SpectatorService<ItemsService>;
   let mockAuth: { currentUser: null | { uid: string; displayName: string | null; email: string | null; photoURL: string | null } };
+
+  const createService = createServiceFactory({
+    service: ItemsService,
+    providers: [{ provide: Firestore, useValue: {} }],
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();
@@ -42,15 +47,9 @@ describe('ItemsService', () => {
 
     mockAuth = { currentUser: null };
 
-    TestBed.configureTestingModule({
-      providers: [
-        ItemsService,
-        { provide: Firestore, useValue: {} },
-        { provide: Auth, useValue: mockAuth },
-      ],
+    spectator = createService({
+      providers: [{ provide: Auth, useValue: mockAuth }],
     });
-
-    service = TestBed.inject(ItemsService);
   });
 
   describe('getItems()', () => {
@@ -58,7 +57,7 @@ describe('ItemsService', () => {
       const items = [{ id: '1', name: 'Bookcase', status: 'available' }];
       vi.mocked(fs.collectionData).mockReturnValue(of(items) as any);
 
-      const result = await firstValueFrom(service.getItems());
+      const result = await firstValueFrom(spectator.service.getItems());
 
       expect(result).toEqual(items);
       expect(fs.orderBy).toHaveBeenCalledWith('createdAt', 'desc');
@@ -70,7 +69,7 @@ describe('ItemsService', () => {
       const items = [{ id: '1', name: 'Lamp', status: 'available' }];
       vi.mocked(fs.collectionData).mockReturnValue(of(items) as any);
 
-      const result = await firstValueFrom(service.getAvailableItems());
+      const result = await firstValueFrom(spectator.service.getAvailableItems());
 
       expect(result).toEqual(items);
       expect(fs.where).toHaveBeenCalledWith('status', '==', 'available');
@@ -82,7 +81,7 @@ describe('ItemsService', () => {
       const item = { id: 'abc', name: 'Chair' };
       vi.mocked(fs.docData).mockReturnValue(of(item) as any);
 
-      const result = await firstValueFrom(service.getItem('abc'));
+      const result = await firstValueFrom(spectator.service.getItem('abc'));
 
       expect(result).toEqual(item);
       expect(fs.doc).toHaveBeenCalledWith({}, 'items', 'abc');
@@ -93,7 +92,7 @@ describe('ItemsService', () => {
     it('should call addDoc with item data and serverTimestamp', async () => {
       vi.mocked(fs.addDoc).mockResolvedValue({ id: 'new-id' } as any);
 
-      const id = await service.createItem({
+      const id = await spectator.service.createItem({
         name: 'Table',
         description: 'A nice table',
         condition: 'good',
@@ -116,7 +115,7 @@ describe('ItemsService', () => {
     it('should call updateDoc with the item id and data plus updatedAt', async () => {
       vi.mocked(fs.updateDoc).mockResolvedValue(undefined);
 
-      await service.updateItem('item-1', { name: 'Updated Table' });
+      await spectator.service.updateItem('item-1', { name: 'Updated Table' });
 
       expect(fs.updateDoc).toHaveBeenCalledWith(
         'mock-doc',
@@ -130,7 +129,7 @@ describe('ItemsService', () => {
     it('should throw if user is not signed in', async () => {
       mockAuth.currentUser = null;
 
-      await expect(service.callDibs('item-1')).rejects.toThrow('You must be signed in');
+      await expect(spectator.service.callDibs('item-1')).rejects.toThrow('You must be signed in');
     });
 
     it('should update item status to claimed with user info', async () => {
@@ -142,7 +141,7 @@ describe('ItemsService', () => {
       };
       vi.mocked(fs.updateDoc).mockResolvedValue(undefined);
 
-      await service.callDibs('item-1');
+      await spectator.service.callDibs('item-1');
 
       expect(fs.updateDoc).toHaveBeenCalledWith(
         'mock-doc',
@@ -167,7 +166,7 @@ describe('ItemsService', () => {
       };
       vi.mocked(fs.updateDoc).mockResolvedValue(undefined);
 
-      await service.callDibs('item-1');
+      await spectator.service.callDibs('item-1');
 
       expect(fs.updateDoc).toHaveBeenCalledWith(
         'mock-doc',
@@ -186,7 +185,7 @@ describe('ItemsService', () => {
       };
       vi.mocked(fs.updateDoc).mockResolvedValue(undefined);
 
-      await service.callDibs('item-1');
+      await spectator.service.callDibs('item-1');
 
       expect(fs.updateDoc).toHaveBeenCalledWith(
         'mock-doc',
@@ -201,7 +200,7 @@ describe('ItemsService', () => {
     it('should reset status to available and clear claimedBy/claimedAt', async () => {
       vi.mocked(fs.updateDoc).mockResolvedValue(undefined);
 
-      await service.releaseDibs('item-1');
+      await spectator.service.releaseDibs('item-1');
 
       expect(fs.updateDoc).toHaveBeenCalledWith(
         'mock-doc',
@@ -219,7 +218,7 @@ describe('ItemsService', () => {
     it('should call deleteDoc with the item doc ref', async () => {
       vi.mocked(fs.deleteDoc).mockResolvedValue(undefined);
 
-      await service.deleteItem('item-1');
+      await spectator.service.deleteItem('item-1');
 
       expect(fs.deleteDoc).toHaveBeenCalledWith('mock-doc');
       expect(fs.doc).toHaveBeenCalledWith({}, 'items', 'item-1');
