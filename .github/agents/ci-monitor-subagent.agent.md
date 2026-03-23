@@ -42,42 +42,6 @@ Call `update_self_healing_fix` with the provided shortLink and action (APPLY/REJ
 
 Call `ci_information` with the provided URL. Return ONLY: `{ shortLink, cipeUrl }`
 
-### AUTO_FIX
-
-Attempt to fix a CI failure locally. You will be given:
-- `failedTaskIds`: array of task IDs that failed
-- `taskFailureSummaries`: array of `{ taskId, summary }` from a prior FETCH_HEAVY call
-- `suggestedFixDescription`: string from Nx Cloud self-healing
-
-Steps:
-1. For each failed task, determine the fix category:
-   - **lint** — run `pnpm nx lint <project> --fix` and re-stage changed files
-   - **typecheck / build** — read the relevant source file, apply the minimal fix, do NOT refactor
-   - **test** — read the failing spec, fix the assertion or the source (prefer fixing source)
-   - **format** — run `pnpm nx format:write`
-2. Apply the fix using file edits or bash commands
-3. Re-run the failed task: `pnpm nx run <taskId>`
-4. Return a result object:
-
-```json
-{
-  "taskId": "...",
-  "fixApplied": "description of what was changed",
-  "rerunStatus": "passed | failed",
-  "filesChanged": ["path/to/file"]
-}
-```
-
-If the fix cannot be determined automatically, return:
-```json
-{ "taskId": "...", "fixApplied": null, "reason": "manual intervention required: <explanation>" }
-```
-
-**Constraints:**
-- Do NOT skip hooks (`--no-verify`)
-- Do NOT modify test expectations to make tests pass — fix the source
-- Do NOT attempt fixes for security-related failures — escalate to the user
-
 ## Important
 
 - Execute ONE command and return immediately

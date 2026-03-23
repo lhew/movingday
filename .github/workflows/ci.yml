@@ -40,7 +40,7 @@ jobs:
         if: always()
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/movingday/lcov.info
+          files: ./coverage/lcov.info
 
   # ── Build ────────────────────────────────────────────────────
   build:
