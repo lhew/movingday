@@ -20,11 +20,10 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Derive Nx SHAs for affected
         uses: nrwl/nx-set-shas@v4
@@ -54,7 +53,6 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24
           cache: 'npm'
 
       - name: Install dependencies
@@ -87,7 +85,6 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24
           cache: 'npm'
 
       - name: Install dependencies
