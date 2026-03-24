@@ -11,7 +11,7 @@ jobs:
   test:
     name: Lint & Unit Tests
     runs-on: ubuntu-latest
-
+  
     steps:
       - uses: actions/checkout@v4
         with:
@@ -32,6 +32,8 @@ jobs:
         run: npx nx affected -t lint --parallel=3
 
       - name: Unit tests
+        env:
+          CI: true
         run: npx nx run-many -t test --all --parallel=3 --coverage
 
       - name: Upload coverage
