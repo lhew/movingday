@@ -111,6 +111,7 @@ jobs:
       - name: Start server and run Cypress
         uses: cypress-io/github-action@v6
         with:
+          install-command: npm ci --legacy-peer-deps
           start: npx nx serve
           wait-on: 'http://localhost:4200'
           wait-on-timeout: 60
