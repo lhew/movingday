@@ -39,7 +39,7 @@ jobs:
         if: always()
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/lcov.info
+          files: ./coverage/movingday/lcov.info
           fail_ci_if_error: false
 
   # ── Build ────────────────────────────────────────────────────
@@ -85,7 +85,7 @@ jobs:
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
-        with:
+        with: 
           cache: 'npm'
 
       - name: Install dependencies

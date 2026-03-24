@@ -62,7 +62,7 @@
       "defaultConfiguration": "development"
     },
     "test": {
-      "executor": "@nx/vite:test",
+      "executor": "@nx/vitest:test",
       "outputs": ["{workspaceRoot}/coverage/movingday"],
       "options": {
         "passWithNoTests": true,

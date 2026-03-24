@@ -2,7 +2,10 @@
   "$schema": "./node_modules/nx/schemas/nx-schema.json",
   "defaultBase": "main",
   "namedInputs": {
-    "default": ["{projectRoot}/**/*", "sharedGlobals"],
+    "default": [
+      "{projectRoot}/**/*",
+      "sharedGlobals"
+    ],
     "production": [
       "default",
       "!{projectRoot}/**/?(*.)+(spec|test).[jt]s?(x)?(.snap)",
@@ -46,12 +49,21 @@
   "targetDefaults": {
     "build": {
       "cache": true,
-      "dependsOn": ["^build"],
-      "inputs": ["production", "^production"]
+      "dependsOn": [
+        "^build"
+      ],
+      "inputs": [
+        "production",
+        "^production"
+      ]
     },
     "test": {
       "cache": true,
-      "inputs": ["default", "^production", "{workspaceRoot}/vitest.workspace.ts"]
+      "inputs": [
+        "default",
+        "^production",
+        "{workspaceRoot}/vitest.workspace.ts"
+      ]
     },
     "lint": {
       "cache": true,
@@ -77,5 +89,6 @@
       "linter": "eslint",
       "unitTestRunner": "vitest"
     }
-  }
+  },
+  "analytics": true
 }
