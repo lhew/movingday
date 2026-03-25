@@ -16,7 +16,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 24
+          node-version: 20
           cache: 'npm'
 
       - name: Install root dependencies
@@ -34,7 +34,13 @@ jobs:
           sed -i "s|%%FIREBASE_STORAGE_BUCKET%%|${{ secrets.FIREBASE_STORAGE_BUCKET }}|g" src/environments/environment.prod.ts
           sed -i "s|%%FIREBASE_MESSAGING_SENDER_ID%%|${{ secrets.FIREBASE_MESSAGING_SENDER_ID }}|g" src/environments/environment.prod.ts
           sed -i "s|%%FIREBASE_APP_ID%%|${{ secrets.FIREBASE_APP_ID }}|g" src/environments/environment.prod.ts
-          sed -i "s|%%ADMIN_EMAIL%%|${{ secrets.ADMIN_EMAIL }}|g" src/environments/environment.prod.ts
+          sed -i "s|%%FIREBASE_MEASUREMENT_ID%%|${{ secrets.FIREBASE_MEASUREMENT_ID }}|g" src/environments/environment.prod.ts
+          sed -i "s|%%ADMIN_EMAILS%%|${{ secrets.ADMIN_EMAILS }}|g" src/environments/environment.prod.ts
+
+      - name: Generate Firebase rules from templates
+        run: npm run generate:rules
+        env:
+          VITE_ADMIN_EMAILS: ${{ secrets.ADMIN_EMAILS }}
 
       - name: Build Angular app (production)
         run: npx nx build --configuration=production
@@ -43,23 +49,23 @@ jobs:
         run: npm run build
         working-directory: functions
 
-      - name: Deploy to Firebase (Hosting + Functions + Firestore rules)
-        uses: FirebaseExtended/action-hosting-deploy@v0
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
         with:
-          repoToken: ${{ secrets.GITHUB_TOKEN }}
-          firebaseServiceAccount: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
-          projectId: ${{ secrets.FIREBASE_PROJECT_ID }}
-          channelId: live
-          # Deploys hosting, functions, firestore rules, and storage rules
-          entryPoint: .
+          credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Set Anthropic API key in Functions secrets
-        # Only runs if the secret exists — idempotent
+      - name: Deploy to Firebase (Hosting + Functions + Firestore + Storage rules)
+        run: |
+          npx firebase-tools deploy \
+            --only hosting,functions,firestore:rules,firestore:indexes,storage \
+            --project ${{ secrets.FIREBASE_PROJECT_ID }} \
+            --non-interactive
+
+      - name: Sync Anthropic API key to Functions secrets
+        # Idempotent — safe to run on every deploy
         run: |
           echo "${{ secrets.ANTHROPIC_API_KEY }}" | \
             npx firebase-tools functions:secrets:set ANTHROPIC_API_KEY \
               --project ${{ secrets.FIREBASE_PROJECT_ID }} \
               --non-interactive
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         continue-on-error: true

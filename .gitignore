@@ -13,6 +13,9 @@ coverage/
 .nx/cache
 .nx/workspace-data
 
+# Credentials — never commit
+service-account.json
+
 # Environment files
 .env
 .env.local
