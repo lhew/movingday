@@ -2,7 +2,7 @@ import { defineConfig } from 'cypress';
 
 const EMULATOR_PROJECT = 'demo-movingday';
 const FIRESTORE_URL = `http://localhost:8080/emulator/v1/projects/${EMULATOR_PROJECT}/databases/(default)/documents`;
-const AUTH_URL = `http://localhost:9099`;
+const AUTH_URL = `http://127.0.0.1:9099`;
 
 /** Lazily initialised firebase-admin Firestore instance (singleton per Cypress process). */
 let _db: any = null;
@@ -26,6 +26,14 @@ export default defineConfig({
     viewportHeight: 720,
     video: false,
     screenshotOnRunFailure: true,
+    // Firebase Firestore uses WebChannel (HTTP long-polling) for real-time
+    // listeners. In CI these connections can be slow to establish, so give
+    // assertions and network requests more time before failing.
+    defaultCommandTimeout: 10000,
+    requestTimeout: 10000,
+    // Required so the Angular app can make cross-origin fetch requests to the
+    // Auth emulator at localhost:9099 without Cypress's proxy blocking them.
+    chromeWebSecurity: false,
 
     async setupNodeEvents(on, config) {
       on('task', {
@@ -67,6 +75,13 @@ export default defineConfig({
           }
           await batch.commit();
           return null;
+        },
+
+        /** Return current number of item docs in emulator (debug/verification). */
+        async countItems() {
+          const db = await getAdminDb();
+          const snapshot = await db.collection('items').get();
+          return snapshot.size;
         },
 
         /** Create a test user in the Auth emulator. Silently ignores EMAIL_EXISTS. */

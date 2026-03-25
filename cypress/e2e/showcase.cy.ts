@@ -144,10 +144,12 @@ describe('Updates page', () => {
 describe('Navigation', () => {
   it('should navigate between showcase and updates', () => {
     cy.visit('/showcase');
-    cy.contains('Updates').click();
+    // Scope to the desktop navbar-center to avoid the hidden mobile dropdown
+    // which also contains these links but has display:none at lg+ viewports.
+    cy.get('.navbar-center').contains('Updates').click();
     cy.url().should('include', '/updates');
 
-    cy.contains('Free Stuff').click();
+    cy.get('.navbar-center').contains('Free Stuff').click();
     cy.url().should('include', '/showcase');
   });
 

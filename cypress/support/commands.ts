@@ -1,5 +1,14 @@
 // Custom Cypress commands
 
+// Augment the browser Window type so cy.window() knows about the __cy helpers
+// that app.config.ts installs when useEmulators is true.
+interface Window {
+  __cy: {
+    signIn(email: string, password: string): Promise<unknown>;
+    signOut(): Promise<unknown>;
+  };
+}
+
 const TEST_USER = {
   email: 'e2e-test@movingday.test',
   password: 'E2ETest123!',
@@ -34,30 +43,55 @@ Cypress.Commands.add('visitShowcase', () => {
 });
 
 Cypress.Commands.add('clearAndSeedFirestore', () => {
-  cy.task('clearFirestore');
-  cy.fixture('items').then((items) => cy.task('seedItems', items));
-  cy.fixture('updates').then((updates) => cy.task('seedUpdates', updates));
+  return cy
+    .task('clearFirestore')
+    .then(() => cy.fixture('items'))
+    .then((items) => cy.task('seedItems', items))
+    .then(() => cy.fixture('updates'))
+    .then((updates) => cy.task('seedUpdates', updates))
+    .then(() => cy.task('countItems'))
+    .then((count) => {
+      expect(Number(count), 'seeded item count').to.be.greaterThan(0);
+    })
+    .then(() => undefined);
 });
 
 Cypress.Commands.add('signInAsTestUser', () => {
   // Ensure the user exists in the Auth emulator (idempotent).
-  cy.task('createAuthUser', TEST_USER);
+  return cy.task('createAuthUser', TEST_USER).then(() =>
+    cy.window().then(async (win) => {
+      let lastError: unknown;
 
-  // Sign in via the Firebase SDK running inside the Angular app's browser context.
-  // getApp() returns the default Firebase app that AngularFire already initialised.
-  cy.wrap(null).then(async () => {
-    const { getApp } = await import('@firebase/app');
-    const { getAuth, signInWithEmailAndPassword } = await import('@firebase/auth');
-    const auth = getAuth(getApp());
-    await signInWithEmailAndPassword(auth, TEST_USER.email, TEST_USER.password);
-  });
+      // Auth emulator can briefly fail with network-request-failed while
+      // browser and emulator are still settling in CI/headless runs.
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          await win.__cy.signIn(TEST_USER.email, TEST_USER.password);
+          return;
+        } catch (error) {
+          lastError = error;
+          const message = String(error);
+          const isTransientNetworkError = message.includes('auth/network-request-failed');
+          if (!isTransientNetworkError || attempt === 3) {
+            throw error;
+          }
+          await new Promise((resolve) => setTimeout(resolve, 300 * attempt));
+        }
+      }
+
+      throw lastError;
+    })
+  );
+
+  // Sign in via the Firebase SDK running inside the Angular app's window.
+  // window.__cy is set by app.config.ts when useEmulators is true so we
+  // call into the app's own Auth instance rather than importing Firebase
+  // into the Cypress runner frame (a separate JS context with no initialized app).
 });
 
 Cypress.Commands.add('signOutTestUser', () => {
-  cy.wrap(null).then(async () => {
-    const { getApp } = await import('@firebase/app');
-    const { getAuth, signOut } = await import('@firebase/auth');
-    const auth = getAuth(getApp());
-    await signOut(auth);
-  });
+  return cy
+    .window()
+    .then((win) => win.__cy.signOut())
+    .then(() => undefined);
 });
