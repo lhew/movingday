@@ -16,14 +16,14 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
           cache: 'npm'
 
       - name: Install root dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       - name: Install Functions dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
         working-directory: functions
 
       - name: Inject environment values into environment.prod.ts
