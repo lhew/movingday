@@ -9,6 +9,7 @@ let _db: any = null;
 async function getAdminDb() {
   if (!_db) {
     process.env['FIRESTORE_EMULATOR_HOST'] = 'localhost:8080';
+    process.env['FIREBASE_AUTH_EMULATOR_HOST'] = '127.0.0.1:9099';
     const { initializeApp, getApps } = await import('firebase-admin/app');
     const { getFirestore } = await import('firebase-admin/firestore');
     const app = getApps().length ? getApps()[0] : initializeApp({ projectId: EMULATOR_PROJECT });
@@ -25,6 +26,8 @@ export default defineConfig({
     viewportWidth: 1280,
     viewportHeight: 720,
     video: false,
+    experimentalMemoryManagement: true,
+    numTestsKeptInMemory: 0,
     screenshotOnRunFailure: true,
     // Firebase Firestore uses WebChannel (HTTP long-polling) for real-time
     // listeners. In CI these connections can be slow to establish, so give
@@ -84,22 +87,42 @@ export default defineConfig({
           return snapshot.size;
         },
 
-        /** Create a test user in the Auth emulator. Silently ignores EMAIL_EXISTS. */
-        async createAuthUser({ email, password, displayName }: { email: string; password: string; displayName: string }) {
-          const res = await fetch(
-            `${AUTH_URL}/identitytoolkit.googleapis.com/v1/accounts:signUp?key=fake-api-key`,
-            {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ email, password, displayName, returnSecureToken: true }),
+        /**
+         * Create or update a test user in the Auth emulator.
+         * Optionally sets custom claims (e.g. { role: 'admin' }).
+         */
+        async createAuthUser({
+          email,
+          password,
+          displayName,
+          claims,
+        }: {
+          email: string;
+          password: string;
+          displayName: string;
+          claims?: Record<string, unknown>;
+        }) {
+          process.env['FIREBASE_AUTH_EMULATOR_HOST'] = '127.0.0.1:9099';
+          const { initializeApp, getApps } = await import('firebase-admin/app');
+          const { getAuth } = await import('firebase-admin/auth');
+
+          const app = getApps().length ? getApps()[0] : initializeApp({ projectId: EMULATOR_PROJECT });
+          const auth = getAuth(app);
+
+          let uid: string;
+          try {
+            const existing = await auth.getUserByEmail(email);
+            uid = existing.uid;
+            await auth.updateUser(uid, { password, displayName });
+          } catch (error: any) {
+            if (error?.code !== 'auth/user-not-found') {
+              throw error;
             }
-          );
-          if (!res.ok) {
-            const body = await res.json();
-            if (body?.error?.message !== 'EMAIL_EXISTS') {
-              throw new Error(`createAuthUser failed: ${JSON.stringify(body)}`);
-            }
+            const created = await auth.createUser({ email, password, displayName });
+            uid = created.uid;
           }
+
+          await auth.setCustomUserClaims(uid, claims ?? null);
           return null;
         },
 

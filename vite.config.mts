@@ -9,7 +9,7 @@ export default defineConfig(({ mode }) => ({
     globals: true,
     environment: "jsdom",
     setupFiles: ["src/test-setup.ts"],
-    include: ["src//*.spec.ts"],
+    include: ["src/**/*.spec.ts"],
     reporters: ["verbose"],
     server: {
       deps: {

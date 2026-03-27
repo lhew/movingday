@@ -168,4 +168,33 @@ describe('AdminComponent', () => {
       expect(confirmSpy).toHaveBeenCalledWith('Delete this item?');
     });
   });
+
+  describe('openCreateItem()', () => {
+    it('should show the form and clear editingItem', () => {
+      spectator.component.openCreateItem();
+      expect(spectator.component.showItemForm()).toBe(true);
+      expect(spectator.component.editingItem()).toBeNull();
+    });
+  });
+
+  describe('openEditItem()', () => {
+    it('should show the form and set editingItem to the given item', () => {
+      const item = { id: 'x', name: 'Chair' } as any;
+      spectator.component.openEditItem(item);
+      expect(spectator.component.showItemForm()).toBe(true);
+      expect(spectator.component.editingItem()).toBe(item);
+    });
+  });
+
+  describe('closeItemForm()', () => {
+    it('should hide the form and clear editingItem', () => {
+      const item = { id: 'x', name: 'Chair' } as any;
+      spectator.component.openEditItem(item);
+
+      spectator.component.closeItemForm();
+
+      expect(spectator.component.showItemForm()).toBe(false);
+      expect(spectator.component.editingItem()).toBeNull();
+    });
+  });
 });

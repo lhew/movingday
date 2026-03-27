@@ -3,6 +3,8 @@ import { AsyncPipe, SlicePipe, JsonPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgentService } from '../../shared/services/agent.service';
 import { ItemsService } from '../../shared/services/items.service';
+import { Item } from '../../shared/models/item.model';
+import { ItemFormComponent } from './item-form/item-form.component';
 
 // Suggested quick prompts to get started
 const QUICK_PROMPTS = [
@@ -16,7 +18,7 @@ const QUICK_PROMPTS = [
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [AsyncPipe, SlicePipe, JsonPipe, FormsModule],
+  imports: [AsyncPipe, SlicePipe, JsonPipe, FormsModule, ItemFormComponent],
   templateUrl: './admin.component.html',
 })
 export class AdminComponent implements AfterViewChecked {
@@ -32,6 +34,9 @@ export class AdminComponent implements AfterViewChecked {
   inputText = signal('');
   activeTab = signal<'agent' | 'items'>('agent');
   quickPrompts = QUICK_PROMPTS;
+
+  showItemForm = signal(false);
+  editingItem = signal<Item | null>(null);
 
   private shouldScroll = false;
 
@@ -60,6 +65,21 @@ export class AdminComponent implements AfterViewChecked {
 
   clearHistory() {
     this.agentService.clearHistory();
+  }
+
+  openCreateItem() {
+    this.editingItem.set(null);
+    this.showItemForm.set(true);
+  }
+
+  openEditItem(item: Item) {
+    this.editingItem.set(item);
+    this.showItemForm.set(true);
+  }
+
+  closeItemForm() {
+    this.showItemForm.set(false);
+    this.editingItem.set(null);
   }
 
   async deleteItem(id: string) {

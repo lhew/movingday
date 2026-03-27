@@ -1,8 +1,8 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
 import { Auth, user } from '@angular/fire/auth';
-import { map, take } from 'rxjs/operators';
-import { environment } from '../../../environments/environment';
+import { from, of } from 'rxjs';
+import { map, switchMap, take } from 'rxjs/operators';
 
 export const adminGuard: CanActivateFn = () => {
   const auth = inject(Auth);
@@ -10,12 +10,20 @@ export const adminGuard: CanActivateFn = () => {
 
   return user(auth).pipe(
     take(1),
-    map((currentUser) => {
-      if (currentUser?.email === environment.adminEmail) {
-        return true;
+    switchMap((currentUser) => {
+      if (!currentUser) {
+        router.navigate(['/']);
+        return of(false);
       }
-      router.navigate(['/']);
-      return false;
+      return from(currentUser.getIdTokenResult()).pipe(
+        map((tokenResult) => {
+          if (tokenResult.claims['role'] === 'admin') {
+            return true;
+          }
+          router.navigate(['/']);
+          return false;
+        })
+      );
     })
   );
 };

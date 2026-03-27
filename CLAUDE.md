@@ -29,6 +29,7 @@ Angular 21 standalone, Nx 22, Firebase/Firestore, Tailwind 4 + DaisyUI 5, Vitest
 - Pure helper functions and model utilities
 - Guard logic (adminGuard, etc.)
 - Component logic that lives in the `.ts` file (signals, methods)
+- ALWAYS use spectator. DO NOT USE testbed.
 
 **What not to unit-test:**
 - Template HTML (that's Cypress's job)

@@ -122,6 +122,12 @@
 
   <!-- ── Items tab ──────────────────────────────────────────────── -->
   @if (activeTab() === 'items') {
+    <div class="flex justify-end mb-4">
+      <button class="btn btn-primary btn-sm" (click)="openCreateItem()">
+        + New item
+      </button>
+    </div>
+
     @if (items$ | async; as items) {
       <div class="overflow-x-auto">
         <table class="table table-zebra w-full">
@@ -151,7 +157,10 @@
                   </span>
                 </td>
                 <td class="text-sm">{{ item.claimedBy?.name ?? '—' }}</td>
-                <td>
+                <td class="flex gap-1">
+                  <button (click)="openEditItem(item)" class="btn btn-ghost btn-xs">
+                    Edit
+                  </button>
                   <button (click)="deleteItem(item.id)" class="btn btn-ghost btn-xs text-error">
                     Delete
                   </button>
@@ -166,6 +175,14 @@
         <span class="loading loading-dots loading-lg text-primary"></span>
       </div>
     }
+  }
+
+  <!-- Item form modal -->
+  @if (showItemForm()) {
+    <app-item-form
+      [item]="editingItem()"
+      (saved)="closeItemForm()"
+      (cancelled)="closeItemForm()" />
   }
 
 </div>

@@ -15,6 +15,12 @@ const TEST_USER = {
   displayName: 'E2E Test User',
 };
 
+const ADMIN_TEST_USER = {
+  email: 'e2e-admin@movingday.test',
+  password: 'E2EAdmin123!',
+  displayName: 'E2E Admin User',
+};
+
 declare namespace Cypress {
   interface Chainable {
     /** Navigate to the showcase page. */
@@ -35,7 +41,35 @@ declare namespace Cypress {
 
     /** Sign out the current user. MUST be called AFTER cy.visit(). */
     signOutTestUser(): Chainable<void>;
+
+    /** Sign in as an admin user (role=admin claim). MUST be called AFTER cy.visit(). */
+    signInAsAdminUser(): Chainable<void>;
   }
+}
+
+function signInWithRetry(win: Window, email: string, password: string): Promise<void> {
+  return (async () => {
+    let lastError: unknown;
+
+    // Auth emulator can briefly fail with network-request-failed while
+    // browser and emulator are still settling in CI/headless runs.
+    for (let attempt = 1; attempt <= 3; attempt++) {
+      try {
+        await win.__cy.signIn(email, password);
+        return;
+      } catch (error) {
+        lastError = error;
+        const message = String(error);
+        const isTransientNetworkError = message.includes('auth/network-request-failed');
+        if (!isTransientNetworkError || attempt === 3) {
+          throw error;
+        }
+        await new Promise((resolve) => setTimeout(resolve, 300 * attempt));
+      }
+    }
+
+    throw lastError;
+  })();
 }
 
 Cypress.Commands.add('visitShowcase', () => {
@@ -59,34 +93,25 @@ Cypress.Commands.add('clearAndSeedFirestore', () => {
 Cypress.Commands.add('signInAsTestUser', () => {
   // Ensure the user exists in the Auth emulator (idempotent).
   return cy.task('createAuthUser', TEST_USER).then(() =>
-    cy.window().then(async (win) => {
-      let lastError: unknown;
-
-      // Auth emulator can briefly fail with network-request-failed while
-      // browser and emulator are still settling in CI/headless runs.
-      for (let attempt = 1; attempt <= 3; attempt++) {
-        try {
-          await win.__cy.signIn(TEST_USER.email, TEST_USER.password);
-          return;
-        } catch (error) {
-          lastError = error;
-          const message = String(error);
-          const isTransientNetworkError = message.includes('auth/network-request-failed');
-          if (!isTransientNetworkError || attempt === 3) {
-            throw error;
-          }
-          await new Promise((resolve) => setTimeout(resolve, 300 * attempt));
-        }
-      }
-
-      throw lastError;
-    })
+    cy.window().then((win) => signInWithRetry(win, TEST_USER.email, TEST_USER.password))
   );
 
   // Sign in via the Firebase SDK running inside the Angular app's window.
   // window.__cy is set by app.config.ts when useEmulators is true so we
   // call into the app's own Auth instance rather than importing Firebase
   // into the Cypress runner frame (a separate JS context with no initialized app).
+});
+
+Cypress.Commands.add('signInAsAdminUser', () => {
+  // Ensure the admin user exists in the Auth emulator with role=admin claim.
+  return cy
+    .task('createAuthUser', {
+      ...ADMIN_TEST_USER,
+      claims: { role: 'admin' },
+    })
+    .then(() =>
+      cy.window().then((win) => signInWithRetry(win, ADMIN_TEST_USER.email, ADMIN_TEST_USER.password))
+    );
 });
 
 Cypress.Commands.add('signOutTestUser', () => {
