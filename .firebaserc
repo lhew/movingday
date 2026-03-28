@@ -1,6 +1,6 @@
 {
   "projects": {
     "default": "demo-movingday",
-    "production": "YOUR_REAL_FIREBASE_PROJECT_ID"
+    "production": "movingday-ed444"
   }
 }

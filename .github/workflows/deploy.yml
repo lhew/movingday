@@ -52,7 +52,7 @@ jobs:
         run: |
           npx firebase-tools deploy \
             --only hosting,functions,firestore:rules,firestore:indexes,storage \
-            --project ${{ secrets.FIREBASE_PROJECT_ID }} \
+            --project production \
             --non-interactive
 
       - name: Sync Anthropic API key to Functions secrets
@@ -60,6 +60,6 @@ jobs:
         run: |
           echo "${{ secrets.ANTHROPIC_API_KEY }}" | \
             npx firebase-tools functions:secrets:set ANTHROPIC_API_KEY \
-              --project ${{ secrets.FIREBASE_PROJECT_ID }} \
+              --project production \
               --non-interactive
         continue-on-error: true
