@@ -125,6 +125,44 @@ describe('ImageUploadService', () => {
 
       await expect(spectator.service.resizeImage(file)).rejects.toThrow('canvas.toBlob returned null');
     });
+
+    it('should reject when canvas 2D context cannot be obtained', async () => {
+      const realCreateElement = document.createElement.bind(document);
+      vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
+        if (tag === 'canvas') {
+          return {
+            width: 0,
+            height: 0,
+            getContext: vi.fn().mockReturnValue(null),
+            toBlob: vi.fn(),
+          } as unknown as HTMLElement;
+        }
+        return realCreateElement(tag);
+      });
+      vi.spyOn(globalThis, 'Image').mockImplementation(() => ({
+        naturalWidth: 100,
+        naturalHeight: 100,
+        onload: undefined as (() => void) | undefined,
+        onerror: undefined,
+        set src(_: string) { setTimeout(() => (this as { onload?: () => void }).onload?.(), 0); },
+      } as unknown as HTMLImageElement));
+
+      const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
+      await expect(spectator.service.resizeImage(file)).rejects.toThrow('Could not get canvas 2D context');
+    });
+
+    it('should reject when the image fails to load', async () => {
+      vi.spyOn(globalThis, 'Image').mockImplementation(() => ({
+        naturalWidth: 0,
+        naturalHeight: 0,
+        onload: undefined,
+        onerror: undefined as (() => void) | undefined,
+        set src(_: string) { setTimeout(() => (this as { onerror?: () => void }).onerror?.(), 0); },
+      } as unknown as HTMLImageElement));
+
+      const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
+      await expect(spectator.service.resizeImage(file)).rejects.toThrow('Failed to load image');
+    });
   });
 
   // ── uploadItemImage ─────────────────────────────────────────────────────────

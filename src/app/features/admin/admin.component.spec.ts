@@ -197,4 +197,25 @@ describe('AdminComponent', () => {
       expect(spectator.component.editingItem()).toBeNull();
     });
   });
+
+  describe('ngAfterViewChecked()', () => {
+    it('should call scrollToBottom and reset shouldScroll when shouldScroll is true', () => {
+      const scrollSpy = vi.spyOn(spectator.component as any, 'scrollToBottom');
+      (spectator.component as any).shouldScroll = true;
+
+      spectator.component.ngAfterViewChecked();
+
+      expect(scrollSpy).toHaveBeenCalled();
+      expect((spectator.component as any).shouldScroll).toBe(false);
+    });
+
+    it('should not call scrollToBottom when shouldScroll is false', () => {
+      const scrollSpy = vi.spyOn(spectator.component as any, 'scrollToBottom');
+      (spectator.component as any).shouldScroll = false;
+
+      spectator.component.ngAfterViewChecked();
+
+      expect(scrollSpy).not.toHaveBeenCalled();
+    });
+  });
 });
