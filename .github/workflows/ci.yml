@@ -93,20 +93,9 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Setup Java (required by Firebase Emulators)
-        uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-
-      - name: Start Firebase emulators
-        run: npx firebase emulators:start --only auth,firestore --project demo-movingday &
-
-      - name: Wait for emulators
-        run: npx --yes wait-on tcp:8080 tcp:9099 --timeout 60000
-
-      - name: Seed E2E data
-        run: npm run e2e:seed
+      # No emulators needed — Auth, ItemsService, and UpdatesService are all
+      # replaced with in-memory mocks when Cypress is detected (useCypressMocks).
+      # Firebase SDK emulator connectors are configured but never exercised.
 
       - name: Start server and run Cypress
         uses: cypress-io/github-action@v6

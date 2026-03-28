@@ -51,7 +51,7 @@ jobs:
       - name: Deploy to Firebase (Hosting + Functions + Firestore rules)
         run: |
           npx firebase-tools deploy \
-            --only hosting,functions,firestore:rules,firestore:indexes \
+            --only hosting,functions,firestore:rules,firestore:indexes,storage:rules \
             --project production \
             --non-interactive
 
