@@ -22,10 +22,6 @@ jobs:
       - name: Install root dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Install Functions dependencies
-        run: npm ci --legacy-peer-deps
-        working-directory: functions
-
       - name: Inject environment values into environment.prod.ts
         run: |
           sed -i "s|%%FIREBASE_API_KEY%%|${{ secrets.FIREBASE_API_KEY }}|g" src/environments/environment.prod.ts
@@ -39,27 +35,15 @@ jobs:
       - name: Build Angular app (production)
         run: npx nx build --configuration=production
 
-      - name: Build Cloud Functions
-        run: npm run build
-        working-directory: functions
-
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Deploy to Firebase (Hosting + Functions + Firestore rules)
+      - name: Deploy to Firebase (Hosting only)
         run: |
           npx firebase-tools deploy \
-            --only hosting,functions,firestore:rules,firestore:indexes,storage:rules \
+            --only hosting \
             --project production \
             --non-interactive
 
-      - name: Sync Anthropic API key to Functions secrets
-        # Idempotent — safe to run on every deploy
-        run: |
-          echo "${{ secrets.ANTHROPIC_API_KEY }}" | \
-            npx firebase-tools functions:secrets:set ANTHROPIC_API_KEY \
-              --project production \
-              --non-interactive
-        continue-on-error: true
