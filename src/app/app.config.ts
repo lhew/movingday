@@ -5,13 +5,14 @@ import { provideHttpClient, withFetch } from '@angular/common/http';
 import { getApp } from 'firebase/app';
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getFirestore, provideFirestore, connectFirestoreEmulator, initializeFirestore } from '@angular/fire/firestore';
-import { getAuth, provideAuth, connectAuthEmulator, signInWithEmailAndPassword, signOut } from '@angular/fire/auth';
+import { Auth, getAuth, provideAuth, connectAuthEmulator, signInWithEmailAndPassword, signOut } from '@angular/fire/auth';
 import { getStorage, provideStorage, connectStorageEmulator } from '@angular/fire/storage';
 import { getFunctions, provideFunctions, connectFunctionsEmulator } from '@angular/fire/functions';
 import { ItemsService } from './shared/services/items.service';
 import { UpdatesService } from './shared/services/updates.service';
 import { MockItemsService } from './shared/services/mock-items.service';
 import { MockUpdatesService } from './shared/services/mock-updates.service';
+import { mockAuth, installCypressAuthHelpers } from './shared/services/mock-auth';
 
 import { environment } from '../environments/environment';
 import { appRoutes } from './app.routes';
@@ -19,6 +20,10 @@ import { appRoutes } from './app.routes';
 const useCypressMocks =
   typeof window !== 'undefined' &&
   !!(window as unknown as { Cypress?: unknown }).Cypress;
+
+if (useCypressMocks) {
+  installCypressAuthHelpers();
+}
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -51,11 +56,11 @@ export const appConfig: ApplicationConfig = {
 
     provideAuth(() => {
       const auth = getAuth();
-      if (environment.useEmulators) {
+      // In Cypress mode auth is fully mocked — no emulator needed.
+      if (environment.useEmulators && !useCypressMocks) {
         connectAuthEmulator(auth, environment.emulators.authUrl, { disableWarnings: true });
-        // Expose auth helpers on window so Cypress tests can sign in/out from
-        // within the AUT's JS context (cy.window().then(win => win.__cy.signIn(...))).
-        // Only present when useEmulators is true (dev / CI E2E).
+        // Expose auth helpers on window so manual dev/CI E2E runs can sign in/out
+        // from within the AUT's JS context.
         Object.assign(window, {
           __cy: {
             signIn: (email: string, password: string) =>
@@ -95,6 +100,7 @@ export const appConfig: ApplicationConfig = {
       ? [
           { provide: ItemsService, useClass: MockItemsService },
           { provide: UpdatesService, useClass: MockUpdatesService },
+          { provide: Auth, useValue: mockAuth },
         ]
       : []),
   ],

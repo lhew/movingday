@@ -2,7 +2,6 @@
 
 describe('Showcase page — unauthenticated', () => {
   beforeEach(() => {
-    cy.clearAndSeedFirestore();
     cy.visit('/showcase');
   });
 
@@ -16,7 +15,7 @@ describe('Showcase page — unauthenticated', () => {
     cy.contains('Claimed').should('be.visible');
   });
 
-  it('should render items from Firestore', () => {
+  it('should render items from the mock service', () => {
     cy.contains('IKEA Billy Bookcase').should('be.visible');
     cy.contains('Standing Desk Lamp').should('be.visible');
     cy.contains('Board Game Collection').should('be.visible');
@@ -63,8 +62,6 @@ describe('Showcase page — unauthenticated', () => {
 
 describe('Showcase page — authenticated', () => {
   beforeEach(() => {
-    cy.clearAndSeedFirestore();
-    cy.task('clearAuthUsers');
     cy.visit('/showcase');
     cy.signInAsTestUser();
   });
@@ -114,7 +111,6 @@ describe('Showcase page — authenticated', () => {
 
 describe('Updates page', () => {
   beforeEach(() => {
-    cy.clearAndSeedFirestore();
     cy.visit('/updates');
   });
 
@@ -122,7 +118,7 @@ describe('Updates page', () => {
     cy.contains('h1', "What's Happening").should('be.visible');
   });
 
-  it('should render updates from Firestore', () => {
+  it('should render updates from the mock service', () => {
     cy.contains('We found a moving company!').should('be.visible');
     cy.contains('Packing has begun').should('be.visible');
     cy.contains('Found the new place').should('be.visible');
