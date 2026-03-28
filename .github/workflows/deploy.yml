@@ -48,10 +48,10 @@ jobs:
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Deploy to Firebase (Hosting + Functions + Firestore + Storage rules)
+      - name: Deploy to Firebase (Hosting + Functions + Firestore rules)
         run: |
           npx firebase-tools deploy \
-            --only hosting,functions,firestore:rules,firestore:indexes,storage \
+            --only hosting,functions,firestore:rules,firestore:indexes \
             --project production \
             --non-interactive
 
