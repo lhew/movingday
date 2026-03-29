@@ -32,6 +32,16 @@ jobs:
           sed -i "s|%%FIREBASE_APP_ID%%|${{ secrets.FIREBASE_APP_ID }}|g" src/environments/environment.prod.ts
           sed -i "s|%%ADMIN_EMAIL%%|${{ secrets.ADMIN_EMAIL }}|g" src/environments/environment.prod.ts
 
+      - name: Verify injection
+        run: |
+          if grep -q '%%' src/environments/environment.prod.ts; then
+            echo "ERROR: Unreplaced placeholders found:"
+            grep '%%' src/environments/environment.prod.ts
+            exit 1
+          else
+            echo "All placeholders replaced successfully"
+          fi
+
       - name: Build Angular app (production)
         run: npx nx build --configuration=production
 
