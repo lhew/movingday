@@ -97,14 +97,16 @@ jobs:
       # replaced with in-memory mocks when Cypress is detected (useCypressMocks).
       # Firebase SDK emulator connectors are configured but never exercised.
 
-      - name: Start server and run Cypress
-        uses: cypress-io/github-action@v6
+      - name: Run E2E with coverage
+        run: npx nx e2e --configuration=coverage --browser=chrome
+
+      - name: Upload E2E coverage
+        uses: codecov/codecov-action@v4
+        if: always()
         with:
-          install-command: npm ci --legacy-peer-deps
-          start: npx nx serve
-          wait-on: 'http://localhost:4200'
-          wait-on-timeout: 60
-          browser: chrome
-          headed: false
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: ./coverage/lcov.info
+          flags: e2e
+          fail_ci_if_error: false
           
 

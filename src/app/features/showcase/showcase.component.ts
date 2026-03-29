@@ -4,8 +4,8 @@ import { Auth, user } from '@angular/fire/auth';
 import { ItemsService } from '../../shared/services/items.service';
 import { Item, CONDITION_LABELS, CONDITION_BADGE_CLASS } from '../../shared/models/item.model';
 import { InlineAlertComponent } from '../../shared/components/inline-alert/inline-alert.component';
-import { combineLatest } from 'rxjs';
-import { map } from 'rxjs/operators';
+import { combineLatest, of } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
 
 @Component({
   selector: 'app-showcase',
@@ -17,20 +17,28 @@ export class ShowcaseComponent {
   private itemsService = inject(ItemsService);
   private auth = inject(Auth);
 
+  readonly claimingId = signal<string | null>(null);
+  readonly claimError = signal<{ itemId: string; message: string } | null>(null);
+  readonly filter = signal<'all' | 'available' | 'claimed'>('all');
+  readonly loadError = signal<string | null>(null);
+
   private readonly currentUser$ = user(this.auth);
 
   readonly vm$ = combineLatest({
-    items: this.itemsService.getItems(),
+    items: this.itemsService.getItems().pipe(
+      catchError((err: unknown) => {
+        const message =
+          err instanceof Error ? err.message : 'Unable to load items. Please try again later.';
+        this.loadError.set(message);
+        return of([] as Item[]);
+      })
+    ),
     uid: this.currentUser$.pipe(map((u) => u?.uid ?? null)),
     isSignedIn: this.currentUser$.pipe(map((u) => !!u)),
   });
 
   readonly conditionLabels = CONDITION_LABELS;
   readonly conditionBadge = CONDITION_BADGE_CLASS;
-
-  readonly claimingId = signal<string | null>(null);
-  readonly claimError = signal<{ itemId: string; message: string } | null>(null);
-  readonly filter = signal<'all' | 'available' | 'claimed'>('all');
 
   async callDibs(item: Item) {
     if (item.status !== 'available') return;

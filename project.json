@@ -7,7 +7,7 @@
   "tags": [],
   "targets": {
     "build": {
-      "executor": "@angular/build:application",
+      "executor": "@angular-builders/custom-esbuild:application",
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/movingday",
@@ -45,18 +45,26 @@
           "optimization": false,
           "extractLicenses": false,
           "sourceMap": true
+        },
+        "coverage": {
+          "optimization": false,
+          "sourceMap": true,
+          "plugins": ["coverage.esbuild-plugin.mjs"]
         }
       },
       "defaultConfiguration": "production"
     },
     "serve": {
-      "executor": "@angular/build:dev-server",
+      "executor": "@angular-builders/custom-esbuild:dev-server",
       "configurations": {
         "production": {
           "buildTarget": "movingday:build:production"
         },
         "development": {
           "buildTarget": "movingday:build:development"
+        },
+        "coverage": {
+          "buildTarget": "movingday:build:coverage"
         }
       },
       "defaultConfiguration": "development"
@@ -72,6 +80,22 @@
     "lint": {
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"]
+    },
+    "e2e": {
+      "executor": "@nx/cypress:cypress",
+      "options": {
+        "cypressConfig": "cypress.config.ts",
+        "devServerTarget": "movingday:serve:development",
+        "testingType": "e2e"
+      },
+      "configurations": {
+        "production": {
+          "devServerTarget": "movingday:serve:production"
+        },
+        "coverage": {
+          "devServerTarget": "movingday:serve:coverage"
+        }
+      }
     }
   }
 }

@@ -19,7 +19,14 @@
   </div>
 
   <!-- Items grid -->
-  @if (vm$ | async; as vm) {
+  @if (loadError()) {
+    <div class="flex flex-col items-center justify-center py-20 gap-4">
+      <p class="text-5xl">😕</p>
+      <p class="text-xl font-semibold">Couldn't load items right now</p>
+      <p class="text-base-content/60 text-sm max-w-sm text-center">{{ loadError() }}</p>
+      <button class="btn btn-primary btn-sm" (click)="loadError.set(null)">Try again</button>
+    </div>
+  } @else if (vm$ | async; as vm) {
     @let filtered = filterItems(vm.items);
 
     @if (filtered.length === 0) {
@@ -132,3 +139,4 @@
   }
 
 </div>
+

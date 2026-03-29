@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createComponentFactory, Spectator } from '@ngneat/spectator/vitest';
 import { TestBed } from '@angular/core/testing';
-import { of, firstValueFrom } from 'rxjs';
+import { of, firstValueFrom, throwError } from 'rxjs';
 
 vi.mock('@angular/fire/auth', () => ({
   Auth: class MockAuth {},
@@ -71,6 +71,31 @@ describe('ShowcaseComponent', () => {
     it('should emit isSignedIn as false when user is not signed in', async () => {
       const vm = await firstValueFrom(spectator.component.vm$);
       expect(vm.isSignedIn).toBe(false);
+    });
+
+    it('should set loadError and emit empty items array when getItems errors', async () => {
+      vi.mocked(mockItemsService.getItems!).mockReturnValue(
+        throwError(() => new Error('Firestore unavailable'))
+      );
+
+      const fixture = TestBed.createComponent(ShowcaseComponent);
+      fixture.componentInstance['itemsService'] = mockItemsService as ItemsService;
+      const vm = await firstValueFrom(fixture.componentInstance.vm$);
+
+      expect(vm.items).toHaveLength(0);
+      expect(fixture.componentInstance.loadError()).toBe('Firestore unavailable');
+    });
+
+    it('should use a fallback message when the error has no message', async () => {
+      vi.mocked(mockItemsService.getItems!).mockReturnValue(throwError(() => ({})));
+
+      const fixture = TestBed.createComponent(ShowcaseComponent);
+      fixture.componentInstance['itemsService'] = mockItemsService as ItemsService;
+      await firstValueFrom(fixture.componentInstance.vm$);
+
+      expect(fixture.componentInstance.loadError()).toBe(
+        'Unable to load items. Please try again later.'
+      );
     });
   });
 

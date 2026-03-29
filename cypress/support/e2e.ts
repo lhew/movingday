@@ -1,2 +1,2 @@
-// Import custom commands
+import '@cypress/code-coverage/support';
 import './commands';
