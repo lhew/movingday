@@ -112,6 +112,7 @@ describe('InviteComponent (unauthenticated)', () => {
 describe('InviteComponent (authenticated)', () => {
   let spectator: Spectator<InviteComponent>;
   let mockRouter: { navigate: ReturnType<typeof vi.fn> };
+  let mockAcceptFn: ReturnType<typeof vi.fn>;
   const mockCurrentUser = { getIdToken: vi.fn().mockResolvedValue('token') };
   const mockAuth = { currentUser: mockCurrentUser };
 
@@ -129,6 +130,9 @@ describe('InviteComponent (authenticated)', () => {
     vi.clearAllMocks();
     mockCurrentUser.getIdToken = vi.fn().mockResolvedValue('token');
     mockRouter = { navigate: vi.fn() };
+    // Must be set before createComponent() — acceptInvitationFn is a class field initializer
+    mockAcceptFn = vi.fn().mockResolvedValue({ data: { success: true } });
+    vi.mocked(fns.httpsCallable).mockReturnValue(mockAcceptFn as any);
     vi.mocked(fs.doc).mockReturnValue('mock-doc' as any);
     vi.mocked(fs.docData).mockReturnValue(of(INVITE_DOC) as any);
 
@@ -144,12 +148,9 @@ describe('InviteComponent (authenticated)', () => {
     spectator.component.nicknameInput.set('cool-leo');
     spectator.component['invitation'].set(INVITE_DOC);
 
-    const callableFn = vi.fn().mockResolvedValue({ data: { success: true } });
-    vi.mocked(fns.httpsCallable).mockReturnValue(callableFn as any);
-
     await spectator.component.submitNickname();
 
-    expect(callableFn).toHaveBeenCalledWith({ inviteId: 'inv-1', nickname: 'cool-leo' });
+    expect(mockAcceptFn).toHaveBeenCalledWith({ inviteId: 'inv-1', nickname: 'cool-leo' });
     expect(mockCurrentUser.getIdToken).toHaveBeenCalledWith(true);
     expect(spectator.component.step()).toBe('done');
   });
@@ -157,9 +158,7 @@ describe('InviteComponent (authenticated)', () => {
   it('should show taken state when CF returns taken: true', async () => {
     spectator.component.nicknameInput.set('taken-name');
     spectator.component['invitation'].set(INVITE_DOC);
-
-    const callableFn = vi.fn().mockResolvedValue({ data: { taken: true, suggestion: 'taken-name-5678' } });
-    vi.mocked(fns.httpsCallable).mockReturnValue(callableFn as any);
+    mockAcceptFn.mockResolvedValueOnce({ data: { taken: true, suggestion: 'taken-name-5678' } });
 
     await spectator.component.submitNickname();
 

@@ -26,6 +26,8 @@ import * as fns from '@angular/fire/functions';
 
 describe('InviteService', () => {
   let spectator: SpectatorService<InviteService>;
+  let mockCreateInvitationFn: ReturnType<typeof vi.fn>;
+  let mockAuthorizeUserFn: ReturnType<typeof vi.fn>;
 
   const createService = createServiceFactory({
     service: InviteService,
@@ -42,18 +44,24 @@ describe('InviteService', () => {
     vi.mocked(fs.query).mockReturnValue('mock-query' as any);
     vi.mocked(fs.orderBy).mockReturnValue('mock-orderby' as any);
 
+    // Must be set before createService() — callables are class field initializers
+    mockCreateInvitationFn = vi.fn().mockResolvedValue({ data: { id: 'invite-abc' } });
+    mockAuthorizeUserFn = vi.fn().mockResolvedValue({ data: { success: true } });
+    vi.mocked(fns.httpsCallable).mockImplementation((_functions: any, name: string) => {
+      if (name === 'createInvitation') return mockCreateInvitationFn as any;
+      if (name === 'authorizeUser') return mockAuthorizeUserFn as any;
+      return vi.fn() as any;
+    });
+
     spectator = createService();
   });
 
   describe('createInvitation()', () => {
     it('should call createInvitation CF and return the invite id', async () => {
-      const callableFn = vi.fn().mockResolvedValue({ data: { id: 'invite-abc' } });
-      vi.mocked(fns.httpsCallable).mockReturnValue(callableFn as any);
-
       const id = await spectator.service.createInvitation('basic');
 
       expect(fns.httpsCallable).toHaveBeenCalledWith({}, 'createInvitation');
-      expect(callableFn).toHaveBeenCalledWith({ role: 'basic' });
+      expect(mockCreateInvitationFn).toHaveBeenCalledWith({ role: 'basic' });
       expect(id).toBe('invite-abc');
     });
   });
@@ -95,13 +103,10 @@ describe('InviteService', () => {
 
   describe('authorizeUser()', () => {
     it('should call authorizeUser CF with the uid', async () => {
-      const callableFn = vi.fn().mockResolvedValue({ data: { success: true } });
-      vi.mocked(fns.httpsCallable).mockReturnValue(callableFn as any);
-
       await spectator.service.authorizeUser('uid-99');
 
       expect(fns.httpsCallable).toHaveBeenCalledWith({}, 'authorizeUser');
-      expect(callableFn).toHaveBeenCalledWith({ uid: 'uid-99' });
+      expect(mockAuthorizeUserFn).toHaveBeenCalledWith({ uid: 'uid-99' });
     });
   });
 });

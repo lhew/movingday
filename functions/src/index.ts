@@ -1,5 +1,6 @@
 import * as functions from 'firebase-functions';
 import * as admin from 'firebase-admin';
+import { FieldValue } from 'firebase-admin/firestore';
 import Anthropic from '@anthropic-ai/sdk';
 
 admin.initializeApp();
@@ -13,7 +14,7 @@ export const onUserCreate = functions.auth.user().onCreate(async (user) => {
     email: user.email ?? '',
     role: 'basic',
     authorized: false,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
   });
   await admin.auth().setCustomUserClaims(user.uid, { role: 'basic', authorized: false });
 });
@@ -65,11 +66,11 @@ export const acceptInvitation = functions.https.onCall(async (data, context) => 
       role,
       email,
       authorized: true,
-      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+      createdAt: FieldValue.serverTimestamp(),
     });
     tx.update(inviteRef, {
       usedBy: uid,
-      usedAt: admin.firestore.FieldValue.serverTimestamp(),
+      usedAt: FieldValue.serverTimestamp(),
     });
 
     return { taken: false };
@@ -96,7 +97,7 @@ export const createInvitation = functions.https.onCall(async (data, context) => 
   const ref = await db.collection('invitations').add({
     role,
     createdBy: context.auth.uid,
-    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    createdAt: FieldValue.serverTimestamp(),
   });
 
   return { id: ref.id };
@@ -137,7 +138,7 @@ async function executeTool(
       const ref = await db.collection('items').add({
         ...input,
         status: 'available',
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        createdAt: FieldValue.serverTimestamp(),
       });
       return { success: true, id: ref.id, message: `Created item "${input['name']}" with ID ${ref.id}` };
     }
@@ -146,7 +147,7 @@ async function executeTool(
       const { id, ...updates } = input as { id: string; [key: string]: unknown };
       await db.collection('items').doc(id).update({
         ...updates,
-        updatedAt: admin.firestore.FieldValue.serverTimestamp(),
+        updatedAt: FieldValue.serverTimestamp(),
       });
       return { success: true, message: `Updated item ${id}` };
     }
@@ -172,7 +173,7 @@ async function executeTool(
       const ref = await db.collection('updates').add({
         ...input,
         author: 'Leo',
-        publishedAt: admin.firestore.FieldValue.serverTimestamp(),
+        publishedAt: FieldValue.serverTimestamp(),
       });
       return { success: true, id: ref.id, message: `Created update "${input['title']}"` };
     }

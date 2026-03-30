@@ -1,4 +1,4 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, Injector, runInInjectionContext } from '@angular/core';
 import {
   Firestore,
   collection,
@@ -15,9 +15,12 @@ import { UserProfile } from '../models/user.model';
 @Injectable({ providedIn: 'root' })
 export class UserService {
   private firestore = inject(Firestore);
+  private injector = inject(Injector);
 
   async getProfile(uid: string): Promise<UserProfile | null> {
-    const snap = await getDoc(doc(this.firestore, 'users', uid));
+    const snap = await runInInjectionContext(this.injector, () =>
+      getDoc(doc(this.firestore, 'users', uid))
+    );
     return snap.exists() ? ({ id: snap.id, ...snap.data() } as unknown as UserProfile) : null;
   }
 

@@ -18,9 +18,11 @@ export class InviteService {
   private firestore = inject(Firestore);
   private functions = inject(Functions);
 
+  private createInvitationFn = httpsCallable<{ role: string }, { id: string }>(this.functions, 'createInvitation');
+  private authorizeUserFn = httpsCallable<{ uid: string }, { success: boolean }>(this.functions, 'authorizeUser');
+
   async createInvitation(role: 'editor' | 'basic'): Promise<string> {
-    const fn = httpsCallable<{ role: string }, { id: string }>(this.functions, 'createInvitation');
-    const result = await fn({ role });
+    const result = await this.createInvitationFn({ role });
     return result.data.id;
   }
 
@@ -38,7 +40,6 @@ export class InviteService {
   }
 
   async authorizeUser(uid: string): Promise<void> {
-    const fn = httpsCallable<{ uid: string }, { success: boolean }>(this.functions, 'authorizeUser');
-    await fn({ uid });
+    await this.authorizeUserFn({ uid });
   }
 }

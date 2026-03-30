@@ -11,7 +11,7 @@ Angular 21 standalone, Nx 22, Firebase/Firestore, Tailwind 4 + DaisyUI 5, Vitest
 - Components are standalone, no NgModules
 - Route lazily — every feature uses `loadComponent` or `loadChildren`
 - Use Angular control flow syntax (`@if`, `@else`, `@for`, `@switch`) — never `*ngIf`, `*ngFor`, or `*ngSwitch`
-  - `NgIf` and `NgFor` must not appear in component `imports` arrays
+  - `NgIf` and `NgFor` must not appear in component `imports` arrays, neither being used in the templates
   - `@for` requires a `track` expression: prefer `track item.id`, fall back to `track $index` only for primitive lists
   - Use `@let` to derive local template variables instead of wrapping in `ng-container`
 

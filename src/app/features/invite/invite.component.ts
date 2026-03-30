@@ -1,9 +1,9 @@
-import { Component, inject, signal, OnInit, DestroyRef } from '@angular/core';
+import { Component, inject, signal, OnInit, DestroyRef, Injector, runInInjectionContext } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Auth, GoogleAuthProvider, signInWithPopup } from '@angular/fire/auth';
 import { Firestore, doc, docData } from '@angular/fire/firestore';
-import { Functions, httpsCallable } from '@angular/fire/functions';
+import { Functions, httpsCallable, HttpsCallable } from '@angular/fire/functions';
 import { Subject, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Invitation } from '../../shared/models/user.model';
@@ -23,6 +23,10 @@ export class InviteComponent implements OnInit {
   private firestore = inject(Firestore);
   private functions = inject(Functions);
   private destroyRef = inject(DestroyRef);
+  private injector = inject(Injector);
+
+  private acceptInvitationFn: HttpsCallable<{ inviteId: string; nickname: string }, { success?: boolean; taken?: boolean; suggestion?: string }> =
+    httpsCallable(this.functions, 'acceptInvitation');
 
   readonly step = signal<Step>('loading');
   readonly invitation = signal<Invitation | null>(null);
@@ -37,8 +41,9 @@ export class InviteComponent implements OnInit {
   ngOnInit(): void {
     const inviteId = this.route.snapshot.paramMap.get('inviteId')!;
 
-    docData(doc(this.firestore, 'invitations', inviteId), { idField: 'id' })
-      .pipe(takeUntilDestroyed(this.destroyRef))
+    runInInjectionContext(this.injector, () =>
+      docData(doc(this.firestore, 'invitations', inviteId), { idField: 'id' })
+    ).pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe((data) => {
         const invite = data as Invitation | undefined;
         if (!invite) {
@@ -67,7 +72,9 @@ export class InviteComponent implements OnInit {
         distinctUntilChanged(),
         switchMap((nickname) => {
           if (!nickname) return of(undefined);
-          return docData(doc(this.firestore, 'nicknames', nickname));
+          return runInInjectionContext(this.injector, () =>
+            docData(doc(this.firestore, 'nicknames', nickname))
+          );
         }),
         takeUntilDestroyed(this.destroyRef)
       )
@@ -104,10 +111,7 @@ export class InviteComponent implements OnInit {
     this.submitting.set(true);
 
     try {
-      const fn = httpsCallable<{ inviteId: string; nickname: string }, { success?: boolean; taken?: boolean; suggestion?: string }>(
-        this.functions, 'acceptInvitation'
-      );
-      const result = await fn({
+      const result = await this.acceptInvitationFn({
         inviteId: this.invitation()!.id,
         nickname: this.nicknameInput(),
       });
