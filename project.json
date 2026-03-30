@@ -91,9 +91,6 @@
       "configurations": {
         "production": {
           "devServerTarget": "movingday:serve:production"
-        },
-        "coverage": {
-          "devServerTarget": "movingday:serve:coverage"
         }
       }
     }
