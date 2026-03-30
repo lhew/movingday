@@ -1,14 +1,20 @@
 name: Deploy to Firebase
 
 on:
-  push:
+  # Runs automatically after CI completes — only deploys if every CI job passed
+  workflow_run:
+    workflows: ["CI"]
+    types: [completed]
     branches: [main]
-  workflow_dispatch:   # Allow manual trigger from GitHub UI
+  # Manual override — rebuilds from source (useful for hotfixes / re-deploys)
+  workflow_dispatch:
 
 jobs:
   deploy:
-    name: Build & Deploy
+    name: Deploy
     runs-on: ubuntu-latest
+    # For workflow_run: only proceed when all CI jobs succeeded
+    if: github.event_name == 'workflow_dispatch' || github.event.workflow_run.conclusion == 'success'
 
     steps:
       - uses: actions/checkout@v4
@@ -19,10 +25,23 @@ jobs:
           node-version: 24
           cache: 'npm'
 
-      - name: Install root dependencies
+      # Always install deps — firebase-tools lives in node_modules
+      - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
+      # ── workflow_run path: reuse the artifact built (and tested) by CI ──────
+      - name: Download build artifact from CI
+        if: github.event_name == 'workflow_run'
+        uses: actions/download-artifact@v4
+        with:
+          name: dist
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: dist/
+
+      # ── workflow_dispatch path: build fresh with injected env secrets ────────
       - name: Inject environment values into environment.prod.ts
+        if: github.event_name == 'workflow_dispatch'
         run: |
           sed -i "s|%%FIREBASE_API_KEY%%|${{ secrets.FIREBASE_API_KEY }}|g" src/environments/environment.prod.ts
           sed -i "s|%%FIREBASE_AUTH_DOMAIN%%|${{ secrets.FIREBASE_AUTH_DOMAIN }}|g" src/environments/environment.prod.ts
@@ -33,6 +52,7 @@ jobs:
           sed -i "s|%%ADMIN_EMAIL%%|${{ secrets.ADMIN_EMAIL }}|g" src/environments/environment.prod.ts
 
       - name: Verify injection
+        if: github.event_name == 'workflow_dispatch'
         run: |
           if grep -q '%%' src/environments/environment.prod.ts; then
             echo "ERROR: Unreplaced placeholders found:"
@@ -43,8 +63,10 @@ jobs:
           fi
 
       - name: Build Angular app (production)
+        if: github.event_name == 'workflow_dispatch'
         run: npx nx build --configuration=production
 
+      # ── Deploy ───────────────────────────────────────────────────────────────
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
