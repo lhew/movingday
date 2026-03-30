@@ -5,11 +5,24 @@ import { of } from 'rxjs';
 import { AdminComponent } from './admin.component';
 import { AgentService } from '../../shared/services/agent.service';
 import { ItemsService } from '../../shared/services/items.service';
+import { UserService } from '../../shared/services/user.service';
+import { InviteService } from '../../shared/services/invite.service';
+import { UserProfile } from '../../shared/models/user.model';
+
+const mockPendingUser: UserProfile = {
+  uid: 'uid-pending',
+  email: 'pending@test.com',
+  role: 'basic',
+  authorized: false,
+  createdAt: null as any,
+};
 
 describe('AdminComponent', () => {
   let spectator: Spectator<AdminComponent>;
   let mockAgentService: Partial<AgentService>;
   let mockItemsService: Partial<ItemsService>;
+  let mockUserService: Partial<UserService>;
+  let mockInviteService: Partial<InviteService>;
 
   const createComponent = createComponentFactory({
     component: AdminComponent,
@@ -31,10 +44,23 @@ describe('AdminComponent', () => {
       deleteItem: vi.fn().mockResolvedValue(undefined),
     };
 
+    mockUserService = {
+      listPendingUsers: vi.fn().mockReturnValue(of([])),
+    };
+
+    mockInviteService = {
+      listInvitations: vi.fn().mockReturnValue(of([])),
+      createInvitation: vi.fn().mockResolvedValue('invite-id-123'),
+      deleteInvitation: vi.fn().mockResolvedValue(undefined),
+      authorizeUser: vi.fn().mockResolvedValue(undefined),
+    };
+
     spectator = createComponent({
       providers: [
         { provide: AgentService, useValue: mockAgentService },
         { provide: ItemsService, useValue: mockItemsService },
+        { provide: UserService, useValue: mockUserService },
+        { provide: InviteService, useValue: mockInviteService },
       ],
     });
   });
@@ -195,6 +221,63 @@ describe('AdminComponent', () => {
 
       expect(spectator.component.showItemForm()).toBe(false);
       expect(spectator.component.editingItem()).toBeNull();
+    });
+  });
+
+  describe('setTab()', () => {
+    it('should switch to invitations tab', () => {
+      spectator.component.setTab('invitations');
+      expect(spectator.component.activeTab()).toBe('invitations');
+    });
+
+    it('should switch to users tab', () => {
+      spectator.component.setTab('users');
+      expect(spectator.component.activeTab()).toBe('users');
+    });
+  });
+
+  describe('generateInvite()', () => {
+    it('should call createInvitation and set generatedLink', async () => {
+      await spectator.component.generateInvite();
+      expect(mockInviteService.createInvitation).toHaveBeenCalledWith('basic');
+      expect(spectator.component.generatedLink()).toContain('invite-id-123');
+    });
+
+    it('should use the selected role when generating an invite', async () => {
+      spectator.component.inviteRole.set('editor');
+      await spectator.component.generateInvite();
+      expect(mockInviteService.createInvitation).toHaveBeenCalledWith('editor');
+    });
+
+    it('should clear generatingInvite after completion', async () => {
+      await spectator.component.generateInvite();
+      expect(spectator.component.generatingInvite()).toBe(false);
+    });
+  });
+
+  describe('deleteInvite()', () => {
+    it('should call deleteInvitation when confirmed', async () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(true);
+      await spectator.component.deleteInvite('inv-1');
+      expect(mockInviteService.deleteInvitation).toHaveBeenCalledWith('inv-1');
+    });
+
+    it('should not call deleteInvitation when cancelled', async () => {
+      vi.spyOn(window, 'confirm').mockReturnValue(false);
+      await spectator.component.deleteInvite('inv-1');
+      expect(mockInviteService.deleteInvitation).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('authorize()', () => {
+    it('should call authorizeUser with the user uid', async () => {
+      await spectator.component.authorize(mockPendingUser);
+      expect(mockInviteService.authorizeUser).toHaveBeenCalledWith('uid-pending');
+    });
+
+    it('should clear authorizingUid after completion', async () => {
+      await spectator.component.authorize(mockPendingUser);
+      expect(spectator.component.authorizingUid()).toBeNull();
     });
   });
 

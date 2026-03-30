@@ -1,5 +1,6 @@
 import { Routes } from '@angular/router';
 import { adminGuard } from './shared/guards/admin.guard';
+import { editorGuard } from './shared/guards/editor.guard';
 
 export const appRoutes: Routes = [
   {
@@ -25,6 +26,19 @@ export const appRoutes: Routes = [
       import('./features/admin/admin.routes').then((m) => m.adminRoutes),
     canActivate: [adminGuard],
     title: 'Admin — Moving Day',
+  },
+  {
+    path: 'invite/:inviteId',
+    loadComponent: () =>
+      import('./features/invite/invite.component').then((m) => m.InviteComponent),
+    title: 'Accept Invite — Moving Day',
+  },
+  {
+    path: 'editor',
+    loadChildren: () =>
+      import('./features/editor/editor.routes').then((m) => m.editorRoutes),
+    canActivate: [editorGuard],
+    title: 'Editor — Moving Day',
   },
   {
     path: '**',

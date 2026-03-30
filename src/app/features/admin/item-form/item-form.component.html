@@ -149,7 +149,7 @@
         Cancel
       </button>
       <button class="btn btn-primary" type="submit" form="item-form"
-              [disabled]="saving() || uploading()">
+              [disabled]="form.invalid || saving() || uploading()">
         @if (saving()) {
           <span class="loading loading-spinner loading-sm"></span>
         }

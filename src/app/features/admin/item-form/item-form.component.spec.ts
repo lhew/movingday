@@ -180,12 +180,12 @@ describe('ItemFormComponent', () => {
       expect(spectator.component.form.valid).toBe(true);
     });
 
-    it('should leave submit enabled when form is invalid so errors can be shown on click', () => {
+    it('should disable submit when form is invalid', () => {
       spectator.component.form.patchValue({ name: '', description: '', category: '', tags: '' });
       spectator.detectChanges();
 
       const submitBtn = spectator.query('button[type="submit"]') as HTMLButtonElement;
-      expect(submitBtn.disabled).toBe(false);
+      expect(submitBtn.disabled).toBe(true);
     });
 
     it('should enable submit when all required fields are valid', () => {

@@ -43,8 +43,13 @@
             </div>
           </label>
           <ul tabindex="0" class="menu menu-sm dropdown-content mt-3 z-[1] p-2 shadow bg-base-100 rounded-box w-48">
-            <li class="menu-title text-xs opacity-60">Hey, {{ userName$ | async }}!</li>
-            <li><a routerLink="/admin">⚙️ Admin panel</a></li>
+            <li class="menu-title text-xs opacity-60">Hey, {{ displayName$ | async }}!</li>
+            @if (isAdmin$ | async) {
+              <li><a routerLink="/admin">⚙️ Admin panel</a></li>
+            }
+            @if (isEditor$ | async) {
+              <li><a routerLink="/editor">✏️ Editor panel</a></li>
+            }
             <li><a (click)="signOut()">🚪 Sign out</a></li>
           </ul>
         </div>

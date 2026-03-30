@@ -16,11 +16,13 @@ import {
 import { Auth } from '@angular/fire/auth';
 import { Observable } from 'rxjs';
 import { Item, ItemStatus } from '../models/item.model';
+import { UserService } from './user.service';
 
 @Injectable({ providedIn: 'root' })
 export class ItemsService {
   private firestore = inject(Firestore);
   private auth = inject(Auth);
+  private userService = inject(UserService);
 
   private get itemsRef() {
     return collection(this.firestore, 'items');
@@ -65,16 +67,21 @@ export class ItemsService {
     });
   }
 
-  /** Call dibs on an item — authenticated users only */
+  /** Call dibs on an item — authorized users only */
   async callDibs(itemId: string): Promise<void> {
     const currentUser = this.auth.currentUser;
     if (!currentUser) throw new Error('You must be signed in to call dibs!');
+
+    const profile = await this.userService.getProfile(currentUser.uid);
+    if (!profile?.authorized) {
+      throw new Error('You need to be authorized to call dibs. Ask an admin or editor.');
+    }
 
     await updateDoc(doc(this.firestore, 'items', itemId), {
       status: 'claimed' as ItemStatus,
       claimedBy: {
         uid: currentUser.uid,
-        name: currentUser.displayName ?? 'Anonymous',
+        name: profile.nickname ?? currentUser.displayName ?? 'Anonymous',
         email: currentUser.email ?? '',
         photoURL: currentUser.photoURL ?? null,
       },

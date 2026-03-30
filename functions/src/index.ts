@@ -5,6 +5,121 @@ import Anthropic from '@anthropic-ai/sdk';
 admin.initializeApp();
 const db = admin.firestore();
 
+// ── Auth trigger: auto-register new users as basic/unauthorized ─────────────
+
+export const onUserCreate = functions.auth.user().onCreate(async (user) => {
+  await db.collection('users').doc(user.uid).set({
+    uid: user.uid,
+    email: user.email ?? '',
+    role: 'basic',
+    authorized: false,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+  await admin.auth().setCustomUserClaims(user.uid, { role: 'basic', authorized: false });
+});
+
+// ── acceptInvitation: claim an invite, set nickname, update claims ──────────
+
+export const acceptInvitation = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError('unauthenticated', 'Must be signed in.');
+  }
+
+  const { inviteId, nickname } = data as { inviteId: string; nickname: string };
+  const uid = context.auth.uid;
+  const email = context.auth.token.email ?? '';
+
+  if (!nickname || nickname.length > 32 || !/^[a-z0-9-]+$/.test(nickname)) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'Nickname must be non-empty, max 32 chars, lowercase alphanumeric and hyphens only.'
+    );
+  }
+
+  const inviteRef = db.collection('invitations').doc(inviteId);
+  const inviteSnap = await inviteRef.get();
+
+  if (!inviteSnap.exists) {
+    throw new functions.https.HttpsError('not-found', 'Invitation not found.');
+  }
+
+  const invite = inviteSnap.data()!;
+  if (invite['usedBy']) {
+    throw new functions.https.HttpsError('already-exists', 'Invitation already used.');
+  }
+
+  const role: string = invite['role'];
+  const nicknameRef = db.collection('nicknames').doc(nickname);
+
+  const result = await db.runTransaction(async (tx) => {
+    const nicknameSnap = await tx.get(nicknameRef);
+    if (nicknameSnap.exists) {
+      const suggestion = `${nickname}-${Math.floor(Math.random() * 9000) + 1000}`;
+      return { taken: true, suggestion };
+    }
+
+    tx.set(nicknameRef, { uid });
+    tx.set(db.collection('users').doc(uid), {
+      uid,
+      nickname,
+      role,
+      email,
+      authorized: true,
+      createdAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+    tx.update(inviteRef, {
+      usedBy: uid,
+      usedAt: admin.firestore.FieldValue.serverTimestamp(),
+    });
+
+    return { taken: false };
+  });
+
+  if (result.taken) return result;
+
+  await admin.auth().setCustomUserClaims(uid, { role, authorized: true });
+  return { success: true };
+});
+
+// ── createInvitation: admin creates a shareable invite link ────────────────
+
+export const createInvitation = functions.https.onCall(async (data, context) => {
+  if (context.auth?.token['role'] !== 'admin') {
+    throw new functions.https.HttpsError('permission-denied', 'Admin only.');
+  }
+
+  const { role } = data as { role: 'editor' | 'basic' };
+  if (role !== 'editor' && role !== 'basic') {
+    throw new functions.https.HttpsError('invalid-argument', 'Role must be editor or basic.');
+  }
+
+  const ref = await db.collection('invitations').add({
+    role,
+    createdBy: context.auth.uid,
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+
+  return { id: ref.id };
+});
+
+// ── authorizeUser: admin/editor authorizes a pending basic user ────────────
+
+export const authorizeUser = functions.https.onCall(async (data, context) => {
+  const callerRole = context.auth?.token['role'];
+  if (callerRole !== 'admin' && callerRole !== 'editor') {
+    throw new functions.https.HttpsError('permission-denied', 'Admin or editor only.');
+  }
+
+  const { uid } = data as { uid: string };
+  const userRecord = await admin.auth().getUser(uid);
+  const currentClaims = userRecord.customClaims ?? {};
+
+  await admin.auth().setCustomUserClaims(uid, { ...currentClaims, authorized: true });
+  await db.collection('users').doc(uid).update({ authorized: true });
+
+  return { success: true };
+});
+
 // Initialize Anthropic client — key is in Firebase Functions config
 // Set it with: firebase functions:secrets:set ANTHROPIC_API_KEY
 const anthropic = new Anthropic({

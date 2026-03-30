@@ -26,10 +26,12 @@ import { ItemsService } from './items.service';
 import { Firestore } from '@angular/fire/firestore';
 import { Auth } from '@angular/fire/auth';
 import * as fs from '@angular/fire/firestore';
+import { UserService } from './user.service';
 
 describe('ItemsService', () => {
   let spectator: SpectatorService<ItemsService>;
   let mockAuth: { currentUser: null | { uid: string; displayName: string | null; email: string | null; photoURL: string | null } };
+  let mockUserService: { getProfile: ReturnType<typeof vi.fn> };
 
   const createService = createServiceFactory({
     service: ItemsService,
@@ -46,9 +48,13 @@ describe('ItemsService', () => {
     vi.mocked(fs.serverTimestamp).mockReturnValue('SERVER_TS' as any);
 
     mockAuth = { currentUser: null };
+    mockUserService = { getProfile: vi.fn().mockResolvedValue({ authorized: true, nickname: undefined }) };
 
     spectator = createService({
-      providers: [{ provide: Auth, useValue: mockAuth }],
+      providers: [
+        { provide: Auth, useValue: mockAuth },
+        { provide: UserService, useValue: mockUserService },
+      ],
     });
   });
 
@@ -132,6 +138,13 @@ describe('ItemsService', () => {
       await expect(spectator.service.callDibs('item-1')).rejects.toThrow('You must be signed in');
     });
 
+    it('should throw if user is not authorized', async () => {
+      mockAuth.currentUser = { uid: 'user-123', displayName: 'Leo', email: 'leo@test.com', photoURL: null };
+      mockUserService.getProfile.mockResolvedValue({ authorized: false });
+
+      await expect(spectator.service.callDibs('item-1')).rejects.toThrow('You need to be authorized');
+    });
+
     it('should update item status to claimed with user info', async () => {
       mockAuth.currentUser = {
         uid: 'user-123',
@@ -139,6 +152,7 @@ describe('ItemsService', () => {
         email: 'leo@test.com',
         photoURL: null,
       };
+      mockUserService.getProfile.mockResolvedValue({ authorized: true, nickname: undefined });
       vi.mocked(fs.updateDoc).mockResolvedValue(undefined);
 
       await spectator.service.callDibs('item-1');
@@ -157,13 +171,29 @@ describe('ItemsService', () => {
       );
     });
 
-    it('should use "Anonymous" if displayName is null', async () => {
+    it('should use the nickname from profile when available', async () => {
+      mockAuth.currentUser = { uid: 'user-123', displayName: 'Leo', email: 'leo@test.com', photoURL: null };
+      mockUserService.getProfile.mockResolvedValue({ authorized: true, nickname: 'cool-leo' });
+      vi.mocked(fs.updateDoc).mockResolvedValue(undefined);
+
+      await spectator.service.callDibs('item-1');
+
+      expect(fs.updateDoc).toHaveBeenCalledWith(
+        'mock-doc',
+        expect.objectContaining({
+          claimedBy: expect.objectContaining({ name: 'cool-leo' }),
+        }),
+      );
+    });
+
+    it('should use "Anonymous" if displayName is null and no nickname', async () => {
       mockAuth.currentUser = {
         uid: 'user-123',
         displayName: null,
         email: 'leo@test.com',
         photoURL: null,
       };
+      mockUserService.getProfile.mockResolvedValue({ authorized: true, nickname: undefined });
       vi.mocked(fs.updateDoc).mockResolvedValue(undefined);
 
       await spectator.service.callDibs('item-1');
@@ -183,6 +213,7 @@ describe('ItemsService', () => {
         email: null,
         photoURL: null,
       };
+      mockUserService.getProfile.mockResolvedValue({ authorized: true, nickname: undefined });
       vi.mocked(fs.updateDoc).mockResolvedValue(undefined);
 
       await spectator.service.callDibs('item-1');

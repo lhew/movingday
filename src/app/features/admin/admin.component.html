@@ -15,6 +15,12 @@
     <a class="tab tab-lg" [class.tab-active]="activeTab() === 'items'" (click)="setTab('items')">
       📦 Items
     </a>
+    <a class="tab tab-lg" [class.tab-active]="activeTab() === 'invitations'" (click)="setTab('invitations')">
+      🔗 Invitations
+    </a>
+    <a class="tab tab-lg" [class.tab-active]="activeTab() === 'users'" (click)="setTab('users')">
+      👥 Pending Users
+    </a>
   </div>
 
   <!-- ── Agent tab ──────────────────────────────────────────────── -->
@@ -172,6 +178,132 @@
       </div>
     } @else {
       <div class="flex justify-center py-20">
+        <span class="loading loading-dots loading-lg text-primary"></span>
+      </div>
+    }
+  }
+
+  <!-- ── Invitations tab ───────────────────────────────────────────── -->
+  @if (activeTab() === 'invitations') {
+    <div class="mb-6">
+      <h2 class="text-lg font-semibold mb-3">Generate Invite Link</h2>
+      <div class="flex gap-3 items-end flex-wrap">
+        <div class="form-control">
+          <label class="label"><span class="label-text">Role</span></label>
+          <select class="select select-bordered" [value]="inviteRole()" (change)="inviteRole.set($any($event.target).value)">
+            <option value="basic">basic</option>
+            <option value="editor">editor</option>
+          </select>
+        </div>
+        <button class="btn btn-primary" [disabled]="generatingInvite()" (click)="generateInvite()">
+          @if (generatingInvite()) {
+            <span class="loading loading-spinner loading-sm"></span>
+          } @else {
+            Generate Invite
+          }
+        </button>
+      </div>
+
+      @if (generatedLink()) {
+        <div class="mt-3 flex gap-2 items-center">
+          <input class="input input-bordered flex-1 text-sm" [value]="generatedLink()" readonly />
+          <button class="btn btn-sm btn-outline" (click)="copyLink(generatedLink())">Copy</button>
+        </div>
+      }
+    </div>
+
+    <h2 class="text-lg font-semibold mb-3">All Invitations</h2>
+    @if (invitations$ | async; as invitations) {
+      @if (invitations.length === 0) {
+        <p class="text-base-content/50 text-sm">No invitations yet.</p>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="table table-zebra w-full">
+            <thead>
+              <tr>
+                <th>Role</th>
+                <th>Status</th>
+                <th>Link</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (invite of invitations; track invite.id) {
+                <tr>
+                  <td><span class="badge badge-sm">{{ invite.role }}</span></td>
+                  <td>
+                    <span class="badge badge-sm" [class.badge-success]="!invite.usedBy" [class.badge-neutral]="invite.usedBy">
+                      {{ invite.usedBy ? 'Used' : 'Pending' }}
+                    </span>
+                  </td>
+                  <td class="text-xs text-base-content/60">
+                    @if (!invite.usedBy) {
+                      <button class="btn btn-ghost btn-xs" (click)="copyLink(window.location.origin + '/invite/' + invite.id)">Copy link</button>
+                    } @else {
+                      —
+                    }
+                  </td>
+                  <td>
+                    @if (!invite.usedBy) {
+                      <button class="btn btn-ghost btn-xs text-error" (click)="deleteInvite(invite.id)">Revoke</button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    } @else {
+      <div class="flex justify-center py-10">
+        <span class="loading loading-dots loading-lg text-primary"></span>
+      </div>
+    }
+  }
+
+  <!-- ── Pending Users tab ──────────────────────────────────────────── -->
+  @if (activeTab() === 'users') {
+    @if (pendingUsers$ | async; as users) {
+      @if (users.length === 0) {
+        <p class="text-base-content/50 text-sm">No pending users.</p>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="table table-zebra w-full">
+            <thead>
+              <tr>
+                <th>Email</th>
+                <th>Nickname</th>
+                <th>Role</th>
+                <th>Action</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (user of users; track user.uid) {
+                <tr>
+                  <td class="text-sm">{{ user.email }}</td>
+                  <td class="text-sm">{{ user.nickname ?? '—' }}</td>
+                  <td><span class="badge badge-sm">{{ user.role }}</span></td>
+                  <td>
+                    <button
+                      class="btn btn-success btn-xs"
+                      [disabled]="authorizingUid() === user.uid"
+                      (click)="authorize(user)"
+                    >
+                      @if (authorizingUid() === user.uid) {
+                        <span class="loading loading-spinner loading-xs"></span>
+                      } @else {
+                        Authorize
+                      }
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    } @else {
+      <div class="flex justify-center py-10">
         <span class="loading loading-dots loading-lg text-primary"></span>
       </div>
     }

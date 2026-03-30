@@ -1,0 +1,100 @@
+<div class="min-h-screen flex items-center justify-center p-4">
+  <div class="card bg-base-100 shadow-xl w-full max-w-md">
+    <div class="card-body gap-4">
+
+      @if (step() === 'loading') {
+        <div class="flex justify-center py-8">
+          <span class="loading loading-spinner loading-lg"></span>
+        </div>
+      }
+
+      @if (step() === 'error') {
+        <div class="text-center py-4">
+          <h2 class="card-title justify-center text-error mb-2">Invalid Invite</h2>
+          <p class="text-base-content/70">{{ errorMessage() }}</p>
+          <a routerLink="/showcase" class="btn btn-primary mt-4">Browse Free Stuff</a>
+        </div>
+      }
+
+      @if (step() === 'sign-in') {
+        @let invite = invitation();
+        <div class="text-center">
+          <h2 class="card-title justify-center mb-1">You're Invited!</h2>
+          @if (invite) {
+            <p class="text-base-content/70 mb-4">
+              You've been invited as a <span class="badge badge-primary">{{ invite.role }}</span>
+            </p>
+          }
+          <p class="text-sm mb-6">Sign in with Google to accept your invitation and claim a nickname.</p>
+          <button class="btn btn-primary w-full" (click)="signIn()">
+            Sign in with Google
+          </button>
+        </div>
+      }
+
+      @if (step() === 'nickname') {
+        @let invite = invitation();
+        <div>
+          <h2 class="card-title mb-1">Choose your nickname</h2>
+          @if (invite) {
+            <p class="text-base-content/70 text-sm mb-4">
+              You're joining as a <span class="badge badge-primary badge-sm">{{ invite.role }}</span>
+            </p>
+          }
+          <div class="form-control gap-2">
+            <label class="label" for="nickname-input">
+              <span class="label-text">Nickname</span>
+              <span class="label-text-alt text-base-content/50">lowercase, hyphens ok</span>
+            </label>
+            <input
+              id="nickname-input"
+              type="text"
+              class="input input-bordered"
+              [class.input-error]="nicknameTaken()"
+              [class.input-success]="nicknameInput() && !nicknameTaken()"
+              [value]="nicknameInput()"
+              (input)="onNicknameChange($any($event.target).value)"
+              placeholder="e.g. awesome-leo"
+            />
+            @if (nicknameTaken()) {
+              <p class="text-error text-sm">
+                That nickname is taken.
+                @if (nicknameSuggestion()) {
+                  Try
+                  <button class="link link-primary" type="button" (click)="useSuggestion()">{{ nicknameSuggestion() }}</button>
+                }
+              </p>
+            } @else if (nicknameInput()) {
+              <p class="text-success text-sm">Nickname is available!</p>
+            }
+          </div>
+          <button
+            class="btn btn-primary w-full mt-4"
+            [disabled]="!nicknameInput() || nicknameTaken() || submitting()"
+            (click)="submitNickname()"
+          >
+            @if (submitting()) {
+              <span class="loading loading-spinner loading-sm"></span>
+            } @else {
+              Claim Nickname & Accept Invite
+            }
+          </button>
+        </div>
+      }
+
+      @if (step() === 'done') {
+        <div class="text-center py-4">
+          <div class="text-5xl mb-4">🎉</div>
+          <h2 class="card-title justify-center mb-2">You're in!</h2>
+          <p class="text-base-content/70 mb-6">
+            Welcome, <strong>{{ nicknameInput() }}</strong>! You can now browse and call dibs on free stuff.
+          </p>
+          <button class="btn btn-primary w-full" (click)="goToShowcase()">
+            Browse Free Stuff
+          </button>
+        </div>
+      }
+
+    </div>
+  </div>
+</div>

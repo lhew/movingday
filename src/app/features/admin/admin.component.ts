@@ -3,7 +3,10 @@ import { AsyncPipe, SlicePipe, JsonPipe } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { AgentService } from '../../shared/services/agent.service';
 import { ItemsService } from '../../shared/services/items.service';
+import { UserService } from '../../shared/services/user.service';
+import { InviteService } from '../../shared/services/invite.service';
 import { Item } from '../../shared/models/item.model';
+import { UserProfile } from '../../shared/models/user.model';
 import { ItemFormComponent } from './item-form/item-form.component';
 import { CanDeactivateFn } from '@angular/router';
 
@@ -31,21 +34,30 @@ export class AdminComponent implements AfterViewChecked {
 
   readonly agentService = inject(AgentService);
   readonly itemsService = inject(ItemsService);
+  readonly userService = inject(UserService);
+  readonly inviteService = inject(InviteService);
 
   readonly items$ = this.itemsService.getItems();
   readonly messages$ = this.agentService.messages$;
   readonly loading$ = this.agentService.loading$;
+  readonly invitations$ = this.inviteService.listInvitations();
+  readonly pendingUsers$ = this.userService.listPendingUsers();
 
   inputText = signal('');
-  activeTab = signal<'agent' | 'items'>('agent');
+  activeTab = signal<'agent' | 'items' | 'invitations' | 'users'>('agent');
   quickPrompts = QUICK_PROMPTS;
 
   showItemForm = signal(false);
   editingItem = signal<Item | null>(null);
+  generatingInvite = signal(false);
+  inviteRole = signal<'editor' | 'basic'>('basic');
+  generatedLink = signal('');
+  authorizingUid = signal<string | null>(null);
+  readonly window = window;
 
   private shouldScroll = false;
 
-  setTab(tab: 'agent' | 'items') {
+  setTab(tab: 'agent' | 'items' | 'invitations' | 'users') {
     this.activeTab.set(tab);
   }
 
@@ -85,6 +97,35 @@ export class AdminComponent implements AfterViewChecked {
   closeItemForm() {
     this.showItemForm.set(false);
     this.editingItem.set(null);
+  }
+
+  async generateInvite(): Promise<void> {
+    this.generatingInvite.set(true);
+    try {
+      const id = await this.inviteService.createInvitation(this.inviteRole());
+      this.generatedLink.set(`${window.location.origin}/invite/${id}`);
+    } finally {
+      this.generatingInvite.set(false);
+    }
+  }
+
+  async copyLink(link: string): Promise<void> {
+    await navigator.clipboard.writeText(link);
+  }
+
+  async deleteInvite(id: string): Promise<void> {
+    if (confirm('Revoke this invitation?')) {
+      await this.inviteService.deleteInvitation(id);
+    }
+  }
+
+  async authorize(user: UserProfile): Promise<void> {
+    this.authorizingUid.set(user.uid);
+    try {
+      await this.inviteService.authorizeUser(user.uid);
+    } finally {
+      this.authorizingUid.set(null);
+    }
   }
 
   canDeactivate(): boolean {

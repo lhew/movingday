@@ -22,6 +22,8 @@ describe('Admin items — add new item', () => {
 
     cy.get('input[formControlName="name"]').clear().type('Packing Tape Bundle');
     cy.get('textarea[formControlName="description"]').clear().type('Three unopened rolls of heavy duty moving tape.');
+    cy.get('input[formControlName="category"]').type('Home');
+    cy.get('input[formControlName="tags"]').type('tape,packing,moving');
     cy.get('button[type="submit"]').should('not.be.disabled');
   });
 
