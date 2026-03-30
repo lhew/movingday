@@ -92,5 +92,6 @@ jobs:
           npx firebase-tools deploy \
             --only hosting,functions \
             --project ${{ secrets.FIREBASE_PROJECT_ID }} \
-            --non-interactive
+            --non-interactive \
+            --force
 
