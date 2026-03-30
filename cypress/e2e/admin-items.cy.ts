@@ -1,7 +1,5 @@
 describe('Admin items — add new item', () => {
   beforeEach(() => {
-    // Item/updates data comes from MockItemsService/MockUpdatesService in Cypress mode.
-    cy.task('clearAuthUsers');
     cy.visit('/showcase');
     cy.signInAsAdminUser();
     cy.visit('/admin');

@@ -2,6 +2,9 @@ import { BehaviorSubject } from 'rxjs';
 
 type MockRole = 'user' | 'admin';
 
+/** SessionStorage key used to persist mock auth role across cy.visit() reloads. */
+const SESSION_KEY = '__cypress_mock_auth_role__';
+
 function makeMockUser(role: MockRole) {
   const isAdmin = role === 'admin';
   return {
@@ -27,7 +30,21 @@ function makeMockUser(role: MockRole) {
 
 type MockUser = ReturnType<typeof makeMockUser>;
 
-const _userSubject = new BehaviorSubject<MockUser | null>(null);
+/**
+ * Re-hydrate auth state from sessionStorage so it survives cy.visit() page
+ * reloads within the same Cypress test. Only the role string is persisted;
+ * the full user object (including function methods) is re-created from it.
+ */
+function loadSessionRole(): MockUser | null {
+  try {
+    const role = sessionStorage.getItem(SESSION_KEY) as MockRole | null;
+    return role ? makeMockUser(role) : null;
+  } catch {
+    return null;
+  }
+}
+
+const _userSubject = new BehaviorSubject<MockUser | null>(loadSessionRole());
 
 /**
  * Minimal Auth-shaped object provided in place of the real Firebase Auth
@@ -62,8 +79,15 @@ export const mockAuth = {
 export function installCypressAuthHelpers(): void {
   Object.assign(window, {
     __cy: {
-      signIn: (role: MockRole) => _userSubject.next(makeMockUser(role)),
-      signOut: () => _userSubject.next(null),
+      signIn: (role: MockRole) => {
+        sessionStorage.setItem(SESSION_KEY, role);
+        _userSubject.next(makeMockUser(role));
+      },
+      signOut: () => {
+        sessionStorage.removeItem(SESSION_KEY);
+        _userSubject.next(null);
+      },
     },
   });
 }
+
