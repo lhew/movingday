@@ -21,11 +21,12 @@ export default defineConfig(({ mode }) => ({
       reportsDirectory: "./coverage/movingday",
       reporter: isCI ? ["text", "lcov"] : ["text", "html"],
       include: ["src/**/*.ts"],
+      excludeAfterRemap: true,
       exclude: [
         "src/test-setup.ts",
         "src/**/*.spec.ts",
         "src/**/*.routes.ts",
-        "src/**/*.html",
+        "**/*.html",
         "src/environments/**",
         "src/main.ts",
       ],
