@@ -25,9 +25,15 @@ jobs:
           node-version: 24
           cache: 'npm'
 
-      # Always install deps — firebase-tools lives in node_modules
+      # workflow_dispatch: full install needed for nx build
       - name: Install dependencies
+        if: github.event_name == 'workflow_dispatch'
         run: npm ci --legacy-peer-deps
+
+      # workflow_run: only firebase-tools needed — dist artifact already built
+      - name: Install firebase-tools
+        if: github.event_name == 'workflow_run'
+        run: npm install -g firebase-tools
 
       # ── workflow_run path: reuse the artifact built (and tested) by CI ──────
       - name: Download build artifact from CI
@@ -66,16 +72,23 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: npx nx build --configuration=production
 
+      # ── Build Functions ──────────────────────────────────────────────────────
+      - name: Install Functions dependencies
+        run: npm ci --prefix functions
+
+      - name: Build Functions (TypeScript → JS)
+        run: npm run build --prefix functions
+
       # ── Deploy ───────────────────────────────────────────────────────────────
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
-      - name: Deploy to Firebase (Hosting only)
+      - name: Deploy to Firebase (Hosting + Functions)
         run: |
           npx firebase-tools deploy \
-            --only hosting \
+            --only hosting,functions \
             --project production \
             --non-interactive
 
