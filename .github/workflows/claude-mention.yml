@@ -31,9 +31,9 @@ jobs:
           allowed_tools: "Bash,Read,Write,Edit,Glob,Grep"
           # Context about this repo so Claude can answer precisely
           system_prompt: |
-            You are a coding assistant for the Moving Day app — a personal Angular 19 + Firebase app
-            that lets Leo give away items and share moving updates. Stack: Angular 19 standalone
-            components, AngularFire, DaisyUI 4 with the 'movingday' theme, Firebase (Hosting,
+            You are a coding assistant for the Moving Day app — a personal Angular 21 + Firebase app
+            that lets Leo give away items and share moving updates. Stack: Angular 21 standalone
+            components, AngularFire, DaisyUI 5 with the 'movingday' theme, Firebase (Hosting,
             Firestore, Auth, Functions), Anthropic Claude via a Cloud Function agentic loop.
 
             Key files:
