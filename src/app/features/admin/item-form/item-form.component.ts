@@ -1,4 +1,4 @@
-import { Component, inject, input, output, signal, OnInit } from '@angular/core';
+import { Component, inject, input, output, signal, OnInit, HostListener } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
 import { ItemsService } from '../../../shared/services/items.service';
 import { ImageUploadService } from '../../../shared/services/image-upload.service';
@@ -63,6 +63,17 @@ export class ItemFormComponent implements OnInit {
 
   get isEditing(): boolean {
     return !!this.item();
+  }
+
+  get isDirty(): boolean {
+    return this.form.dirty || this.pendingFile() !== null;
+  }
+
+  @HostListener('window:beforeunload', ['$event'])
+  onBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.isDirty) {
+      event.preventDefault();
+    }
   }
 
   // Convenience getters for template error access

@@ -5,6 +5,10 @@ import { AgentService } from '../../shared/services/agent.service';
 import { ItemsService } from '../../shared/services/items.service';
 import { Item } from '../../shared/models/item.model';
 import { ItemFormComponent } from './item-form/item-form.component';
+import { CanDeactivateFn } from '@angular/router';
+
+export const canDeactivateAdmin: CanDeactivateFn<AdminComponent> = (component) =>
+  component.canDeactivate();
 
 // Suggested quick prompts to get started
 const QUICK_PROMPTS = [
@@ -23,6 +27,7 @@ const QUICK_PROMPTS = [
 })
 export class AdminComponent implements AfterViewChecked {
   @ViewChild('chatContainer') private chatContainer!: ElementRef;
+  @ViewChild(ItemFormComponent) private itemFormRef?: ItemFormComponent;
 
   readonly agentService = inject(AgentService);
   readonly itemsService = inject(ItemsService);
@@ -80,6 +85,13 @@ export class AdminComponent implements AfterViewChecked {
   closeItemForm() {
     this.showItemForm.set(false);
     this.editingItem.set(null);
+  }
+
+  canDeactivate(): boolean {
+    if (this.showItemForm() && this.itemFormRef?.isDirty) {
+      return confirm('You have unsaved changes. Leave anyway?');
+    }
+    return true;
   }
 
   async deleteItem(id: string) {

@@ -321,4 +321,44 @@ describe('ItemFormComponent', () => {
       expect(cancelledSpy).toHaveBeenCalled();
     });
   });
+
+  // ── isDirty ──────────────────────────────────────────────────────────────────
+
+  describe('isDirty', () => {
+    it('should be false when form is pristine and no pending file', () => {
+      expect(spectator.component.isDirty).toBe(false);
+    });
+
+    it('should be true when the form has been modified', () => {
+      spectator.component.form.patchValue({ name: 'Changed' });
+      spectator.component.form.markAsDirty();
+      expect(spectator.component.isDirty).toBe(true);
+    });
+
+    it('should be true when a pending file is set even if form is pristine', () => {
+      spectator.component.pendingFile.set(new File(['img'], 'pic.jpg'));
+      expect(spectator.component.isDirty).toBe(true);
+    });
+  });
+
+  // ── beforeunload ─────────────────────────────────────────────────────────────
+
+  describe('onBeforeUnload()', () => {
+    it('should call preventDefault when form is dirty', () => {
+      spectator.component.form.markAsDirty();
+      const event = { preventDefault: vi.fn() } as unknown as BeforeUnloadEvent;
+
+      spectator.component.onBeforeUnload(event);
+
+      expect(event.preventDefault).toHaveBeenCalled();
+    });
+
+    it('should not call preventDefault when form is pristine', () => {
+      const event = { preventDefault: vi.fn() } as unknown as BeforeUnloadEvent;
+
+      spectator.component.onBeforeUnload(event);
+
+      expect(event.preventDefault).not.toHaveBeenCalled();
+    });
+  });
 });
