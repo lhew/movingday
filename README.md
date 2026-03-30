@@ -9,7 +9,7 @@
 
 Personal app for Leo's move. Lets people browse and claim free items, and follow along with moving updates.
 
-Built with Angular 19 · Firebase · DaisyUI 4 · Claude AI (Opus 4.6) · Nx
+Built with Angular 21 · Firebase · DaisyUI 5 · Claude AI · Nx
 
 ---
 
@@ -33,76 +33,7 @@ Built with Angular 19 · Firebase · DaisyUI 4 · Claude AI (Opus 4.6) · Nx
 ### 1. Install dependencies
 
 ```bash
-npm install# Moving Day — Claude Rules
-
-## Stack
-Angular 19 standalone, Nx, Firebase/Firestore, Tailwind + DaisyUI, Vitest, Cypress.
-
-## Conventions
-- Always use `inject()` for dependency injection, never constructor injection
-- Use signals for local state, async pipe in templates
-- Firebase calls only inside `shared/services/`
-- Never put API keys or secrets in the frontend — use Cloud Functions
-- Components are standalone, no NgModules
-- Route lazily — every feature uses `loadComponent` or `loadChildren`
-
-## Testing
-
-### Unit tests (Vitest)
-- Test files live next to the file they test: `foo.service.spec.ts` beside `foo.service.ts`
-- Run all tests: `npx nx test`
-- Run in watch mode: `npx nx test --watch`
-- Run with coverage: `npx nx test --coverage`
-- Coverage report is generated in `./coverage/`
-
-**What to test:**
-- All services — mock Firestore with `vi.fn()` or `vi.spyOn()`
-- Pure helper functions and model utilities
-- Guard logic (adminGuard, etc.)
-- Component logic that lives in the `.ts` file (signals, methods)
-
-**What not to unit-test:**
-- Template HTML (that's Cypress's job)
-- Third-party library internals
-- Simple pass-through wrappers
-
-**Example structure:**
-```typescript
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-
-describe('MyService', () => {
-  it('should do X', () => {
-    // arrange, act, assert
-  });
-});
-```
-
-### E2E tests (Cypress)
-- Test files live in `cypress/e2e/`
-- Run headlessly: `npx nx e2e` (requires `npx nx serve` running first)
-- Open interactive runner: `npx cypress open`
-
-**What to E2E test:**
-- Full user journeys: visit showcase → sign in → call dibs
-- Navigation between pages
-- 404 handling
-- Admin panel access (guard redirect when not signed in)
-
-**Cypress conventions:**
-- Use `cy.contains()` over brittle CSS selectors where possible
-- Add custom commands to `cypress/support/commands.ts`
-- Never hard-code wait times — use `cy.wait('@alias')` or retry-able assertions
-
-### Before committing
-```bash
-npx nx lint        # lint
-npx nx test        # unit tests
-npx nx build       # production build (catches type errors)
-```
-
-### CI
-GitHub Actions runs lint → unit tests → build → E2E on every push to `main` and every PR.
-See `.github/workflows/ci.yml`.
+npm install
 cd functions && npm install && cd ..
 ```
 
@@ -139,9 +70,8 @@ firebase functions:secrets:set ANTHROPIC_API_KEY
 # Angular dev server only (no AI agent)
 npm start
 
-# With Firebase emulators (Firestore + Functions — enables the AI agent locally)
-firebase emulators:start &
-npm start
+# With Firebase emulators + Angular together (enables the AI agent locally)
+npm run dev
 ```
 
 App runs at `http://localhost:4200`.

@@ -54,27 +54,23 @@ This is non-negotiable. Never finish a component change without covering it with
 
 **Component test template:**
 ```typescript
-import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { createComponentFactory, Spectator } from '@ngneat/spectator/vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { MyComponent } from './my.component';
 
 describe('MyComponent', () => {
-  let component: MyComponent;
-  let fixture: ComponentFixture<MyComponent>;
+  let spectator: Spectator<MyComponent>;
+  const createComponent = createComponentFactory({
+    component: MyComponent,
+    // providers: [{ provide: MyService, useValue: mockMyService }],
+  });
 
-  beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [MyComponent],
-      // providers: [{ provide: MyService, useValue: mockMyService }],
-    }).compileComponents();
-
-    fixture = TestBed.createComponent(MyComponent);
-    component = fixture.componentInstance;
-    fixture.detectChanges();
+  beforeEach(() => {
+    spectator = createComponent();
   });
 
   it('should create', () => {
-    expect(component).toBeTruthy();
+    expect(spectator.component).toBeTruthy();
   });
 
   it('should <describe behaviour>', () => {
@@ -87,7 +83,7 @@ describe('MyComponent', () => {
 
 ### E2E tests (Cypress)
 - Test files live in `cypress/e2e/`
-- Run headlessly: `npx nx e2e` (requires `npx nx serve` running first)
+- Run headlessly: `npx nx e2e` (starts the dev server automatically)
 - Open interactive runner: `npx cypress open`
 
 **What to E2E test:**
