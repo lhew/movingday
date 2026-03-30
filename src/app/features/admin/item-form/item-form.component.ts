@@ -32,8 +32,8 @@ export class ItemFormComponent implements OnInit {
     condition:   ['good' as ItemCondition, Validators.required],
     status:      ['available' as ItemStatus, Validators.required],
     imageUrl:    [''],
-    category:    ['', [Validators.maxLength(40), Validators.pattern(this.categoryPattern)]],
-    tags:        ['', [Validators.maxLength(120), Validators.pattern(this.tagsPattern)]],
+    category:    ['', [Validators.required, Validators.maxLength(40), Validators.pattern(this.categoryPattern)]],
+    tags:        ['', [Validators.required, Validators.maxLength(120), Validators.pattern(this.tagsPattern)]],
   });
 
   // Image upload state

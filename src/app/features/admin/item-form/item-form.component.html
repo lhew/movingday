@@ -114,23 +114,28 @@
       <!-- Category + Tags -->
       <div class="grid grid-cols-2 gap-4">
         <div class="form-control">
-          <label class="label"><span class="label-text font-medium">Category</span></label>
+          <label class="label"><span class="label-text font-medium">Category *</span></label>
           <input type="text" class="input input-bordered"
                  [class.input-error]="f['category'].invalid && f['category'].touched"
                  placeholder="e.g. Furniture"
                  formControlName="category" />
-          @if (f['category'].touched && f['category'].errors?.['maxlength']) {
+          @if (f['category'].touched && f['category'].errors?.['required']) {
+            <p class="label-text-alt text-error mt-1">Category is required.</p>
+          } @else if (f['category'].touched && f['category'].errors?.['maxlength']) {
             <p class="label-text-alt text-error mt-1">40 characters max.</p>
           } @else if (f['category'].touched && f['category'].errors?.['pattern']) {
             <p class="label-text-alt text-error mt-1">Use letters, numbers, spaces, -, /, and & only.</p>
           }
         </div>
         <div class="form-control">
-          <label class="label"><span class="label-text font-medium">Tags</span></label>
+          <label class="label"><span class="label-text font-medium">Tags *</span></label>
           <input type="text" class="input input-bordered"
+                 [class.input-error]="f['tags'].invalid && f['tags'].touched"
                  placeholder="chair, wood, ikea"
                  formControlName="tags" />
-          @if (f['tags'].touched && f['tags'].errors?.['maxlength']) {
+          @if (f['tags'].touched && f['tags'].errors?.['required']) {
+            <p class="label-text-alt text-error mt-1">Tags are required.</p>
+          } @else if (f['tags'].touched && f['tags'].errors?.['maxlength']) {
             <p class="label-text-alt text-error mt-1">120 characters max.</p>
           } @else if (f['tags'].touched && f['tags'].errors?.['pattern']) {
             <p class="label-text-alt text-error mt-1">Use comma-separated tags (letters, numbers, hyphens).</p>
@@ -144,7 +149,7 @@
         Cancel
       </button>
       <button class="btn btn-primary" type="submit" form="item-form"
-              [disabled]="saving() || uploading() || form.invalid">
+              [disabled]="saving() || uploading()">
         @if (saving()) {
           <span class="loading loading-spinner loading-sm"></span>
         }

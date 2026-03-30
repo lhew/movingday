@@ -116,10 +116,32 @@ describe('ItemFormComponent', () => {
       expect(spectator.component.form.get('description')?.errors?.['minlength']).toBeTruthy();
     });
 
-    it('should be valid when required fields are filled', () => {
+    it('should be invalid when category is empty', () => {
       spectator.component.form.patchValue({
         name: 'Nice chair',
         description: 'A comfortable wooden chair in good shape.',
+        category: '',
+        tags: 'chair',
+      });
+      expect(spectator.component.form.get('category')?.errors?.['required']).toBeTruthy();
+    });
+
+    it('should be invalid when tags are empty', () => {
+      spectator.component.form.patchValue({
+        name: 'Nice chair',
+        description: 'A comfortable wooden chair in good shape.',
+        category: 'Furniture',
+        tags: '',
+      });
+      expect(spectator.component.form.get('tags')?.errors?.['required']).toBeTruthy();
+    });
+
+    it('should be valid when all required fields are filled', () => {
+      spectator.component.form.patchValue({
+        name: 'Nice chair',
+        description: 'A comfortable wooden chair in good shape.',
+        category: 'Furniture',
+        tags: 'chair',
       });
       expect(spectator.component.form.valid).toBe(true);
     });
@@ -150,6 +172,7 @@ describe('ItemFormComponent', () => {
       spectator.component.form.patchValue({
         name: 'Nice chair',
         description: 'A comfortable wooden chair in good shape.',
+        category: 'Furniture',
         tags: 'chair,wood-table,ikea',
       });
 
@@ -157,18 +180,20 @@ describe('ItemFormComponent', () => {
       expect(spectator.component.form.valid).toBe(true);
     });
 
-    it('should keep submit disabled while form is invalid', () => {
-      spectator.component.form.patchValue({ name: '', description: '' });
+    it('should leave submit enabled when form is invalid so errors can be shown on click', () => {
+      spectator.component.form.patchValue({ name: '', description: '', category: '', tags: '' });
       spectator.detectChanges();
 
       const submitBtn = spectator.query('button[type="submit"]') as HTMLButtonElement;
-      expect(submitBtn.disabled).toBe(true);
+      expect(submitBtn.disabled).toBe(false);
     });
 
-    it('should enable submit when required fields are valid', () => {
+    it('should enable submit when all required fields are valid', () => {
       spectator.component.form.patchValue({
         name: 'Nice chair',
         description: 'A comfortable wooden chair in good shape.',
+        category: 'Furniture',
+        tags: 'chair',
       });
       spectator.detectChanges();
 
@@ -186,6 +211,8 @@ describe('ItemFormComponent', () => {
         description: 'A very bright and modern lamp.',
         condition: 'new',
         status: 'available',
+        category: 'Lighting',
+        tags: 'lamp',
       });
     });
 
@@ -216,7 +243,7 @@ describe('ItemFormComponent', () => {
     });
 
     it('should parse comma-separated tags into an array', async () => {
-      spectator.component.form.patchValue({ tags: 'wood, ikea, tall' });
+      spectator.component.form.patchValue({ category: 'Furniture', tags: 'wood, ikea, tall' });
       await spectator.component.save();
       expect(mockItemsService.createItem).toHaveBeenCalledWith(
         expect.objectContaining({ tags: ['wood', 'ikea', 'tall'] })
