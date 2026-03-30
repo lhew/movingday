@@ -93,18 +93,22 @@ export const agent = functions
       return;
     }
 
-    // TODO: Verify Firebase ID token (uncomment in production)
-    // const authHeader = req.headers.authorization;
-    // if (!authHeader?.startsWith('Bearer ')) {
-    //   res.status(401).json({ error: 'Unauthorized' });
-    //   return;
-    // }
-    // const idToken = authHeader.split('Bearer ')[1];
-    // const decodedToken = await admin.auth().verifyIdToken(idToken);
-    // if (decodedToken.email !== 'YOUR_ADMIN_EMAIL@gmail.com') {
-    //   res.status(403).json({ error: 'Forbidden' });
-    //   return;
-    // }
+    // Verify Firebase ID token — only users with role:'admin' custom claim may call this
+    const authHeader = req.headers.authorization;
+    if (!authHeader?.startsWith('Bearer ')) {
+      res.status(401).json({ error: 'Unauthorized' });
+      return;
+    }
+    try {
+      const decodedToken = await admin.auth().verifyIdToken(authHeader.split('Bearer ')[1]);
+      if (decodedToken['role'] !== 'admin') {
+        res.status(403).json({ error: 'Forbidden' });
+        return;
+      }
+    } catch {
+      res.status(401).json({ error: 'Invalid token' });
+      return;
+    }
 
     const { messages, tools } = req.body;
 
@@ -113,8 +117,8 @@ export const agent = functions
       let currentMessages = [...messages];
       const toolsExecuted: Array<{ toolName: string; input: unknown; result: unknown }> = [];
 
-      // eslint-disable-next-line no-constant-condition
-      while (true) {
+      const MAX_TOOL_ITERATIONS = 10;
+      for (let iteration = 0; iteration < MAX_TOOL_ITERATIONS; iteration++) {
         const response = await anthropic.messages.create({
           model: 'claude-opus-4-6',
           max_tokens: 4096,
@@ -130,41 +134,40 @@ Always confirm what you did after taking actions.`,
           tools: tools,
         });
 
-        // If model wants to use tools
-        if (response.stop_reason === 'tool_use') {
-          const toolUseBlocks = response.content.filter((c) => c.type === 'tool_use');
-          const toolResults = [];
-
-          for (const toolUse of toolUseBlocks) {
-            if (toolUse.type !== 'tool_use') continue;
-            const result = await executeTool(
-              toolUse.name,
-              toolUse.input as Record<string, unknown>
-            );
-            toolsExecuted.push({ toolName: toolUse.name, input: toolUse.input, result });
-            toolResults.push({
-              type: 'tool_result' as const,
-              tool_use_id: toolUse.id,
-              content: JSON.stringify(result),
-            });
-          }
-
-          // Add assistant's tool use and results to the message history
-          currentMessages = [
-            ...currentMessages,
-            { role: 'assistant', content: response.content },
-            { role: 'user', content: toolResults },
-          ];
-          continue;
+        // Final text response — stop the loop
+        if (response.stop_reason !== 'tool_use') {
+          const textContent = response.content.find((c) => c.type === 'text');
+          const reply = textContent?.type === 'text' ? textContent.text : 'Done!';
+          res.json({ reply, toolsExecuted });
+          return;
         }
 
-        // Final text response
-        const textContent = response.content.find((c) => c.type === 'text');
-        const reply = textContent?.type === 'text' ? textContent.text : 'Done!';
+        // Execute all requested tools and feed results back into the conversation
+        const toolUseBlocks = response.content.filter((c) => c.type === 'tool_use');
+        const toolResults = [];
 
-        res.json({ reply, toolsExecuted });
-        return;
+        for (const toolUse of toolUseBlocks) {
+          if (toolUse.type !== 'tool_use') continue;
+          const result = await executeTool(
+            toolUse.name,
+            toolUse.input as Record<string, unknown>
+          );
+          toolsExecuted.push({ toolName: toolUse.name, input: toolUse.input, result });
+          toolResults.push({
+            type: 'tool_result' as const,
+            tool_use_id: toolUse.id,
+            content: JSON.stringify(result),
+          });
+        }
+
+        currentMessages = [
+          ...currentMessages,
+          { role: 'assistant', content: response.content },
+          { role: 'user', content: toolResults },
+        ];
       }
+
+      res.status(500).json({ error: 'Agent exceeded maximum tool iterations' });
     } catch (error) {
       console.error('Agent error:', error);
       res.status(500).json({ error: 'Agent failed', details: String(error) });
