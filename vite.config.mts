@@ -25,6 +25,7 @@ export default defineConfig(({ mode }) => ({
         "src/test-setup.ts",
         "src/**/*.spec.ts",
         "src/**/*.routes.ts",
+        "src/**/*.html",
         "src/environments/**",
         "src/main.ts",
       ],
