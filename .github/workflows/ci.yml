@@ -44,6 +44,16 @@ jobs:
           files: ./coverage/movingday/lcov.info
           fail_ci_if_error: false
 
+      - name: Generate stats.json
+        run: npm run stats
+
+      - name: Upload stats artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: stats
+          path: src/assets/stats.json
+          retention-days: 30
+
   # ── Build ────────────────────────────────────────────────────
   build:
     name: Build
@@ -61,6 +71,12 @@ jobs:
 
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
+
+      - name: Download stats artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: stats
+          path: src/assets
 
       - name: Inject environment values into environment.prod.ts
         run: |
