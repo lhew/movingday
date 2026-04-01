@@ -10,7 +10,7 @@ vi.mock('firebase/storage', async (importOriginal) => {
     ...actual,
     ref: vi.fn(() => ({})),
     uploadBytes: vi.fn(() => Promise.resolve({})),
-    getDownloadURL: vi.fn(() => Promise.resolve('https://storage.example.com/img.jpg')),
+    getDownloadURL: vi.fn(() => Promise.resolve('https://storage.example.com/img.webp')),
   };
 });
 
@@ -171,22 +171,22 @@ describe('ImageUploadService', () => {
     it('should call uploadBytes and return the download URL', async () => {
       const { uploadBytes, getDownloadURL } = await import('firebase/storage');
 
-      const blob = new Blob(['data'], { type: 'image/jpeg' });
+      const blob = new Blob(['data'], { type: 'image/webp' });
       const url = await spectator.service.uploadItemImage(blob);
 
       expect(uploadBytes).toHaveBeenCalled();
       expect(getDownloadURL).toHaveBeenCalled();
-      expect(url).toBe('https://storage.example.com/img.jpg');
+      expect(url).toBe('https://storage.example.com/img.webp');
     });
 
     it('should upload under the items/ path', async () => {
       const { ref } = await import('firebase/storage');
 
-      const blob = new Blob(['data'], { type: 'image/jpeg' });
+      const blob = new Blob(['data'], { type: 'image/webp' });
       await spectator.service.uploadItemImage(blob);
 
       const callArg = (ref as ReturnType<typeof vi.fn>).mock.calls[0][1] as string;
-      expect(callArg).toMatch(/^items\/.*\.jpg$/);
+      expect(callArg).toMatch(/^items\/.*\.webp$/);
     });
   });
 });
