@@ -121,6 +121,24 @@ export const authorizeUser = functions.https.onCall(async (data, context) => {
   return { success: true };
 });
 
+// ── deauthorizeUser: admin blocks/revokes access from a user ─────────────
+
+export const deauthorizeUser = functions.https.onCall(async (data, context) => {
+  const callerRole = context.auth?.token['role'];
+  if (callerRole !== 'admin') {
+    throw new functions.https.HttpsError('permission-denied', 'Admin only.');
+  }
+
+  const { uid } = data as { uid: string };
+  const userRecord = await admin.auth().getUser(uid);
+  const currentClaims = userRecord.customClaims ?? {};
+
+  await admin.auth().setCustomUserClaims(uid, { ...currentClaims, authorized: false });
+  await db.collection('users').doc(uid).update({ authorized: false });
+
+  return { success: true };
+});
+
 // Initialize Anthropic client — key is in Firebase Functions config
 // Set it with: firebase functions:secrets:set ANTHROPIC_API_KEY
 const anthropic = new Anthropic({

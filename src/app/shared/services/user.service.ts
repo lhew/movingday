@@ -32,4 +32,8 @@ export class UserService {
     const q = query(collection(this.firestore, 'users'), where('authorized', '==', false));
     return collectionData(q, { idField: 'id' }) as Observable<UserProfile[]>;
   }
+
+  listAllUsers(): Observable<UserProfile[]> {
+    return collectionData(collection(this.firestore, 'users'), { idField: 'id' }) as Observable<UserProfile[]>;
+  }
 }

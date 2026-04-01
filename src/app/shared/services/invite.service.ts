@@ -20,6 +20,7 @@ export class InviteService {
 
   private createInvitationFn = httpsCallable<{ role: string }, { id: string }>(this.functions, 'createInvitation');
   private authorizeUserFn = httpsCallable<{ uid: string }, { success: boolean }>(this.functions, 'authorizeUser');
+  private deauthorizeUserFn = httpsCallable<{ uid: string }, { success: boolean }>(this.functions, 'deauthorizeUser');
 
   async createInvitation(role: 'editor' | 'basic'): Promise<string> {
     const result = await this.createInvitationFn({ role });
@@ -41,5 +42,9 @@ export class InviteService {
 
   async authorizeUser(uid: string): Promise<void> {
     await this.authorizeUserFn({ uid });
+  }
+
+  async deauthorizeUser(uid: string): Promise<void> {
+    await this.deauthorizeUserFn({ uid });
   }
 }

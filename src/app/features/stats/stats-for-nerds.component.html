@@ -1,0 +1,218 @@
+<div class="max-w-5xl mx-auto px-4 py-10">
+
+  <!-- Header -->
+  <div class="text-center mb-10">
+    <h1 class="text-4xl font-bold mb-2">🤓 Stats for Nerds</h1>
+    <p class="text-base-content/60 text-sm">
+      Auto-generated dashboard — run <code class="kbd kbd-sm">npm run stats</code> to refresh
+    </p>
+  </div>
+
+  <!-- Loading -->
+  @if (loading()) {
+    <div class="flex justify-center py-20">
+      <span class="loading loading-spinner loading-lg text-primary"></span>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (error()) {
+    <div class="alert alert-warning max-w-lg mx-auto">
+      <span>⚠️ {{ error() }}</span>
+    </div>
+  }
+
+  <!-- Dashboard -->
+  @if (stats(); as s) {
+    <p class="text-center text-xs text-base-content/40 mb-8">
+      Generated {{ s.generatedAt | date:'medium' }}
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+      <!-- ── Git ──────────────────────────────────────────────── -->
+      <div class="card bg-base-200 shadow">
+        <div class="card-body gap-4">
+          <h2 class="card-title text-lg">🗂 Git History</h2>
+
+          <div class="stats stats-vertical bg-base-100 rounded-xl shadow-none">
+            <div class="stat py-3">
+              <div class="stat-title">Total commits</div>
+              <div class="stat-value text-primary">{{ s.git.totalCommits | number }}</div>
+              <div class="stat-desc">{{ s.git.recentCommits }} in the last 30 days</div>
+            </div>
+            <div class="stat py-3">
+              <div class="stat-title">Last commit</div>
+              <div class="stat-value text-2xl truncate max-w-xs" [title]="s.git.lastCommitMsg">
+                {{ s.git.lastCommitMsg }}
+              </div>
+              <div class="stat-desc">{{ s.git.lastCommitDate }} by {{ s.git.lastCommitAuthor }}</div>
+            </div>
+          </div>
+
+          @if (s.git.commitsByAuthor.length) {
+            <div>
+              <p class="text-xs font-semibold text-base-content/50 mb-2 uppercase tracking-wider">Commits by author</p>
+              @for (author of s.git.commitsByAuthor; track author.name) {
+                <div class="flex items-center gap-2 mb-1">
+                  <span class="text-sm flex-1 truncate">{{ author.name }}</span>
+                  <div class="flex-1">
+                    <progress
+                      class="progress progress-primary w-full"
+                      [value]="author.count"
+                      [max]="s.git.totalCommits">
+                    </progress>
+                  </div>
+                  <span class="text-xs tabular-nums w-8 text-right">{{ author.count }}</span>
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <!-- ── Lint ─────────────────────────────────────────────── -->
+      <div class="card bg-base-200 shadow">
+        <div class="card-body gap-4">
+          <h2 class="card-title text-lg">
+            🧹 Lint
+            @if (s.lint.passed) {
+              <span class="badge badge-success badge-sm">Passing</span>
+            } @else {
+              <span class="badge badge-error badge-sm">Failing</span>
+            }
+          </h2>
+
+          <div class="stats stats-vertical bg-base-100 rounded-xl shadow-none">
+            <div class="stat py-3">
+              <div class="stat-title">Files analyzed</div>
+              <div class="stat-value text-primary">{{ s.lint.filesAnalyzed | number }}</div>
+            </div>
+            <div class="stat py-3">
+              <div class="stat-title">Errors / Warnings</div>
+              <div class="stat-value text-2xl">
+                <span class="text-error">{{ s.lint.errors }}</span>
+                <span class="text-base-content/30 mx-1">/</span>
+                <span class="text-warning">{{ s.lint.warnings }}</span>
+              </div>
+            </div>
+          </div>
+
+          @if (s.lint.topRules.length) {
+            <div>
+              <p class="text-xs font-semibold text-base-content/50 mb-2 uppercase tracking-wider">Top triggered rules</p>
+              @for (rule of s.lint.topRules; track rule.rule) {
+                <div class="flex items-center justify-between gap-2 py-1 border-b border-base-300 last:border-0">
+                  <code class="text-xs truncate text-accent">{{ rule.rule }}</code>
+                  <span class="badge badge-ghost badge-sm tabular-nums">{{ rule.count }}</span>
+                </div>
+              }
+            </div>
+          } @else {
+            <p class="text-sm text-base-content/50 italic">No lint violations 🎉</p>
+          }
+        </div>
+      </div>
+
+      <!-- ── Unit Tests ────────────────────────────────────────── -->
+      <div class="card bg-base-200 shadow">
+        <div class="card-body gap-4">
+          <h2 class="card-title text-lg">🧪 Unit Tests</h2>
+
+          <div class="stats stats-vertical bg-base-100 rounded-xl shadow-none">
+            <div class="stat py-3">
+              <div class="stat-title">Test suites</div>
+              <div class="stat-value text-primary">{{ s.unitTests.suites }}</div>
+            </div>
+            <div class="stat py-3">
+              <div class="stat-title">Tests</div>
+              <div class="stat-value text-2xl">{{ s.unitTests.total }}</div>
+              <div class="stat-desc">
+                <span class="text-success">{{ s.unitTests.passed }} passed</span>
+                @if (s.unitTests.failed) {
+                  · <span class="text-error">{{ s.unitTests.failed }} failed</span>
+                }
+                @if (s.unitTests.skipped) {
+                  · <span class="text-warning">{{ s.unitTests.skipped }} skipped</span>
+                }
+              </div>
+            </div>
+          </div>
+
+          <div>
+            <div class="flex justify-between text-xs mb-1">
+              <span class="text-base-content/60">Pass rate</span>
+              <span class="font-semibold">{{ passRate(s.unitTests) }}%</span>
+            </div>
+            <progress
+              class="progress w-full"
+              [class]="passRate(s.unitTests) === 100 ? 'progress-success' : 'progress-warning'"
+              [value]="passRate(s.unitTests)"
+              max="100">
+            </progress>
+          </div>
+
+          @if (s.unitTests.durationMs) {
+            <p class="text-xs text-base-content/50">
+              ⏱ Ran in {{ formatDuration(s.unitTests.durationMs) }}
+            </p>
+          }
+        </div>
+      </div>
+
+      <!-- ── Coverage & E2E ────────────────────────────────────── -->
+      <div class="flex flex-col gap-6">
+
+        <!-- Coverage -->
+        <div class="card bg-base-200 shadow flex-1">
+          <div class="card-body gap-3">
+            <h2 class="card-title text-lg">📐 Coverage</h2>
+            @if (s.coverage.lines !== null) {
+              <div class="grid grid-cols-2 gap-2">
+                @let metrics = [
+                  { label: 'Statements', value: s.coverage.statements },
+                  { label: 'Lines', value: s.coverage.lines },
+                  { label: 'Functions', value: s.coverage.functions },
+                  { label: 'Branches', value: s.coverage.branches }
+                ];
+                @for (m of metrics; track m.label) {
+                  <div class="bg-base-100 rounded-lg p-3 text-center">
+                    <div class="text-xl font-bold" [class]="coverageBadge(m.value).replace('badge-', 'text-')">
+                      {{ m.value !== null ? (m.value | number:'1.1-1') + '%' : '—' }}
+                    </div>
+                    <div class="text-xs text-base-content/50 mt-1">{{ m.label }}</div>
+                  </div>
+                }
+              </div>
+            } @else {
+              <p class="text-sm text-base-content/50 italic">
+                Run <code class="kbd kbd-xs">npm run stats</code> with coverage to see data.
+              </p>
+            }
+          </div>
+        </div>
+
+        <!-- E2E -->
+        <div class="card bg-base-200 shadow flex-1">
+          <div class="card-body gap-3">
+            <h2 class="card-title text-lg">🌐 E2E Tests</h2>
+            <div class="stats stats-horizontal bg-base-100 rounded-xl shadow-none">
+              <div class="stat py-3 place-items-center">
+                <div class="stat-title text-xs">Spec files</div>
+                <div class="stat-value text-primary text-3xl">{{ s.e2eTests.specFiles }}</div>
+              </div>
+              <div class="stat py-3 place-items-center">
+                <div class="stat-title text-xs">~Tests</div>
+                <div class="stat-value text-3xl">{{ s.e2eTests.estimatedTests }}</div>
+              </div>
+            </div>
+            <p class="text-xs text-base-content/40">Cypress · count estimated from <code>it(</code> calls</p>
+          </div>
+        </div>
+
+      </div>
+
+    </div>
+  }
+
+</div>

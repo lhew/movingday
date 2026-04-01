@@ -41,6 +41,14 @@ export const appRoutes: Routes = [
     title: 'Editor — Moving Day',
   },
   {
+    path: 'stats',
+    loadComponent: () =>
+      import('./features/stats/stats-for-nerds.component').then(
+        (m) => m.StatsForNerdsComponent
+      ),
+    title: 'Stats for Nerds — Moving Day',
+  },
+  {
     path: '**',
     loadComponent: () =>
       import('./features/not-found/not-found.component').then((m) => m.NotFoundComponent),

@@ -15,9 +15,9 @@
     <form id="item-form" [formGroup]="form" class="flex flex-col gap-4" (ngSubmit)="save()">
 
       <!-- Name -->
-      <div class="form-control">
-        <label class="label"><span class="label-text font-medium">Name *</span></label>
-        <input type="text" class="input input-bordered"
+      <div class="form-control flex flex-col">
+        <label class="label" for="item-name"><span class="label-text font-medium">Name *</span></label>
+        <input id="item-name" type="text" class="input input-bordered w-full"
                [class.input-error]="f['name'].invalid && f['name'].touched"
                placeholder="e.g. IKEA Billy bookcase"
                formControlName="name" />
@@ -31,9 +31,9 @@
       </div>
 
       <!-- Description -->
-      <div class="form-control">
-        <label class="label"><span class="label-text font-medium">Description *</span></label>
-        <textarea class="textarea textarea-bordered resize-none" rows="3"
+      <div class="form-control flex flex-col">
+        <label class="label" for="item-description"><span class="label-text font-medium">Description *</span></label>
+        <textarea id="item-description" class="textarea textarea-bordered resize-none w-full" rows="3"
                   [class.textarea-error]="f['description'].invalid && f['description'].touched"
                   placeholder="Briefly describe the item…"
                   formControlName="description"></textarea>
@@ -49,16 +49,16 @@
       <!-- Condition + Status -->
       <div class="grid grid-cols-2 gap-4">
         <div class="form-control">
-          <label class="label"><span class="label-text font-medium">Condition *</span></label>
-          <select class="select select-bordered" formControlName="condition">
+          <label class="label" for="item-condition"><span class="label-text font-medium">Condition *</span></label>
+          <select id="item-condition" class="select select-bordered" formControlName="condition">
             @for (c of conditions; track c) {
               <option [value]="c">{{ c }}</option>
             }
           </select>
         </div>
         <div class="form-control">
-          <label class="label"><span class="label-text font-medium">Status *</span></label>
-          <select class="select select-bordered" formControlName="status">
+          <label class="label" for="item-status"><span class="label-text font-medium">Status *</span></label>
+          <select id="item-status" class="select select-bordered" formControlName="status">
             @for (s of statuses; track s) {
               <option [value]="s">{{ s }}</option>
             }
@@ -114,8 +114,8 @@
       <!-- Category + Tags -->
       <div class="grid grid-cols-2 gap-4">
         <div class="form-control">
-          <label class="label"><span class="label-text font-medium">Category *</span></label>
-          <input type="text" class="input input-bordered"
+          <label class="label" for="item-category"><span class="label-text font-medium">Category *</span></label>
+          <input id="item-category" type="text" class="input input-bordered"
                  [class.input-error]="f['category'].invalid && f['category'].touched"
                  placeholder="e.g. Furniture"
                  formControlName="category" />
@@ -128,8 +128,8 @@
           }
         </div>
         <div class="form-control">
-          <label class="label"><span class="label-text font-medium">Tags *</span></label>
-          <input type="text" class="input input-bordered"
+          <label class="label" for="item-tags"><span class="label-text font-medium">Tags *</span></label>
+          <input id="item-tags" type="text" class="input input-bordered"
                  [class.input-error]="f['tags'].invalid && f['tags'].touched"
                  placeholder="chair, wood, ikea"
                  formControlName="tags" />

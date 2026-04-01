@@ -1,0 +1,56 @@
+{
+  "generatedAt": "2026-04-01T12:40:43.667Z",
+  "git": {
+    "totalCommits": 50,
+    "lastCommitMsg": "fix: resolve angular-fire injection context and fieldvalue issues",
+    "lastCommitDate": "2026-03-30",
+    "lastCommitAuthor": "leo",
+    "branchName": "main",
+    "firstCommitDate": "2026-03-21",
+    "recentCommits": 50,
+    "commitsByAuthor": [
+      {
+        "name": "leo",
+        "count": 41
+      },
+      {
+        "name": "Leonardo Almeida Marques",
+        "count": 9
+      }
+    ]
+  },
+  "lint": {
+    "errors": 1,
+    "warnings": 74,
+    "filesAnalyzed": 64,
+    "passed": false,
+    "topRules": [
+      {
+        "rule": "@typescript-eslint/no-explicit-any",
+        "count": 74
+      },
+      {
+        "rule": "@typescript-eslint/no-unused-vars",
+        "count": 1
+      }
+    ]
+  },
+  "unitTests": {
+    "total": 216,
+    "passed": 216,
+    "failed": 0,
+    "skipped": 0,
+    "suites": 106,
+    "durationMs": 1543
+  },
+  "coverage": {
+    "lines": null,
+    "functions": null,
+    "branches": null,
+    "statements": null
+  },
+  "e2eTests": {
+    "specFiles": 2,
+    "estimatedTests": 21
+  }
+}
