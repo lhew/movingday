@@ -89,24 +89,24 @@ describe('ImageUploadService', () => {
       expect(result).toBe(resultBlob);
     });
 
-    it('should scale down a wide image so width = 1100px', async () => {
-      const { getCanvas } = setupResizeMock(2200, 1000);
+    it('should scale down a wide image so width = 600px', async () => {
+      const { getCanvas } = setupResizeMock(1200, 600);
       const file = new File(['data'], 'wide.jpg', { type: 'image/jpeg' });
 
       await spectator.service.resizeImage(file);
 
-      expect(getCanvas()?.width).toBe(1100);
-      expect(getCanvas()?.height).toBe(500);
+      expect(getCanvas()?.width).toBe(600);
+      expect(getCanvas()?.height).toBe(300);
     });
 
-    it('should scale down a tall image so height = 1100px', async () => {
-      const { getCanvas } = setupResizeMock(1000, 2200);
+    it('should scale down a tall image so height = 600px', async () => {
+      const { getCanvas } = setupResizeMock(600, 1200);
       const file = new File(['data'], 'tall.jpg', { type: 'image/jpeg' });
 
       await spectator.service.resizeImage(file);
 
-      expect(getCanvas()?.width).toBe(500);
-      expect(getCanvas()?.height).toBe(1100);
+      expect(getCanvas()?.width).toBe(300);
+      expect(getCanvas()?.height).toBe(600);
     });
 
     it('should not upscale an image already within the limit', async () => {
