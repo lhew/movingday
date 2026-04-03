@@ -30,10 +30,11 @@ import { Firestore } from '@angular/fire/firestore';
 import { Auth } from '@angular/fire/auth';
 import { Functions } from '@angular/fire/functions';
 import * as fs from '@angular/fire/firestore';
+import { Timestamp } from '@angular/fire/firestore';
 import * as fns from '@angular/fire/functions';
 import * as fireAuth from '@angular/fire/auth';
 
-const INVITE_DOC = { id: 'inv-1', role: 'basic', createdBy: 'uid-x', createdAt: null as any };
+const INVITE_DOC = { id: 'inv-1', role: 'basic', createdBy: 'uid-x', createdAt: null as unknown as Timestamp };
 
 // ── Tests with no authenticated user ─────────────────────────────────────────
 
@@ -55,7 +56,7 @@ describe('InviteComponent (unauthenticated)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mockRouter = { navigate: vi.fn() };
-    vi.mocked(fs.doc).mockReturnValue('mock-doc' as any);
+    vi.mocked(fs.doc).mockReturnValue('mock-doc' as unknown as ReturnType<typeof fs.doc>);
 
     spectator = createComponent({ providers: [{ provide: Router, useValue: mockRouter }] });
   });
@@ -65,27 +66,27 @@ describe('InviteComponent (unauthenticated)', () => {
   });
 
   it('should set step to error when invitation is not found', () => {
-    vi.mocked(fs.docData).mockReturnValue(of(undefined) as any);
+    vi.mocked(fs.docData).mockReturnValue(of(undefined) as unknown as ReturnType<typeof fs.docData>);
     spectator.component.ngOnInit();
     expect(spectator.component.step()).toBe('error');
     expect(spectator.component.errorMessage()).toContain('not found');
   });
 
   it('should set step to error when invitation is already used', () => {
-    vi.mocked(fs.docData).mockReturnValue(of({ ...INVITE_DOC, usedBy: 'uid-x' }) as any);
+    vi.mocked(fs.docData).mockReturnValue(of({ ...INVITE_DOC, usedBy: 'uid-x' }) as unknown as ReturnType<typeof fs.docData>);
     spectator.component.ngOnInit();
     expect(spectator.component.step()).toBe('error');
     expect(spectator.component.errorMessage()).toContain('already been used');
   });
 
   it('should set step to sign-in when invite is valid and user is not authenticated', () => {
-    vi.mocked(fs.docData).mockReturnValue(of(INVITE_DOC) as any);
+    vi.mocked(fs.docData).mockReturnValue(of(INVITE_DOC) as unknown as ReturnType<typeof fs.docData>);
     spectator.component.ngOnInit();
     expect(spectator.component.step()).toBe('sign-in');
   });
 
   it('should set step to nickname after successful Google sign-in', async () => {
-    vi.mocked(fireAuth.signInWithPopup).mockResolvedValue({} as any);
+    vi.mocked(fireAuth.signInWithPopup).mockResolvedValue({} as unknown as Awaited<ReturnType<typeof fireAuth.signInWithPopup>>);
     await spectator.component.signIn();
     expect(spectator.component.step()).toBe('nickname');
   });
@@ -132,9 +133,9 @@ describe('InviteComponent (authenticated)', () => {
     mockRouter = { navigate: vi.fn() };
     // Must be set before createComponent() — acceptInvitationFn is a class field initializer
     mockAcceptFn = vi.fn().mockResolvedValue({ data: { success: true } });
-    vi.mocked(fns.httpsCallable).mockReturnValue(mockAcceptFn as any);
-    vi.mocked(fs.doc).mockReturnValue('mock-doc' as any);
-    vi.mocked(fs.docData).mockReturnValue(of(INVITE_DOC) as any);
+    vi.mocked(fns.httpsCallable).mockReturnValue(mockAcceptFn as unknown as ReturnType<typeof fns.httpsCallable>);
+    vi.mocked(fs.doc).mockReturnValue('mock-doc' as unknown as ReturnType<typeof fs.doc>);
+    vi.mocked(fs.docData).mockReturnValue(of(INVITE_DOC) as unknown as ReturnType<typeof fs.docData>);
 
     spectator = createComponent({ providers: [{ provide: Router, useValue: mockRouter }] });
     spectator.component.ngOnInit();

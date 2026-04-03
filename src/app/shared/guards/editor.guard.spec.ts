@@ -1,6 +1,6 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { Auth } from '@angular/fire/auth';
+import { Auth, User } from '@angular/fire/auth';
 import * as fireAuth from '@angular/fire/auth';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { firstValueFrom, Observable, of } from 'rxjs';
@@ -29,7 +29,7 @@ describe('editorGuard', () => {
   }
 
   it('should redirect and return false when no user is signed in', async () => {
-    vi.spyOn(fireAuth, 'user').mockReturnValue(of(null) as any);
+    vi.spyOn(fireAuth, 'user').mockReturnValue(of<User | null>(null));
 
     const result = await firstValueFrom(runGuard());
 
@@ -41,7 +41,7 @@ describe('editorGuard', () => {
     const mockUser = {
       getIdTokenResult: vi.fn().mockResolvedValue({ claims: { role: 'editor' } }),
     };
-    vi.spyOn(fireAuth, 'user').mockReturnValue(of(mockUser) as any);
+    vi.spyOn(fireAuth, 'user').mockReturnValue(of(mockUser as unknown as User));
 
     const result = await firstValueFrom(runGuard());
 
@@ -53,7 +53,7 @@ describe('editorGuard', () => {
     const mockUser = {
       getIdTokenResult: vi.fn().mockResolvedValue({ claims: { role: 'admin' } }),
     };
-    vi.spyOn(fireAuth, 'user').mockReturnValue(of(mockUser) as any);
+    vi.spyOn(fireAuth, 'user').mockReturnValue(of(mockUser as unknown as User));
 
     const result = await firstValueFrom(runGuard());
 
@@ -65,7 +65,7 @@ describe('editorGuard', () => {
     const mockUser = {
       getIdTokenResult: vi.fn().mockResolvedValue({ claims: { role: 'basic' } }),
     };
-    vi.spyOn(fireAuth, 'user').mockReturnValue(of(mockUser) as any);
+    vi.spyOn(fireAuth, 'user').mockReturnValue(of(mockUser as unknown as User));
 
     const result = await firstValueFrom(runGuard());
 
@@ -77,7 +77,7 @@ describe('editorGuard', () => {
     const mockUser = {
       getIdTokenResult: vi.fn().mockResolvedValue({ claims: {} }),
     };
-    vi.spyOn(fireAuth, 'user').mockReturnValue(of(mockUser) as any);
+    vi.spyOn(fireAuth, 'user').mockReturnValue(of(mockUser as unknown as User));
 
     const result = await firstValueFrom(runGuard());
 

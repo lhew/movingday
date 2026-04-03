@@ -30,11 +30,11 @@ describe('UpdatesService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(fs.collection).mockReturnValue('mock-collection' as any);
-    vi.mocked(fs.query).mockReturnValue('mock-query' as any);
-    vi.mocked(fs.doc).mockReturnValue('mock-doc' as any);
-    vi.mocked(fs.orderBy).mockReturnValue('mock-orderby' as any);
-    vi.mocked(fs.serverTimestamp).mockReturnValue('SERVER_TS' as any);
+    vi.mocked(fs.collection).mockReturnValue('mock-collection' as unknown as ReturnType<typeof fs.collection>);
+    vi.mocked(fs.query).mockReturnValue('mock-query' as unknown as ReturnType<typeof fs.query>);
+    vi.mocked(fs.doc).mockReturnValue('mock-doc' as unknown as ReturnType<typeof fs.doc>);
+    vi.mocked(fs.orderBy).mockReturnValue('mock-orderby' as unknown as ReturnType<typeof fs.orderBy>);
+    vi.mocked(fs.serverTimestamp).mockReturnValue('SERVER_TS' as unknown as ReturnType<typeof fs.serverTimestamp>);
 
     spectator = createService();
   });
@@ -45,7 +45,7 @@ describe('UpdatesService', () => {
         { id: '1', title: 'We found a mover!', content: 'Content', author: 'Leo' },
         { id: '2', title: 'Packing day', content: 'Content 2', author: 'Leo' },
       ];
-      vi.mocked(fs.collectionData).mockReturnValue(of(updates) as any);
+      vi.mocked(fs.collectionData).mockReturnValue(of(updates) as unknown as ReturnType<typeof fs.collectionData>);
 
       const result = await firstValueFrom(spectator.service.getUpdates());
 
@@ -54,7 +54,7 @@ describe('UpdatesService', () => {
     });
 
     it('should return empty array when no updates exist', async () => {
-      vi.mocked(fs.collectionData).mockReturnValue(of([]) as any);
+      vi.mocked(fs.collectionData).mockReturnValue(of([]) as unknown as ReturnType<typeof fs.collectionData>);
 
       const result = await firstValueFrom(spectator.service.getUpdates());
 
@@ -65,7 +65,7 @@ describe('UpdatesService', () => {
   describe('getUpdate()', () => {
     it('should return a single update by id', async () => {
       const update = { id: 'u-1', title: 'Hello World', content: 'Content', author: 'Leo' };
-      vi.mocked(fs.docData).mockReturnValue(of(update) as any);
+      vi.mocked(fs.docData).mockReturnValue(of(update) as unknown as ReturnType<typeof fs.docData>);
 
       const result = await firstValueFrom(spectator.service.getUpdate('u-1'));
 
@@ -74,7 +74,7 @@ describe('UpdatesService', () => {
     });
 
     it('should return undefined for a missing update', async () => {
-      vi.mocked(fs.docData).mockReturnValue(of(undefined) as any);
+      vi.mocked(fs.docData).mockReturnValue(of(undefined) as unknown as ReturnType<typeof fs.docData>);
 
       const result = await firstValueFrom(spectator.service.getUpdate('missing'));
 
@@ -84,7 +84,7 @@ describe('UpdatesService', () => {
 
   describe('createUpdate()', () => {
     it('should call addDoc with update data and publishedAt timestamp', async () => {
-      vi.mocked(fs.addDoc).mockResolvedValue({ id: 'new-update-id' } as any);
+      vi.mocked(fs.addDoc).mockResolvedValue({ id: 'new-update-id' } as unknown as Awaited<ReturnType<typeof fs.addDoc>>);
 
       const id = await spectator.service.createUpdate({
         title: 'New update',
@@ -105,7 +105,7 @@ describe('UpdatesService', () => {
     });
 
     it('should preserve optional fields like emoji and pinned', async () => {
-      vi.mocked(fs.addDoc).mockResolvedValue({ id: 'update-2' } as any);
+      vi.mocked(fs.addDoc).mockResolvedValue({ id: 'update-2' } as unknown as Awaited<ReturnType<typeof fs.addDoc>>);
 
       await spectator.service.createUpdate({
         title: 'Pinned post',

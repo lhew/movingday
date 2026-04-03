@@ -27,17 +27,17 @@ describe('UserService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(fs.collection).mockReturnValue('mock-collection' as any);
-    vi.mocked(fs.doc).mockReturnValue('mock-doc' as any);
-    vi.mocked(fs.query).mockReturnValue('mock-query' as any);
-    vi.mocked(fs.where).mockReturnValue('mock-where' as any);
+    vi.mocked(fs.collection).mockReturnValue('mock-collection' as unknown as ReturnType<typeof fs.collection>);
+    vi.mocked(fs.doc).mockReturnValue('mock-doc' as unknown as ReturnType<typeof fs.doc>);
+    vi.mocked(fs.query).mockReturnValue('mock-query' as unknown as ReturnType<typeof fs.query>);
+    vi.mocked(fs.where).mockReturnValue('mock-where' as unknown as ReturnType<typeof fs.where>);
 
     spectator = createService();
   });
 
   describe('getProfile()', () => {
     it('should return null when the document does not exist', async () => {
-      vi.mocked(fs.getDoc).mockResolvedValue({ exists: () => false } as any);
+      vi.mocked(fs.getDoc).mockResolvedValue({ exists: () => false } as unknown as Awaited<ReturnType<typeof fs.getDoc>>);
 
       const result = await spectator.service.getProfile('uid-1');
 
@@ -51,7 +51,7 @@ describe('UserService', () => {
         exists: () => true,
         id: 'uid-1',
         data: () => profile,
-      } as any);
+      } as unknown as Awaited<ReturnType<typeof fs.getDoc>>);
 
       const result = await spectator.service.getProfile('uid-1');
 
@@ -62,7 +62,7 @@ describe('UserService', () => {
   describe('streamProfile()', () => {
     it('should return an observable wrapping docData', async () => {
       const profile = { uid: 'uid-1', email: 'a@b.com', role: 'basic', authorized: false };
-      vi.mocked(fs.docData).mockReturnValue(of(profile) as any);
+      vi.mocked(fs.docData).mockReturnValue(of(profile) as unknown as ReturnType<typeof fs.docData>);
 
       const result = await firstValueFrom(spectator.service.streamProfile('uid-1'));
 
@@ -74,7 +74,7 @@ describe('UserService', () => {
   describe('listPendingUsers()', () => {
     it('should query users where authorized == false', async () => {
       const users = [{ uid: 'uid-2', authorized: false }];
-      vi.mocked(fs.collectionData).mockReturnValue(of(users) as any);
+      vi.mocked(fs.collectionData).mockReturnValue(of(users) as unknown as ReturnType<typeof fs.collectionData>);
 
       const result = await firstValueFrom(spectator.service.listPendingUsers());
 

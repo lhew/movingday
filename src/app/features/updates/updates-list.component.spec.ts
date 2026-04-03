@@ -6,6 +6,7 @@ import { provideRouter } from '@angular/router';
 import { UpdatesListComponent } from './updates-list.component';
 import { UpdatesService } from '../../shared/services/updates.service';
 import { MovingUpdate } from '../../shared/models/update.model';
+import { Timestamp } from '@angular/fire/firestore';
 
 function mockUpdate(overrides: Partial<MovingUpdate> = {}): MovingUpdate {
   return {
@@ -13,7 +14,7 @@ function mockUpdate(overrides: Partial<MovingUpdate> = {}): MovingUpdate {
     title: 'Update title',
     content: 'Content here',
     author: 'Leo',
-    publishedAt: { toDate: () => new Date('2024-01-15') } as any,
+    publishedAt: { toDate: () => new Date('2024-01-15') } as unknown as Timestamp,
     ...overrides,
   };
 }

@@ -12,7 +12,7 @@ vi.mock('@angular/fire/auth', () => ({
 }));
 
 import { AppComponent } from './app.component';
-import { Auth } from '@angular/fire/auth';
+import { Auth, User } from '@angular/fire/auth';
 import * as fireAuth from '@angular/fire/auth';
 import { UserService } from './shared/services/user.service';
 
@@ -57,7 +57,7 @@ describe('AppComponent', () => {
     });
 
     it('should reload the page after signing out', async () => {
-      const reloadSpy = vi.spyOn(component as any, 'reload').mockImplementation(() => {});
+      const reloadSpy = vi.spyOn(component as unknown as { reload(): void }, 'reload').mockImplementation(() => {});
 
       await component.signOut();
 
@@ -67,7 +67,7 @@ describe('AppComponent', () => {
 
   describe('isAdmin$', () => {
     it('should emit false when no user is signed in', async () => {
-      vi.mocked(fireAuth.user).mockReturnValue(of(null) as any);
+      vi.mocked(fireAuth.user).mockReturnValue(of<User | null>(null));
       const fixture = TestBed.createComponent(AppComponent);
       const result = await firstValueFrom(fixture.componentInstance.isAdmin$);
       expect(result).toBe(false);
@@ -78,7 +78,7 @@ describe('AppComponent', () => {
         getIdTokenResult: vi.fn().mockResolvedValue({ claims: { role: 'admin' } }),
         uid: 'uid-1',
       };
-      vi.mocked(fireAuth.user).mockReturnValue(of(mockUser) as any);
+      vi.mocked(fireAuth.user).mockReturnValue(of(mockUser as unknown as User));
       const fixture = TestBed.createComponent(AppComponent);
       const result = await firstValueFrom(fixture.componentInstance.isAdmin$);
       expect(result).toBe(true);
@@ -89,7 +89,7 @@ describe('AppComponent', () => {
         getIdTokenResult: vi.fn().mockResolvedValue({ claims: { role: 'editor' } }),
         uid: 'uid-1',
       };
-      vi.mocked(fireAuth.user).mockReturnValue(of(mockUser) as any);
+      vi.mocked(fireAuth.user).mockReturnValue(of(mockUser as unknown as User));
       const fixture = TestBed.createComponent(AppComponent);
       const result = await firstValueFrom(fixture.componentInstance.isAdmin$);
       expect(result).toBe(false);
@@ -102,7 +102,7 @@ describe('AppComponent', () => {
         getIdTokenResult: vi.fn().mockResolvedValue({ claims: { role: 'editor' } }),
         uid: 'uid-1',
       };
-      vi.mocked(fireAuth.user).mockReturnValue(of(mockUser) as any);
+      vi.mocked(fireAuth.user).mockReturnValue(of(mockUser as unknown as User));
       const fixture = TestBed.createComponent(AppComponent);
       const result = await firstValueFrom(fixture.componentInstance.isEditor$);
       expect(result).toBe(true);
@@ -113,7 +113,7 @@ describe('AppComponent', () => {
         getIdTokenResult: vi.fn().mockResolvedValue({ claims: { role: 'admin' } }),
         uid: 'uid-1',
       };
-      vi.mocked(fireAuth.user).mockReturnValue(of(mockUser) as any);
+      vi.mocked(fireAuth.user).mockReturnValue(of(mockUser as unknown as User));
       const fixture = TestBed.createComponent(AppComponent);
       const result = await firstValueFrom(fixture.componentInstance.isEditor$);
       expect(result).toBe(false);
@@ -122,7 +122,7 @@ describe('AppComponent', () => {
 
   describe('displayName$', () => {
     it('should emit null when no user is signed in', async () => {
-      vi.mocked(fireAuth.user).mockReturnValue(of(null) as any);
+      vi.mocked(fireAuth.user).mockReturnValue(of<User | null>(null));
       const fixture = TestBed.createComponent(AppComponent);
       const result = await firstValueFrom(fixture.componentInstance.displayName$);
       expect(result).toBeNull();
@@ -134,7 +134,7 @@ describe('AppComponent', () => {
         uid: 'uid-1',
         displayName: 'Leo Test',
       };
-      vi.mocked(fireAuth.user).mockReturnValue(of(mockUser) as any);
+      vi.mocked(fireAuth.user).mockReturnValue(of(mockUser as unknown as User));
       mockUserService.getProfile.mockResolvedValue({ nickname: 'cool-leo', authorized: true });
       const fixture = TestBed.createComponent(AppComponent);
       const result = await firstValueFrom(fixture.componentInstance.displayName$);
@@ -147,7 +147,7 @@ describe('AppComponent', () => {
         uid: 'uid-1',
         displayName: 'Leo Test',
       };
-      vi.mocked(fireAuth.user).mockReturnValue(of(mockUser) as any);
+      vi.mocked(fireAuth.user).mockReturnValue(of(mockUser as unknown as User));
       mockUserService.getProfile.mockResolvedValue(null);
       const fixture = TestBed.createComponent(AppComponent);
       const result = await firstValueFrom(fixture.componentInstance.displayName$);

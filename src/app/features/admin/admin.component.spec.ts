@@ -7,13 +7,15 @@ import { ItemsService } from '../../shared/services/items.service';
 import { UserService } from '../../shared/services/user.service';
 import { InviteService } from '../../shared/services/invite.service';
 import { UserProfile } from '../../shared/models/user.model';
+import { Item } from '../../shared/models/item.model';
+import { Timestamp } from '@angular/fire/firestore';
 
 const mockPendingUser: UserProfile = {
   uid: 'uid-pending',
   email: 'pending@test.com',
   role: 'basic',
   authorized: false,
-  createdAt: null as any,
+  createdAt: null as unknown as Timestamp,
 };
 
 describe('AdminComponent', () => {
@@ -105,7 +107,7 @@ describe('AdminComponent', () => {
 
   describe('openEditItem()', () => {
     it('should show the form and set editingItem to the given item', () => {
-      const item = { id: 'x', name: 'Chair' } as any;
+      const item = { id: 'x', name: 'Chair' } as unknown as Item;
       spectator.component.openEditItem(item);
       expect(spectator.component.showItemForm()).toBe(true);
       expect(spectator.component.editingItem()).toBe(item);
@@ -114,7 +116,7 @@ describe('AdminComponent', () => {
 
   describe('closeItemForm()', () => {
     it('should hide the form and clear editingItem', () => {
-      const item = { id: 'x', name: 'Chair' } as any;
+      const item = { id: 'x', name: 'Chair' } as unknown as Item;
       spectator.component.openEditItem(item);
 
       spectator.component.closeItemForm();
@@ -187,7 +189,7 @@ describe('AdminComponent', () => {
       email: 'authorized@test.com',
       role: 'basic',
       authorized: true,
-      createdAt: null as any,
+      createdAt: null as unknown as Timestamp,
     };
 
     it('should call deauthorizeUser when confirmed', async () => {

@@ -6,6 +6,7 @@ import { UserService } from '../../shared/services/user.service';
 import { InviteService } from '../../shared/services/invite.service';
 import { EditorComponent } from './editor.component';
 import { Item } from '../../shared/models/item.model';
+import { Timestamp } from '@angular/fire/firestore';
 import { UserProfile } from '../../shared/models/user.model';
 
 const mockItem: Item = {
@@ -14,7 +15,7 @@ const mockItem: Item = {
   description: 'A nice chair',
   condition: 'good',
   status: 'available',
-  createdAt: null as any,
+  createdAt: null as unknown as Timestamp,
 };
 
 const mockPendingUser: UserProfile = {
@@ -22,7 +23,7 @@ const mockPendingUser: UserProfile = {
   email: 'pending@test.com',
   role: 'basic',
   authorized: false,
-  createdAt: null as any,
+  createdAt: null as unknown as Timestamp,
 };
 
 describe('EditorComponent', () => {

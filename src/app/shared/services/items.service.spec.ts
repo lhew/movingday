@@ -40,12 +40,12 @@ describe('ItemsService', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(fs.collection).mockReturnValue('mock-collection' as any);
-    vi.mocked(fs.query).mockReturnValue('mock-query' as any);
-    vi.mocked(fs.doc).mockReturnValue('mock-doc' as any);
-    vi.mocked(fs.orderBy).mockReturnValue('mock-orderby' as any);
-    vi.mocked(fs.where).mockReturnValue('mock-where' as any);
-    vi.mocked(fs.serverTimestamp).mockReturnValue('SERVER_TS' as any);
+    vi.mocked(fs.collection).mockReturnValue('mock-collection' as unknown as ReturnType<typeof fs.collection>);
+    vi.mocked(fs.query).mockReturnValue('mock-query' as unknown as ReturnType<typeof fs.query>);
+    vi.mocked(fs.doc).mockReturnValue('mock-doc' as unknown as ReturnType<typeof fs.doc>);
+    vi.mocked(fs.orderBy).mockReturnValue('mock-orderby' as unknown as ReturnType<typeof fs.orderBy>);
+    vi.mocked(fs.where).mockReturnValue('mock-where' as unknown as ReturnType<typeof fs.where>);
+    vi.mocked(fs.serverTimestamp).mockReturnValue('SERVER_TS' as unknown as ReturnType<typeof fs.serverTimestamp>);
 
     mockAuth = { currentUser: null };
     mockUserService = { getProfile: vi.fn().mockResolvedValue({ authorized: true, nickname: undefined }) };
@@ -61,7 +61,7 @@ describe('ItemsService', () => {
   describe('getItems()', () => {
     it('should return an observable of all items', async () => {
       const items = [{ id: '1', name: 'Bookcase', status: 'available' }];
-      vi.mocked(fs.collectionData).mockReturnValue(of(items) as any);
+      vi.mocked(fs.collectionData).mockReturnValue(of(items) as unknown as ReturnType<typeof fs.collectionData>);
 
       const result = await firstValueFrom(spectator.service.getItems());
 
@@ -73,7 +73,7 @@ describe('ItemsService', () => {
   describe('getAvailableItems()', () => {
     it('should query with where status == available', async () => {
       const items = [{ id: '1', name: 'Lamp', status: 'available' }];
-      vi.mocked(fs.collectionData).mockReturnValue(of(items) as any);
+      vi.mocked(fs.collectionData).mockReturnValue(of(items) as unknown as ReturnType<typeof fs.collectionData>);
 
       const result = await firstValueFrom(spectator.service.getAvailableItems());
 
@@ -85,7 +85,7 @@ describe('ItemsService', () => {
   describe('getItem()', () => {
     it('should return a single item by id', async () => {
       const item = { id: 'abc', name: 'Chair' };
-      vi.mocked(fs.docData).mockReturnValue(of(item) as any);
+      vi.mocked(fs.docData).mockReturnValue(of(item) as unknown as ReturnType<typeof fs.docData>);
 
       const result = await firstValueFrom(spectator.service.getItem('abc'));
 
@@ -96,7 +96,7 @@ describe('ItemsService', () => {
 
   describe('createItem()', () => {
     it('should call addDoc with item data and serverTimestamp', async () => {
-      vi.mocked(fs.addDoc).mockResolvedValue({ id: 'new-id' } as any);
+      vi.mocked(fs.addDoc).mockResolvedValue({ id: 'new-id' } as unknown as Awaited<ReturnType<typeof fs.addDoc>>);
 
       const id = await spectator.service.createItem({
         name: 'Table',

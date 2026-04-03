@@ -12,6 +12,7 @@ import { ShowcaseComponent } from './showcase.component';
 import { ItemsService } from '../../shared/services/items.service';
 import { Auth } from '@angular/fire/auth';
 import { Item } from '../../shared/models/item.model';
+import { Timestamp } from '@angular/fire/firestore';
 
 function mockItem(overrides: Partial<Item> = {}): Item {
   return {
@@ -20,7 +21,7 @@ function mockItem(overrides: Partial<Item> = {}): Item {
     description: 'A nice bookcase',
     condition: 'good',
     status: 'available',
-    createdAt: {} as any,
+    createdAt: {} as unknown as Timestamp,
     ...overrides,
   };
 }
