@@ -43,7 +43,7 @@
           <!-- Image -->
           <figure class="relative aspect-square overflow-hidden bg-base-200">
             @if (item.imageUrl) {
-              <img [src]="item.imageUrl" [alt]="item.name" class="w-full h-full object-cover" [loading]="i === 0 ? 'eager' : 'lazy'" [fetchpriority]="i === 0 ? 'high' : 'auto'" />
+              <img [src]="item.imageUrl" [alt]="item.name" class="w-full h-full object-cover" [loading]="i === 0 ? 'eager' : 'lazy'" [attr.fetchpriority]="i === 0 ? 'high' : 'auto'" />
             } @else {
               <div class="w-full h-full flex items-center justify-center text-6xl">📦</div>
             }
