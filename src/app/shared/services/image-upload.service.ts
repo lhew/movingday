@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Storage } from '@angular/fire/storage';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-const MAX_DIMENSION = 1100;
+const MAX_DIMENSION = 600;
 
 @Injectable({ providedIn: 'root' })
 export class ImageUploadService {
@@ -40,7 +40,7 @@ export class ImageUploadService {
             else reject(new Error('canvas.toBlob returned null'));
           },
           'image/webp',
-          0.4
+          0.3
         );
       };
 
