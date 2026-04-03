@@ -66,22 +66,29 @@
 
             <p class="text-sm text-base-content/70 line-clamp-2">{{ item.description }}</p>
 
-            <!-- Claimed by -->
-            @if (item.status === 'claimed' && item.claimedBy) {
-              <div class="flex items-center gap-2 text-xs text-base-content/60">
-                <div class="avatar">
-                  <div class="w-5 rounded-full">
-                    @if (item.claimedBy.photoURL) {
-                      <img [src]="item.claimedBy.photoURL" />
-                    }
+              <!-- Price tag -->
+              @if (item.price !== undefined) {
+                <span class="badge badge-outline badge-sm self-start">€{{ formatPrice(item.price) }}</span>
+              } @else {
+                <span class="badge badge-success badge-outline badge-sm self-start">Free</span>
+              }
+
+              <!-- Claimed by -->
+              @if (item.status === 'claimed' && item.claimedBy) {
+                <div class="flex items-center gap-2 text-xs text-base-content/60">
+                  <div class="avatar">
+                    <div class="w-5 rounded-full">
+                      @if (item.claimedBy.photoURL) {
+                        <img [src]="item.claimedBy.photoURL" />
+                      }
+                    </div>
                   </div>
+                  <span>Claimed by {{ item.claimedBy.name }}</span>
+                  @if (isClaimedByMe(item, vm.uid)) {
+                    <span class="badge badge-xs badge-primary">you!</span>
+                  }
                 </div>
-                <span>Claimed by {{ item.claimedBy.name }}</span>
-                @if (isClaimedByMe(item, vm.uid)) {
-                  <span class="badge badge-xs badge-primary">you!</span>
-                }
-              </div>
-            }
+              }
 
             <!-- Actions -->
             <div class="card-actions mt-2 flex-col">

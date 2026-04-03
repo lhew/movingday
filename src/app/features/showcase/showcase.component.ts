@@ -82,4 +82,10 @@ export class ShowcaseComponent {
   trackById(_: number, item: Item): string {
     return item.id;
   }
+
+  formatPrice(cents: number): string {
+    const euros = Math.floor(cents / 100);
+    const centsPart = (cents % 100).toString().padStart(2, '0');
+    return `${euros},${centsPart}`;
+  }
 }

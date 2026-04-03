@@ -108,6 +108,7 @@
   body {
     font-family: var(--font-sans);
     @apply bg-base-100 text-base-content antialiased;
+    background-color: #f0f0f0;
   }
 
   h1 { @apply text-4xl font-bold; }

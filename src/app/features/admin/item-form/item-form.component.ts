@@ -187,7 +187,7 @@ export class ItemFormComponent implements OnInit {
       } else {
         await this.itemsService.createItem({
           ...base,
-          price: priceInCents,
+          ...(priceInCents !== undefined ? { price: priceInCents } : {}),
         } as Omit<Item, 'id' | 'createdAt'>);
       }
 
