@@ -12,7 +12,7 @@ import { UpdatesService } from '../../shared/services/updates.service';
       <div class="text-center mb-10">
         <h1 class="text-4xl font-bold mb-3">📰 What's Happening</h1>
         <p class="text-base-content/70 text-lg">
-          Follow along as Leo navigates the chaos of moving.
+          Follow along as Leo & Emily navigate the chaos of moving.
         </p>
       </div>
 

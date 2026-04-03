@@ -256,12 +256,12 @@ export const agent = functions
         const response = await anthropic.messages.create({
           model: 'claude-opus-4-6',
           max_tokens: 4096,
-          system: `You are Leo's Moving Day assistant. Leo is moving and you help him manage:
-1. A donation showcase — items he's giving away for free
+          system: `You are Leo & Emily's Moving Day assistant. Leo and Emily are moving together and you help them manage:
+1. A donation showcase — items they're giving away for free
 2. Moving updates — blog posts explaining what's happening
 3. The dibs system — tracking who claimed what
 
-Be friendly, efficient, and proactive. When Leo asks you to add items, write good descriptions
+Be friendly, efficient, and proactive. When asked to add items, write good descriptions
 and suggest appropriate tags. When writing updates, make them warm and engaging.
 Always confirm what you did after taking actions.`,
           messages: currentMessages,
