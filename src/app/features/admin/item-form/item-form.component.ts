@@ -1,5 +1,6 @@
 import { Component, inject, input, output, signal, OnInit, HostListener } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
+import { deleteField } from '@angular/fire/firestore';
 import { ItemsService } from '../../../shared/services/items.service';
 import { ImageUploadService } from '../../../shared/services/image-upload.service';
 import { Item, ItemCondition, ItemStatus } from '../../../shared/models/item.model';
@@ -160,7 +161,7 @@ export class ItemFormComponent implements OnInit {
       }
 
       const raw = this.form.getRawValue();
-      const data = {
+      const base = {
         name:        raw.name!.trim(),
         description: raw.description!.trim(),
         condition:   raw.condition as ItemCondition,
@@ -170,16 +171,24 @@ export class ItemFormComponent implements OnInit {
         tags:        raw.tags?.trim()
                        ? raw.tags.split(',').map(t => t.trim()).filter(Boolean)
                        : undefined,
-        price:       raw.pricing === 'priced' && raw.price
-                       ? this.parseDisplayToCents(raw.price)
-                       : undefined,
       };
+      const priceInCents = raw.pricing === 'priced' && raw.price
+        ? this.parseDisplayToCents(raw.price)
+        : undefined;
 
       const existing = this.item();
       if (existing) {
-        await this.itemsService.updateItem(existing.id, data);
+        // updateDoc rejects `undefined` — use deleteField() to remove the field
+        const updatePayload: Record<string, unknown> = {
+          ...base,
+          price: priceInCents ?? deleteField(),
+        };
+        await this.itemsService.updateItem(existing.id, updatePayload as Partial<Item>);
       } else {
-        await this.itemsService.createItem(data as Omit<Item, 'id' | 'createdAt'>);
+        await this.itemsService.createItem({
+          ...base,
+          price: priceInCents,
+        } as Omit<Item, 'id' | 'createdAt'>);
       }
 
       this.saved.emit();
