@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => ({
     coverage: {
       provider: "istanbul",
       reportsDirectory: "./coverage/movingday",
-      reporter: isCI ? ["text", "lcov"] : ["text", "html"],
+      reporter: isCI ? ["text", "lcov", "json-summary"] : ["text", "html"],
       include: ["src/**/*.ts"],
       excludeAfterRemap: true,
       exclude: [
