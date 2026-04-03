@@ -2,6 +2,18 @@ import { Component, inject, signal, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { DecimalPipe, DatePipe } from '@angular/common';
 
+export interface BuildInfo {
+  commitSha: string | null;
+  commitShort: string | null;
+  runId: string | null;
+  runNumber: number | null;
+  workflow: string | null;
+  actor: string | null;
+  ref: string | null;
+  repository: string | null;
+  serverUrl: string;
+}
+
 export interface CommitAuthor {
   name: string;
   count: number;
@@ -9,6 +21,7 @@ export interface CommitAuthor {
 
 export interface Stats {
   generatedAt: string;
+  build: BuildInfo | null;
   git: {
     totalCommits: number;
     lastCommitMsg: string;
@@ -70,6 +83,16 @@ export class StatsForNerdsComponent implements OnInit {
         this.loading.set(false);
       },
     });
+  }
+
+  commitUrl(b: BuildInfo): string | null {
+    if (!b.repository || !b.commitSha) return null;
+    return `${b.serverUrl}/${b.repository}/commit/${b.commitSha}`;
+  }
+
+  runUrl(b: BuildInfo): string | null {
+    if (!b.repository || !b.runId) return null;
+    return `${b.serverUrl}/${b.repository}/actions/runs/${b.runId}`;
   }
 
   passRate(tests: Stats['unitTests']): number {

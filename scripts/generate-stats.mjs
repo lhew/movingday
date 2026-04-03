@@ -168,6 +168,22 @@ if (existsSync(covSummaryPath)) {
   }
 }
 
+// ── Build info (GitHub Actions) ──────────────────────────────────
+process.stdout.write('  build info... ');
+const commitSha = process.env.GITHUB_SHA ?? run('git rev-parse HEAD', null) ?? null;
+const build = {
+  commitSha,
+  commitShort: commitSha ? commitSha.slice(0, 7) : null,
+  runId: process.env.GITHUB_RUN_ID ?? null,
+  runNumber: process.env.GITHUB_RUN_NUMBER ? parseInt(process.env.GITHUB_RUN_NUMBER, 10) : null,
+  workflow: process.env.GITHUB_WORKFLOW ?? null,
+  actor: process.env.GITHUB_ACTOR ?? null,
+  ref: process.env.GITHUB_REF_NAME ?? branchName,
+  repository: process.env.GITHUB_REPOSITORY ?? null,
+  serverUrl: process.env.GITHUB_SERVER_URL ?? 'https://github.com',
+};
+console.log(build.runId ? `run #${build.runNumber} (${build.commitShort})` : `local (${build.commitShort})`);
+
 // ── E2E tests ────────────────────────────────────────────────────
 process.stdout.write('  e2e... ');
 const specFilesRaw = run('find cypress/e2e -name "*.cy.ts" 2>/dev/null | wc -l', '0');
@@ -189,6 +205,7 @@ const outPath = resolve(assetsDir, 'stats.json');
 
 const stats = {
   generatedAt: new Date().toISOString(),
+  build,
   git,
   lint,
   unitTests,

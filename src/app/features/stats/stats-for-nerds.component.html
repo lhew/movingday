@@ -30,6 +30,62 @@
 
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
+      <!-- ── Build Info ────────────────────────────────────────── -->
+      @if (s.build; as b) {
+        <div class="card bg-base-200 shadow md:col-span-2">
+          <div class="card-body">
+            <h2 class="card-title text-lg">🏗 Build Info</h2>
+            <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+
+              <!-- Commit -->
+              <div class="bg-base-100 rounded-lg p-3">
+                <p class="text-xs text-base-content/50 mb-1">Commit</p>
+                @if (commitUrl(b); as url) {
+                  <a [href]="url" target="_blank" rel="noopener"
+                     class="font-mono text-sm font-bold text-primary link link-hover">
+                    {{ b.commitShort ?? '—' }}
+                  </a>
+                } @else {
+                  <span class="font-mono text-sm font-bold">{{ b.commitShort ?? '—' }}</span>
+                }
+              </div>
+
+              <!-- Branch / Ref -->
+              <div class="bg-base-100 rounded-lg p-3">
+                <p class="text-xs text-base-content/50 mb-1">Branch</p>
+                <p class="text-sm font-semibold truncate" [title]="b.ref ?? ''">{{ b.ref ?? '—' }}</p>
+              </div>
+
+              <!-- Run -->
+              <div class="bg-base-100 rounded-lg p-3">
+                <p class="text-xs text-base-content/50 mb-1">CI Run</p>
+                @if (b.runNumber && runUrl(b); as url) {
+                  <a [href]="url" target="_blank" rel="noopener"
+                     class="text-sm font-semibold text-primary link link-hover">
+                    #{{ b.runNumber }}
+                  </a>
+                } @else {
+                  <span class="text-sm font-semibold text-base-content/40 italic">local</span>
+                }
+              </div>
+
+              <!-- Triggered by -->
+              <div class="bg-base-100 rounded-lg p-3">
+                <p class="text-xs text-base-content/50 mb-1">Triggered by</p>
+                <p class="text-sm font-semibold truncate">{{ b.actor ?? '—' }}</p>
+              </div>
+
+              <!-- Workflow -->
+              <div class="bg-base-100 rounded-lg p-3">
+                <p class="text-xs text-base-content/50 mb-1">Workflow</p>
+                <p class="text-sm font-semibold truncate" [title]="b.workflow ?? ''">{{ b.workflow ?? '—' }}</p>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      }
+
       <!-- ── Git ──────────────────────────────────────────────── -->
       <div class="card bg-base-200 shadow">
         <div class="card-body gap-4">
