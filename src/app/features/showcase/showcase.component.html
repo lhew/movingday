@@ -133,8 +133,20 @@
       }
     </div>
   } @else {
-    <div class="flex justify-center py-20">
-      <span class="loading loading-dots loading-lg text-primary"></span>
+    <!-- Loading skeleton — static img src makes placeholder discoverable to preload scanner -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+      @for (_ of [1,2,3,4]; track $index) {
+        <div class="card bg-base-100 shadow-sm animate-pulse">
+          <figure class="aspect-square overflow-hidden bg-base-200">
+            <img src="/assets/placeholder.svg" alt="" class="w-full h-full object-cover opacity-30" />
+          </figure>
+          <div class="card-body p-4 gap-3">
+            <div class="h-4 bg-base-300 rounded w-3/4"></div>
+            <div class="h-3 bg-base-300 rounded w-full"></div>
+            <div class="h-3 bg-base-300 rounded w-2/3"></div>
+          </div>
+        </div>
+      }
     </div>
   }
 
