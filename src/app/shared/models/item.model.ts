@@ -10,6 +10,8 @@ export interface Item {
   condition: ItemCondition;
   imageUrl?: string;
   status: ItemStatus;
+  /** Price in euro cents (e.g. 599 = €5,99). Absent or undefined means free. */
+  price?: number;
   claimedBy?: {
     uid: string;
     name: string;

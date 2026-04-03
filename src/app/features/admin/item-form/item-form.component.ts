@@ -34,6 +34,8 @@ export class ItemFormComponent implements OnInit {
     imageUrl:    [''],
     category:    ['', [Validators.required, Validators.maxLength(40), Validators.pattern(this.categoryPattern)]],
     tags:        ['', [Validators.required, Validators.maxLength(120), Validators.pattern(this.tagsPattern)]],
+    pricing:     ['free' as 'free' | 'priced', Validators.required],
+    price:       [''],
   });
 
   // Image upload state
@@ -46,6 +48,7 @@ export class ItemFormComponent implements OnInit {
   ngOnInit() {
     const existing = this.item();
     if (existing) {
+      const hasPricing = existing.price !== undefined;
       this.form.patchValue({
         name:        existing.name,
         description: existing.description,
@@ -54,7 +57,12 @@ export class ItemFormComponent implements OnInit {
         imageUrl:    existing.imageUrl ?? '',
         category:    existing.category ?? '',
         tags:        existing.tags?.join(', ') ?? '',
+        pricing:     hasPricing ? 'priced' : 'free',
+        price:       hasPricing ? this.formatCentsToDisplay(existing.price!) : '',
       });
+      if (hasPricing) {
+        this.onPricingChange('priced');
+      }
       if (existing.imageUrl) {
         this.imagePreview.set(existing.imageUrl);
       }
@@ -78,6 +86,39 @@ export class ItemFormComponent implements OnInit {
 
   // Convenience getters for template error access
   get f() { return this.form.controls; }
+
+  onPricingChange(value: 'free' | 'priced'): void {
+    const priceControl = this.form.get('price')!;
+    if (value === 'priced') {
+      priceControl.setValidators([Validators.required, Validators.pattern(/^\d+,\d{2}$/)]);
+    } else {
+      priceControl.clearValidators();
+      priceControl.setValue('');
+    }
+    priceControl.updateValueAndValidity();
+  }
+
+  onPriceInput(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const digits = input.value.replace(/\D/g, '').replace(/^0+/, '') || '0';
+    const padded = digits.padStart(3, '0');
+    const euros = parseInt(padded.slice(0, -2), 10);
+    const cents = padded.slice(-2);
+    const formatted = `${euros},${cents}`;
+    input.value = formatted;
+    this.form.get('price')!.setValue(formatted);
+  }
+
+  private formatCentsToDisplay(cents: number): string {
+    const euros = Math.floor(cents / 100);
+    const centsPart = (cents % 100).toString().padStart(2, '0');
+    return `${euros},${centsPart}`;
+  }
+
+  private parseDisplayToCents(display: string): number {
+    const [eurosStr, centsStr] = display.split(',');
+    return parseInt(eurosStr, 10) * 100 + parseInt(centsStr || '0', 10);
+  }
 
   onFileSelected(event: Event) {
     const input = event.target as HTMLInputElement;
@@ -128,6 +169,9 @@ export class ItemFormComponent implements OnInit {
         category:    raw.category?.trim() || undefined,
         tags:        raw.tags?.trim()
                        ? raw.tags.split(',').map(t => t.trim()).filter(Boolean)
+                       : undefined,
+        price:       raw.pricing === 'priced' && raw.price
+                       ? this.parseDisplayToCents(raw.price)
                        : undefined,
       };
 

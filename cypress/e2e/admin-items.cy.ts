@@ -27,6 +27,36 @@ describe('Admin items — add new item', () => {
     cy.get('button[type="submit"]').should('not.be.disabled');
   });
 
+  it('should show price input only when "Priced" is selected', () => {
+    cy.contains('a', '📦 Items').click();
+    cy.contains('button', '+ New item').click();
+
+    cy.get('#item-price').should('not.exist');
+
+    cy.get('input[type="radio"][value="priced"]').click();
+    cy.get('#item-price').should('be.visible');
+
+    cy.get('input[type="radio"][value="free"]').click();
+    cy.get('#item-price').should('not.exist');
+  });
+
+  it('should block submit when priced is selected but price is empty', () => {
+    cy.contains('a', '📦 Items').click();
+    cy.contains('button', '+ New item').click();
+
+    cy.get('input[formControlName="name"]').type('Fancy Lamp');
+    cy.get('textarea[formControlName="description"]').type('A very bright and modern lamp for your home.');
+    cy.get('input[formControlName="category"]').type('Lighting');
+    cy.get('input[formControlName="tags"]').type('lamp,light');
+
+    cy.get('input[type="radio"][value="priced"]').click();
+    cy.get('button[type="submit"]').should('be.disabled');
+
+    // Typing a price should unblock
+    cy.get('#item-price').type('599');
+    cy.get('button[type="submit"]').should('not.be.disabled');
+  });
+
   it('should create a new item from the modal form', () => {
     const itemName = 'Wooden Side Table';
 

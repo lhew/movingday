@@ -66,6 +66,44 @@
         </div>
       </div>
 
+      <!-- Pricing -->
+      <div class="form-control flex flex-col">
+        <label class="label"><span class="label-text font-medium">Pricing *</span></label>
+        <div class="flex gap-6">
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" class="radio radio-primary" formControlName="pricing"
+                   value="free" (change)="onPricingChange('free')" />
+            <span class="label-text">Free</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer">
+            <input type="radio" class="radio radio-primary" formControlName="pricing"
+                   value="priced" (change)="onPricingChange('priced')" />
+            <span class="label-text">Priced</span>
+          </label>
+        </div>
+      </div>
+
+      @if (f['pricing'].value === 'priced') {
+        <div class="form-control flex flex-col">
+          <label class="label" for="item-price"><span class="label-text font-medium">Price *</span></label>
+          <label class="input input-bordered flex items-center gap-1 w-48"
+                 [class.input-error]="f['price'].invalid && f['price'].touched">
+            <span class="text-base-content/60">€</span>
+            <input id="item-price" type="text"
+                   class="grow"
+                   placeholder="0,00"
+                   [value]="f['price'].value"
+                   (input)="onPriceInput($event)"
+                   (blur)="f['price'].markAsTouched()" />
+          </label>
+          @if (f['price'].touched && f['price'].errors?.['required']) {
+            <p class="label-text-alt text-error mt-1">Price is required.</p>
+          } @else if (f['price'].touched && f['price'].errors?.['pattern']) {
+            <p class="label-text-alt text-error mt-1">Enter a valid price (e.g. 5,99).</p>
+          }
+        </div>
+      }
+
       <!-- Image upload -->
       <div class="form-control">
         <label class="label"><span class="label-text font-medium">Image</span></label>

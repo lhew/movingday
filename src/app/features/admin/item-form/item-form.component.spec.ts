@@ -18,6 +18,12 @@ const mockItem: Item = {
   createdAt: { toDate: () => new Date() } as Timestamp,
 };
 
+const mockPricedItem: Item = {
+  ...mockItem,
+  id: 'item-2',
+  price: 599,
+};
+
 describe('ItemFormComponent', () => {
   let spectator: Spectator<ItemFormComponent>;
   let mockItemsService: Partial<ItemsService>;
@@ -95,6 +101,26 @@ describe('ItemFormComponent', () => {
 
     it('isEditing should be true', () => {
       expect(spectator.component.isEditing).toBe(true);
+    });
+
+    it('should default pricing to "free" when item has no price', () => {
+      expect(spectator.component.form.value.pricing).toBe('free');
+    });
+  });
+
+  describe('edit mode (priced item)', () => {
+    beforeEach(() => {
+      spectator = createComponent({ props: { item: mockPricedItem } });
+      mockItemsService = spectator.inject(ItemsService) as Partial<ItemsService>;
+    });
+
+    it('should set pricing to "priced" and format the price', () => {
+      expect(spectator.component.form.value.pricing).toBe('priced');
+      expect(spectator.component.form.value.price).toBe('5,99');
+    });
+
+    it('price field should have required validator set', () => {
+      expect(spectator.component.form.get('price')?.errors).toBeNull(); // value "5,99" is valid
     });
   });
 
@@ -202,6 +228,69 @@ describe('ItemFormComponent', () => {
     });
   });
 
+  // ── pricing ──────────────────────────────────────────────────────────────────
+
+  describe('pricing', () => {
+    it('should default pricing to "free"', () => {
+      expect(spectator.component.form.value.pricing).toBe('free');
+    });
+
+    it('price field should have no validators when pricing is "free"', () => {
+      spectator.component.onPricingChange('free');
+      spectator.component.form.get('price')!.setValue('');
+      expect(spectator.component.form.get('price')?.errors).toBeNull();
+    });
+
+    it('price field should be required when pricing is "priced"', () => {
+      spectator.component.onPricingChange('priced');
+      expect(spectator.component.form.get('price')?.errors?.['required']).toBeTruthy();
+    });
+
+    it('price field should be invalid with an incorrect format', () => {
+      spectator.component.onPricingChange('priced');
+      spectator.component.form.get('price')!.setValue('5.99');
+      expect(spectator.component.form.get('price')?.errors?.['pattern']).toBeTruthy();
+    });
+
+    it('price field should be valid with correct euro format', () => {
+      spectator.component.onPricingChange('priced');
+      spectator.component.form.get('price')!.setValue('5,99');
+      expect(spectator.component.form.get('price')?.errors).toBeNull();
+    });
+
+    it('onPricingChange("free") should clear the price value', () => {
+      spectator.component.onPricingChange('priced');
+      spectator.component.form.get('price')!.setValue('5,99');
+      spectator.component.onPricingChange('free');
+      expect(spectator.component.form.get('price')!.value).toBe('');
+    });
+
+    it('onPriceInput should format "599" as "5,99"', () => {
+      spectator.component.onPricingChange('priced');
+      const input = document.createElement('input');
+      input.value = '599';
+      spectator.component.onPriceInput({ target: input } as unknown as Event);
+      expect(input.value).toBe('5,99');
+      expect(spectator.component.form.get('price')!.value).toBe('5,99');
+    });
+
+    it('onPriceInput should format a single digit as leading-zero cents', () => {
+      spectator.component.onPricingChange('priced');
+      const input = document.createElement('input');
+      input.value = '9';
+      spectator.component.onPriceInput({ target: input } as unknown as Event);
+      expect(input.value).toBe('0,09');
+    });
+
+    it('onPriceInput should handle "1250" as "12,50"', () => {
+      spectator.component.onPricingChange('priced');
+      const input = document.createElement('input');
+      input.value = '1250';
+      spectator.component.onPriceInput({ target: input } as unknown as Event);
+      expect(input.value).toBe('12,50');
+    });
+  });
+
   // ── save() — create ──────────────────────────────────────────────────────────
 
   describe('save() — create', () => {
@@ -261,6 +350,24 @@ describe('ItemFormComponent', () => {
       expect(mockItemsService.createItem).toHaveBeenCalledWith(
         expect.objectContaining({ imageUrl: 'https://storage.example.com/img.jpg' })
       );
+    });
+
+    it('should include price in cents when pricing is "priced"', async () => {
+      spectator.component.form.patchValue({ pricing: 'priced' });
+      spectator.component.onPricingChange('priced');
+      spectator.component.form.get('price')!.setValue('5,99');
+
+      await spectator.component.save();
+
+      const call = vi.mocked(mockItemsService.createItem!).mock.calls[0][0] as Item;
+      expect(call.price).toBe(599);
+    });
+
+    it('should omit price when pricing is "free"', async () => {
+      await spectator.component.save();
+
+      const call = vi.mocked(mockItemsService.createItem!).mock.calls[0][0] as Item;
+      expect(call.price).toBeUndefined();
     });
 
     it('should set an error and not emit saved when createItem throws', async () => {
