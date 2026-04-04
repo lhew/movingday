@@ -1,0 +1,180 @@
+[
+  {
+    "route": "Showcase",
+    "impact": "serious",
+    "id": "color-contrast",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "help": "Elements must meet minimum color contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=axeAPI",
+    "nodes": [
+      [
+        "h1"
+      ],
+      [
+        ".text-lg"
+      ],
+      [
+        ".tab-active"
+      ],
+      [
+        ".tab:nth-child(2)"
+      ],
+      [
+        ".tab:nth-child(3)"
+      ],
+      [
+        ".item-card:nth-child(1) > .card-body.p-4.gap-2 > .items-start.justify-between.gap-2 > h2"
+      ],
+      [
+        ".item-card:nth-child(1) > .card-body.p-4.gap-2 > .line-clamp-2.text-sm.text-base-content\\/70"
+      ],
+      [
+        ".item-card:nth-child(1) > .card-body.p-4.gap-2 > .badge-outline.self-start.badge-success"
+      ],
+      [
+        ".item-card:nth-child(1) > .card-body.p-4.gap-2 > .card-actions.mt-2.flex-col > .text-base-content\\/50.text-center.text-xs"
+      ],
+      [
+        ".item-card:nth-child(2) > .card-body.p-4.gap-2 > .items-start.justify-between.gap-2 > h2"
+      ],
+      [
+        ".item-card:nth-child(2) > .card-body.p-4.gap-2 > .line-clamp-2.text-sm.text-base-content\\/70"
+      ],
+      [
+        ".item-card:nth-child(2) > .card-body.p-4.gap-2 > .badge-outline.self-start.badge-success"
+      ],
+      [
+        ".item-card:nth-child(2) > .card-body.p-4.gap-2 > .text-base-content\\/60.text-xs.items-center > span"
+      ],
+      [
+        ".item-card:nth-child(2) > .card-body.p-4.gap-2 > .card-actions.mt-2.flex-col > .text-base-content\\/50.text-center.text-xs"
+      ],
+      [
+        ".item-card:nth-child(3) > .card-body.p-4.gap-2 > .items-start.justify-between.gap-2 > h2"
+      ],
+      [
+        ".item-card:nth-child(3) > .card-body.p-4.gap-2 > .line-clamp-2.text-sm.text-base-content\\/70"
+      ],
+      [
+        ".item-card:nth-child(3) > .card-body.p-4.gap-2 > .badge-outline.self-start.badge-success"
+      ],
+      [
+        ".item-card:nth-child(3) > .card-body.p-4.gap-2 > .card-actions.mt-2.flex-col > .text-base-content\\/50.text-center.text-xs"
+      ],
+      [
+        ".item-card:nth-child(4) > .card-body.p-4.gap-2 > .items-start.justify-between.gap-2 > h2"
+      ],
+      [
+        ".item-card:nth-child(4) > .card-body.p-4.gap-2 > .line-clamp-2.text-sm.text-base-content\\/70"
+      ],
+      [
+        ".item-card:nth-child(4) > .card-body.p-4.gap-2 > .badge-outline.self-start.badge-success"
+      ],
+      [
+        ".item-card:nth-child(4) > .card-body.p-4.gap-2 > .card-actions.mt-2.flex-col > .text-base-content\\/50.text-center.text-xs"
+      ],
+      [
+        ".item-card:nth-child(5) > .card-body.p-4.gap-2 > .items-start.justify-between.gap-2 > h2"
+      ],
+      [
+        ".item-card:nth-child(5) > .card-body.p-4.gap-2 > .line-clamp-2.text-sm.text-base-content\\/70"
+      ],
+      [
+        ".item-card:nth-child(5) > .card-body.p-4.gap-2 > .badge-outline.self-start.badge-success"
+      ],
+      [
+        ".item-card:nth-child(5) > .card-body.p-4.gap-2 > .text-base-content\\/60.text-xs.items-center > span"
+      ],
+      [
+        ".item-card:nth-child(5) > .card-body.p-4.gap-2 > .card-actions.mt-2.flex-col > .text-base-content\\/50.text-center.text-xs"
+      ],
+      [
+        ".link"
+      ]
+    ]
+  },
+  {
+    "route": "Updates list",
+    "impact": "serious",
+    "id": "color-contrast",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "help": "Elements must meet minimum color contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=axeAPI",
+    "nodes": [
+      [
+        ".link"
+      ]
+    ]
+  },
+  {
+    "route": "Stats for nerds",
+    "impact": "serious",
+    "id": "color-contrast",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "help": "Elements must meet minimum color contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=axeAPI",
+    "nodes": [
+      [
+        ".text-base-content\\/60"
+      ],
+      [
+        "code"
+      ],
+      [
+        ".link"
+      ]
+    ]
+  },
+  {
+    "route": "Invite (invalid id)",
+    "impact": "serious",
+    "id": "color-contrast",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "help": "Elements must meet minimum color contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=axeAPI",
+    "nodes": [
+      [
+        ".link"
+      ]
+    ]
+  },
+  {
+    "route": "Invite (invalid id)",
+    "impact": "moderate",
+    "id": "page-has-heading-one",
+    "description": "Ensure that the page, or at least one of its frames contains a level-one heading",
+    "help": "Page should contain a level-one heading",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/page-has-heading-one?application=axeAPI",
+    "nodes": [
+      [
+        "html"
+      ]
+    ]
+  },
+  {
+    "route": "Not found",
+    "impact": "serious",
+    "id": "color-contrast",
+    "description": "Ensure the contrast between foreground and background colors meets WCAG 2 AA minimum contrast ratio thresholds",
+    "help": "Elements must meet minimum color contrast ratio thresholds",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/color-contrast?application=axeAPI",
+    "nodes": [
+      [
+        ".link"
+      ]
+    ]
+  },
+  {
+    "route": "Not found",
+    "impact": "moderate",
+    "id": "page-has-heading-one",
+    "description": "Ensure that the page, or at least one of its frames contains a level-one heading",
+    "help": "Page should contain a level-one heading",
+    "helpUrl": "https://dequeuniversity.com/rules/axe/4.11/page-has-heading-one?application=axeAPI",
+    "nodes": [
+      [
+        "html"
+      ]
+    ]
+  }
+]

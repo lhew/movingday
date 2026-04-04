@@ -56,6 +56,15 @@ Cypress.Commands.add('checkPageA11y', (context?) => {
         message: `[${v.impact}] ${v.id}: ${v.description}`,
         consoleProps: () => ({ impact: v.impact, nodes }),
       });
+      cy.task('logA11yViolation', {
+        route: Cypress.currentTest.titlePath[1],
+        impact: v.impact,
+        id: v.id,
+        description: v.description,
+        help: v.help,
+        helpUrl: v.helpUrl,
+        nodes: v.nodes.map((n) => n.target),
+      });
     });
-  });
+  }, true); // skipFailures=true so all routes are collected
 });

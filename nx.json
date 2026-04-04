@@ -79,6 +79,9 @@
         "{workspaceRoot}/.eslintignore",
         "{workspaceRoot}/eslint.config.mjs"
       ]
+    },
+    "build-storybook": {
+      "cache": true
     }
   },
   "generators": {
