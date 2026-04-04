@@ -6,7 +6,14 @@ const templateParser = require('@angular-eslint/template-parser');
 
 module.exports = tseslint.config(
   {
-    ignores: ['dist/', 'coverage/', '.nx/', '.angular/', 'node_modules/', 'functions/lib/'],
+    ignores: [
+      'dist/',
+      'coverage/',
+      '.nx/',
+      '.angular/',
+      'node_modules/',
+      'functions/lib/',
+    ],
   },
   // TypeScript source files
   {
@@ -15,15 +22,24 @@ module.exports = tseslint.config(
     plugins: { '@angular-eslint': angular },
     languageOptions: {
       parserOptions: {
-        project: ['tsconfig.eslint.json'],
+        project: ['tsconfig.eslint.json', '.storybook/tsconfig.json'],
         tsconfigRootDir: __dirname,
       },
     },
     rules: {
       '@typescript-eslint/no-explicit-any': 'warn',
-      '@typescript-eslint/no-unused-vars': ['error', { argsIgnorePattern: '^_' }],
-      '@angular-eslint/component-selector': ['error', { type: 'element', prefix: 'app', style: 'kebab-case' }],
-      '@angular-eslint/directive-selector': ['error', { type: 'attribute', prefix: 'app', style: 'camelCase' }],
+      '@typescript-eslint/no-unused-vars': [
+        'error',
+        { argsIgnorePattern: '^_' },
+      ],
+      '@angular-eslint/component-selector': [
+        'error',
+        { type: 'element', prefix: 'app', style: 'kebab-case' },
+      ],
+      '@angular-eslint/directive-selector': [
+        'error',
+        { type: 'attribute', prefix: 'app', style: 'camelCase' },
+      ],
     },
   },
   // Angular HTML templates

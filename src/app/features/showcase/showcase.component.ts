@@ -1,11 +1,13 @@
 import { Component, inject, signal } from '@angular/core';
 import { AsyncPipe, NgClass } from '@angular/common';
 import { Auth, user } from '@angular/fire/auth';
+import { Timestamp } from '@angular/fire/firestore';
 import { ItemsService } from '../../shared/services/items.service';
+import { UserService } from '../../shared/services/user.service';
 import { Item, CONDITION_LABELS, CONDITION_BADGE_CLASS } from '../../shared/models/item.model';
 import { InlineAlertComponent } from '../../shared/components/inline-alert/inline-alert.component';
 import { combineLatest, of } from 'rxjs';
-import { catchError, map } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-showcase',
@@ -16,11 +18,13 @@ import { catchError, map } from 'rxjs/operators';
 export class ShowcaseComponent {
   private itemsService = inject(ItemsService);
   private auth = inject(Auth);
+  private userService = inject(UserService);
 
   readonly claimingId = signal<string | null>(null);
   readonly claimError = signal<{ itemId: string; message: string } | null>(null);
   readonly filter = signal<'all' | 'available' | 'claimed'>('all');
   readonly loadError = signal<string | null>(null);
+  readonly selectedItem = signal<Item | null>(null);
 
   private readonly currentUser$ = user(this.auth);
 
@@ -35,6 +39,10 @@ export class ShowcaseComponent {
     ),
     uid: this.currentUser$.pipe(map((u) => u?.uid ?? null)),
     isSignedIn: this.currentUser$.pipe(map((u) => !!u)),
+    isAuthorized: this.currentUser$.pipe(
+      switchMap((u) => (u ? this.userService.streamProfile(u.uid) : of(null))),
+      map((profile) => !!profile?.authorized),
+    ),
   });
 
   readonly conditionLabels = CONDITION_LABELS;
@@ -87,5 +95,18 @@ export class ShowcaseComponent {
     const euros = Math.floor(cents / 100);
     const centsPart = (cents % 100).toString().padStart(2, '0');
     return `${euros},${centsPart}`;
+  }
+
+  openDetail(item: Item): void {
+    this.selectedItem.set(item);
+  }
+
+  closeDetail(): void {
+    this.selectedItem.set(null);
+  }
+
+  formatDate(ts: Timestamp | undefined): string {
+    if (!ts) return '—';
+    return ts.toDate().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
   }
 }

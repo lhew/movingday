@@ -86,6 +86,29 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"]
     },
+    "storybook": {
+      "executor": "@storybook/angular:start-storybook",
+      "options": {
+        "configDir": ".storybook",
+        "browserTarget": "movingday:build",
+        "compodoc": false,
+        "port": 4400
+      }
+    },
+    "build-storybook": {
+      "executor": "@storybook/angular:build-storybook",
+      "options": {
+        "configDir": ".storybook",
+        "browserTarget": "movingday:build",
+        "compodoc": false,
+        "outputDir": "dist/storybook/movingday"
+      },
+      "configurations": {
+        "ci": {
+          "quiet": true
+        }
+      }
+    },
     "e2e": {
       "executor": "@nx/cypress:cypress",
       "options": {

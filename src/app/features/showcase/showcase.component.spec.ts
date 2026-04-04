@@ -10,6 +10,7 @@ vi.mock('@angular/fire/auth', () => ({
 
 import { ShowcaseComponent } from './showcase.component';
 import { ItemsService } from '../../shared/services/items.service';
+import { UserService } from '../../shared/services/user.service';
 import { Auth } from '@angular/fire/auth';
 import { Item } from '../../shared/models/item.model';
 import { Timestamp } from '@angular/fire/firestore';
@@ -29,6 +30,7 @@ function mockItem(overrides: Partial<Item> = {}): Item {
 describe('ShowcaseComponent', () => {
   let spectator: Spectator<ShowcaseComponent>;
   let mockItemsService: Partial<ItemsService>;
+  let mockUserService: Partial<UserService>;
 
   const createComponent = createComponentFactory({
     component: ShowcaseComponent,
@@ -44,9 +46,14 @@ describe('ShowcaseComponent', () => {
       releaseDibs: vi.fn().mockResolvedValue(undefined),
     };
 
+    mockUserService = {
+      streamProfile: vi.fn().mockReturnValue(of(undefined)),
+    };
+
     spectator = createComponent({
       providers: [
         { provide: ItemsService, useValue: mockItemsService },
+        { provide: UserService, useValue: mockUserService },
         { provide: Auth, useValue: {} },
       ],
     });
@@ -281,6 +288,52 @@ describe('ShowcaseComponent', () => {
       await expect(spectator.component.releaseDibs(item)).rejects.toThrow();
 
       expect(spectator.component.claimingId()).toBeNull();
+    });
+  });
+
+  describe('openDetail()', () => {
+    it('should set selectedItem to the given item', () => {
+      const item = mockItem({ id: 'detail-item' });
+      spectator.component.openDetail(item);
+      expect(spectator.component.selectedItem()).toEqual(item);
+    });
+  });
+
+  describe('closeDetail()', () => {
+    it('should clear selectedItem', () => {
+      spectator.component.openDetail(mockItem());
+      spectator.component.closeDetail();
+      expect(spectator.component.selectedItem()).toBeNull();
+    });
+  });
+
+  describe('formatDate()', () => {
+    it('should return "—" when timestamp is undefined', () => {
+      expect(spectator.component.formatDate(undefined)).toBe('—');
+    });
+
+    it('should format a Timestamp to a readable date string', () => {
+      const mockTimestamp = {
+        toDate: () => new Date('2025-12-25T12:00:00Z'),
+      } as unknown as Timestamp;
+      const result = spectator.component.formatDate(mockTimestamp);
+      expect(result).toContain('25');
+      expect(result).toContain('Dec');
+      expect(result).toContain('2025');
+    });
+  });
+
+  describe('formatPrice()', () => {
+    it('should format cents to euro display string', () => {
+      expect(spectator.component.formatPrice(599)).toBe('5,99');
+    });
+
+    it('should format zero cents', () => {
+      expect(spectator.component.formatPrice(0)).toBe('0,00');
+    });
+
+    it('should format whole euros', () => {
+      expect(spectator.component.formatPrice(1000)).toBe('10,00');
     });
   });
 });

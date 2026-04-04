@@ -98,36 +98,41 @@
                   (dismiss)="claimError.set(null)"
                 />
               }
+              <button (click)="openDetail(item)" class="btn btn-ghost btn-xs w-full">🔍 Details</button>
               @if (vm.isSignedIn) {
-                <!-- Release my own claim -->
-                @if (isClaimedByMe(item, vm.uid)) {
-                  <button (click)="releaseDibs(item)"
-                          [disabled]="claimingId() === item.id"
-                          class="btn btn-sm btn-outline btn-error w-full">
-                    @if (claimingId() === item.id) {
-                      <span class="loading loading-spinner loading-xs"></span>
-                    }
-                    Release my dibs
-                  </button>
-                }
+                @if (!vm.isAuthorized) {
+                  <p class="text-xs text-warning/80 w-full text-center">⏳ Waiting for admin approval</p>
+                } @else {
+                  <!-- Release my own claim -->
+                  @if (isClaimedByMe(item, vm.uid)) {
+                    <button (click)="releaseDibs(item)"
+                            [disabled]="claimingId() === item.id"
+                            class="btn btn-sm btn-outline btn-error w-full">
+                      @if (claimingId() === item.id) {
+                        <span class="loading loading-spinner loading-xs"></span>
+                      }
+                      Release my dibs
+                    </button>
+                  }
 
-                <!-- Call dibs -->
-                @if (item.status === 'available') {
-                  <button (click)="callDibs(item)"
-                          [disabled]="claimingId() === item.id"
-                          class="btn btn-sm btn-primary w-full">
-                    @if (claimingId() === item.id) {
-                      <span class="loading loading-spinner loading-xs"></span>
-                    }
-                    🙋 Call dibs!
-                  </button>
-                }
+                  <!-- Call dibs -->
+                  @if (item.status === 'available') {
+                    <button (click)="callDibs(item)"
+                            [disabled]="claimingId() === item.id"
+                            class="btn btn-sm btn-primary w-full">
+                      @if (claimingId() === item.id) {
+                        <span class="loading loading-spinner loading-xs"></span>
+                      }
+                      🙋 Call dibs!
+                    </button>
+                  }
 
-                <!-- Someone else claimed it -->
-                @if (item.status === 'claimed' && !isClaimedByMe(item, vm.uid)) {
-                  <button disabled class="btn btn-sm btn-disabled w-full">
-                    Already claimed
-                  </button>
+                  <!-- Someone else claimed it -->
+                  @if (item.status === 'claimed' && !isClaimedByMe(item, vm.uid)) {
+                    <button disabled class="btn btn-sm btn-disabled w-full">
+                      Already claimed
+                    </button>
+                  }
                 }
               } @else {
                 <p class="text-xs text-base-content/50 w-full text-center">
@@ -159,3 +164,91 @@
 
 </div>
 
+<!-- ── Item detail modal ───────────────────────────────────────── -->
+@if (selectedItem()) {
+  @let detail = selectedItem()!;
+  <div class="modal modal-open">
+    <div class="modal-box overflow-y-auto" style="width: calc(100vh - 2em); max-width: 50em">
+
+      <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
+              type="button" aria-label="Close" (click)="closeDetail()">✕</button>
+
+      <!-- Image -->
+      @if (detail.imageUrl) {
+        <figure class="aspect-video overflow-hidden rounded-lg bg-base-200 mb-5">
+          <img [src]="detail.imageUrl" [alt]="detail.name" class="w-full h-full object-cover" />
+        </figure>
+      } @else {
+        <div class="aspect-video rounded-lg bg-base-200 flex items-center justify-center text-6xl mb-5">📦</div>
+      }
+
+      <!-- Name + badges -->
+      <div class="flex items-start justify-between gap-3 mb-3 flex-wrap">
+        <h2 class="text-2xl font-bold">{{ detail.name }}</h2>
+        <div class="flex gap-2 flex-wrap shrink-0">
+          <span class="badge badge-sm" [ngClass]="conditionBadge[detail.condition]">
+            {{ conditionLabels[detail.condition] }}
+          </span>
+          <span class="badge badge-sm"
+                [class.badge-success]="detail.status === 'available'"
+                [class.badge-warning]="detail.status === 'claimed'"
+                [class.badge-neutral]="detail.status === 'gone'">
+            {{ detail.status }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Price -->
+      @if (detail.price !== undefined) {
+        <p class="text-lg font-semibold text-primary mb-3">€{{ formatPrice(detail.price) }}</p>
+      } @else {
+        <span class="badge badge-success badge-outline mb-3">Free</span>
+      }
+
+      <!-- Description -->
+      <p class="text-base-content/80 leading-relaxed mb-5">{{ detail.description }}</p>
+
+      <!-- Meta grid -->
+      <div class="grid grid-cols-2 gap-x-6 gap-y-3 text-sm mb-4">
+        @if (detail.category) {
+          <div>
+            <span class="text-base-content/50 block text-xs uppercase tracking-wide">Category</span>
+            <span class="font-medium">{{ detail.category }}</span>
+          </div>
+        }
+        <div>
+          <span class="text-base-content/50 block text-xs uppercase tracking-wide">Added</span>
+          <span class="font-medium">{{ formatDate(detail.createdAt) }}</span>
+        </div>
+      </div>
+
+      <!-- Tags -->
+      @if (detail.tags?.length) {
+        <div class="flex flex-wrap gap-1 mb-4">
+          @for (tag of detail.tags!; track tag) {
+            <span class="badge badge-ghost badge-sm">{{ tag }}</span>
+          }
+        </div>
+      }
+
+      <!-- Claimed by -->
+      @if (detail.status === 'claimed' && detail.claimedBy) {
+        <div class="flex items-center gap-3 p-3 rounded-lg bg-base-200 mt-2">
+          @if (detail.claimedBy.photoURL) {
+            <div class="avatar">
+              <div class="w-8 rounded-full">
+                <img [src]="detail.claimedBy.photoURL" [alt]="detail.claimedBy.name" />
+              </div>
+            </div>
+          }
+          <div>
+            <p class="text-sm font-medium">Claimed by {{ detail.claimedBy.name }}</p>
+            <p class="text-xs text-base-content/50">{{ detail.claimedBy.email }}</p>
+          </div>
+        </div>
+      }
+
+    </div>
+    <div class="modal-backdrop" (click)="closeDetail()"></div>
+  </div>
+}
