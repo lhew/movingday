@@ -9,6 +9,5 @@ export default defineConfig({
     viewportHeight: 720,
     video: false,
     screenshotOnRunFailure: true,
-    browser: 'chrome',
   },
 });

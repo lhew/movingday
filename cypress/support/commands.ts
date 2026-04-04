@@ -19,6 +19,13 @@ declare namespace Cypress {
 
     /** Sign in as an admin user (role=admin claim). MUST be called AFTER cy.visit(). */
     signInAsAdminUser(): Chainable<void>;
+
+    /**
+     * Inject axe-core and assert zero accessibility violations on the current page.
+     * @param context  CSS selector or axe ElementContext to scope the check (optional).
+     * @param options  axe RunOptions passed to checkA11y (optional).
+     */
+    checkPageA11y(context?: string | Node): Chainable<void>;
   }
 }
 
@@ -32,4 +39,23 @@ Cypress.Commands.add('signInAsAdminUser', () => {
 
 Cypress.Commands.add('signOutTestUser', () => {
   cy.window().then((win) => win.__cy.signOut());
+});
+
+/**
+ * Inject axe-core and assert zero a11y violations.
+ * Call AFTER cy.visit() and after the page has finished loading.
+ * Violations are printed to the Cypress command log for easy debugging.
+ */
+Cypress.Commands.add('checkPageA11y', (context?) => {
+  cy.injectAxe();
+  cy.checkA11y(context, undefined, (violations) => {
+    violations.forEach((v) => {
+      const nodes = v.nodes.map((n) => n.target.join(', ')).join('\n  ');
+      Cypress.log({
+        name: 'a11y violation',
+        message: `[${v.impact}] ${v.id}: ${v.description}`,
+        consoleProps: () => ({ impact: v.impact, nodes }),
+      });
+    });
+  });
 });

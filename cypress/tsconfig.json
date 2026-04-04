@@ -1,7 +1,7 @@
 {
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
-    "types": ["cypress", "node"],
+    "types": ["cypress", "node", "axe-core"],
     "lib": ["ES2022", "dom"],
     "module": "ES2022",
     "moduleResolution": "node",
