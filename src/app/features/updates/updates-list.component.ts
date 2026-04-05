@@ -38,7 +38,7 @@ import { UpdatesService } from '../../shared/services/updates.service';
                 </div>
                 <h2 class="card-title text-xl">{{ update.title }}</h2>
                 <p class="text-base-content/70 text-sm line-clamp-2">{{ update.summary ?? update.content }}</p>
-                <div class="text-xs text-base-content/40 mt-2">
+                <div class="text-xs text-base-content/65 mt-2">
                   {{ update.publishedAt?.toDate() | date:'MMMM d, y' }}
                 </div>
               </div>

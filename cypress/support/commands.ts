@@ -66,5 +66,5 @@ Cypress.Commands.add('checkPageA11y', (context?) => {
         nodes: v.nodes.map((n) => n.target),
       });
     });
-  }, true); // skipFailures=true so all routes are collected
+  }, false); // skipFailures=false — zero violations required
 });

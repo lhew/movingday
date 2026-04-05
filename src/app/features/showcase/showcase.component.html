@@ -12,9 +12,9 @@
   <!-- Filter tabs -->
   <div class="flex justify-center mb-8">
     <div class="tabs tabs-boxed">
-      <a class="tab" [class.tab-active]="filter() === 'all'" (click)="setFilter('all')">All</a>
-      <a class="tab" [class.tab-active]="filter() === 'available'" (click)="setFilter('available')">✅ Available</a>
-      <a class="tab" [class.tab-active]="filter() === 'claimed'" (click)="setFilter('claimed')">🤝 Claimed</a>
+      <a class="tab text-base-content" [class.tab-active]="filter() === 'all'" (click)="setFilter('all')">All</a>
+      <a class="tab text-base-content" [class.tab-active]="filter() === 'available'" (click)="setFilter('available')">✅ Available</a>
+      <a class="tab text-base-content" [class.tab-active]="filter() === 'claimed'" (click)="setFilter('claimed')">🤝 Claimed</a>
     </div>
   </div>
 
@@ -70,12 +70,12 @@
               @if (item.price !== undefined) {
                 <span class="badge badge-outline badge-sm self-start">€{{ formatPrice(item.price) }}</span>
               } @else {
-                <span class="badge badge-success badge-outline badge-sm self-start">Free</span>
+                <span class="badge badge-success badge-sm self-start">Free</span>
               }
 
               <!-- Claimed by -->
               @if (item.status === 'claimed' && item.claimedBy) {
-                <div class="flex items-center gap-2 text-xs text-base-content/60">
+                <div class="flex items-center gap-2 text-xs text-base-content/75">
                   <div class="avatar">
                     <div class="w-5 rounded-full">
                       @if (item.claimedBy.photoURL) {
@@ -135,7 +135,7 @@
                   }
                 }
               } @else {
-                <p class="text-xs text-base-content/50 w-full text-center">
+                <p class="text-xs text-base-content/70 w-full text-center">
                   Sign in to call dibs
                 </p>
               }

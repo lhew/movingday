@@ -1,16 +1,17 @@
-<div class="min-h-screen flex items-center justify-center p-4">
+<div class="min-h-screen flex flex-col items-center justify-center gap-6 p-4">
+  <h1 class="text-xl font-bold">📦 Moving Day</h1>
   <div class="card bg-base-100 shadow-xl w-full max-w-md">
     <div class="card-body gap-4">
 
       @if (step() === 'loading') {
-        <div class="flex justify-center py-8">
+        <div class="flex flex-col items-center justify-center py-8 gap-4">
           <span class="loading loading-spinner loading-lg"></span>
         </div>
       }
 
       @if (step() === 'error') {
         <div class="text-center py-4">
-          <h2 class="card-title justify-center text-error mb-2">Invalid Invite</h2>
+          <h2 class="card-title justify-center text-base-content mb-2">⚠️ Invalid Invite</h2>
           <p class="text-base-content/70">{{ errorMessage() }}</p>
           <a routerLink="/showcase" class="btn btn-primary mt-4">Browse Free Stuff</a>
         </div>
