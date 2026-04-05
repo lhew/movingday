@@ -123,5 +123,5 @@ jobs:
       # Firebase SDK emulator connectors are configured but never exercised.
 
       - name: Run E2E tests
-        run: npx nx e2e --browser=chrome
+        run: npx nx e2e --browser=chrome --env CI=true
 
