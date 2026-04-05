@@ -1,4 +1,8 @@
 import type { StorybookConfig } from '@storybook/angular';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const config: StorybookConfig = {
   stories: ['../src/app/**/*.@(mdx|stories.@(js|jsx|ts|tsx))'],
@@ -7,10 +11,14 @@ const config: StorybookConfig = {
     name: '@storybook/angular',
     options: {},
   },
+  webpackFinal: async (config) => {
+    config.resolve ??= {};
+    config.resolve.alias = {
+      ...config.resolve.alias,
+      '@angular/fire/firestore': path.resolve(__dirname, './firebase-firestore.mock.ts'),
+    };
+    return config;
+  },
 };
 
 export default config;
-
-// To customize your Vite configuration you can use the viteFinal field.
-// Check https://storybook.js.org/docs/react/builders/vite#configuration
-// and https://nx.dev/recipes/storybook/custom-builder-configs

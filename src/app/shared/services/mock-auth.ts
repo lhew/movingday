@@ -77,6 +77,7 @@ export const mockAuth = {
 
 /** Called once at app bootstrap (Cypress mode only). */
 export function installCypressAuthHelpers(): void {
+  if (typeof window === 'undefined') return;
   Object.assign(window, {
     __cy: {
       signIn: (role: MockRole) => {

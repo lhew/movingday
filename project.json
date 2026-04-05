@@ -7,12 +7,13 @@
   "tags": [],
   "targets": {
     "build": {
-      "executor": "@angular-builders/custom-esbuild:application",
+      "executor": "@nx/angular:application",
       "outputs": ["{options.outputPath}"],
       "options": {
         "outputPath": "dist/movingday",
         "index": "src/index.html",
         "browser": "src/main.ts",
+        "server": "src/main.server.ts",
         "polyfills": ["zone.js"],
         "tsConfig": "tsconfig.app.json",
         "assets": [
@@ -60,7 +61,7 @@
       "defaultConfiguration": "production"
     },
     "serve": {
-      "executor": "@angular-builders/custom-esbuild:dev-server",
+      "executor": "@angular-devkit/build-angular:dev-server",
       "configurations": {
         "production": {
           "buildTarget": "movingday:build:production"

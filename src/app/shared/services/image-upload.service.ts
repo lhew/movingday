@@ -1,4 +1,5 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { Storage } from '@angular/fire/storage';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
@@ -7,12 +8,16 @@ const MAX_DIMENSION = 600;
 @Injectable({ providedIn: 'root' })
 export class ImageUploadService {
   private storage = inject(Storage);
+  private platformId = inject(PLATFORM_ID);
 
   /**
    * Resize an image file so neither dimension exceeds MAX_DIMENSION,
    * then encode as JPEG via canvas.
    */
   resizeImage(file: File): Promise<Blob> {
+    if (!isPlatformBrowser(this.platformId)) {
+      return Promise.reject(new Error('resizeImage is only available in the browser'));
+    }
     return new Promise((resolve, reject) => {
       const img = new Image();
       const objectUrl = URL.createObjectURL(file);

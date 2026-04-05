@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, afterNextRender } from '@angular/core';
 import { AsyncPipe, NgClass } from '@angular/common';
 import { Auth, user } from '@angular/fire/auth';
 import { Timestamp } from '@angular/fire/firestore';
@@ -17,7 +17,7 @@ import { catchError, map, switchMap } from 'rxjs/operators';
 })
 export class ShowcaseComponent {
   private itemsService = inject(ItemsService);
-  private auth = inject(Auth);
+  private auth = inject(Auth, { optional: true });
   private userService = inject(UserService);
 
   readonly claimingId = signal<string | null>(null);
@@ -25,8 +25,9 @@ export class ShowcaseComponent {
   readonly filter = signal<'all' | 'available' | 'claimed'>('all');
   readonly loadError = signal<string | null>(null);
   readonly selectedItem = signal<Item | null>(null);
+  readonly showDeferred = signal(false);
 
-  private readonly currentUser$ = user(this.auth);
+  private readonly currentUser$ = this.auth ? user(this.auth) : of(null);
 
   readonly vm$ = combineLatest({
     items: this.itemsService.getItems().pipe(
@@ -47,6 +48,13 @@ export class ShowcaseComponent {
 
   readonly conditionLabels = CONDITION_LABELS;
   readonly conditionBadge = CONDITION_BADGE_CLASS;
+
+  constructor() {
+    // After the next render, enable deferred content
+    afterNextRender(() => {
+      this.showDeferred.set(true);
+    });
+  }
 
   async callDibs(item: Item) {
     if (item.status !== 'available') return;

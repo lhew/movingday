@@ -1,6 +1,6 @@
-import { Component, inject } from '@angular/core';
+import { Component, inject, PLATFORM_ID } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { AsyncPipe } from '@angular/common';
+import { AsyncPipe, DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { Auth, user, signInWithPopup, signOut, GoogleAuthProvider } from '@angular/fire/auth';
 import { from, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
@@ -13,10 +13,12 @@ import { UserService } from '../../services/user.service';
   templateUrl: './auth-menu.component.html',
 })
 export class AuthMenuComponent {
-  private auth = inject(Auth);
+  private auth = inject(Auth, { optional: true });
   private userService = inject(UserService);
+  private doc = inject(DOCUMENT);
+  private platformId = inject(PLATFORM_ID);
 
-  readonly user$ = user(this.auth);
+  readonly user$ = this.auth ? user(this.auth) : of(null);
   readonly isSignedIn$ = this.user$.pipe(map((u) => !!u));
   readonly userPhoto$ = this.user$.pipe(map((u) => u?.photoURL));
 
@@ -37,11 +39,17 @@ export class AuthMenuComponent {
   );
 
   signIn() {
-    signInWithPopup(this.auth, new GoogleAuthProvider());
+    if (this.auth) {
+      signInWithPopup(this.auth, new GoogleAuthProvider());
+    }
   }
 
   async signOut() {
-    await signOut(this.auth);
-    location.reload();
+    if (this.auth) {
+      await signOut(this.auth);
+      if (isPlatformBrowser(this.platformId)) {
+        this.doc.defaultView?.location.reload();
+      }
+    }
   }
 }

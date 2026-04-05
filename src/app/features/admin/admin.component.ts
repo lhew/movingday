@@ -1,5 +1,5 @@
-import { Component, inject, signal, ViewChild } from '@angular/core';
-import { AsyncPipe, SlicePipe } from '@angular/common';
+import { Component, inject, signal, ViewChild, PLATFORM_ID } from '@angular/core';
+import { AsyncPipe, SlicePipe, DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { ItemsService } from '../../shared/services/items.service';
 import { UserService } from '../../shared/services/user.service';
 import { InviteService } from '../../shared/services/invite.service';
@@ -20,6 +20,10 @@ export const canDeactivateAdmin: CanDeactivateFn<AdminComponent> = (component) =
 export class AdminComponent {
   @ViewChild(ItemFormComponent) private itemFormRef?: ItemFormComponent;
 
+  private readonly doc = inject(DOCUMENT);
+  private readonly platformId = inject(PLATFORM_ID);
+  readonly origin = this.doc.location?.origin ?? '';
+
   readonly itemsService = inject(ItemsService);
   readonly userService = inject(UserService);
   readonly inviteService = inject(InviteService);
@@ -36,7 +40,6 @@ export class AdminComponent {
   inviteRole = signal<'editor' | 'basic'>('basic');
   generatedLink = signal('');
   authorizingUid = signal<string | null>(null);
-  readonly window = window;
 
   setTab(tab: 'items' | 'invitations' | 'users') {
     this.activeTab.set(tab);
@@ -61,14 +64,16 @@ export class AdminComponent {
     this.generatingInvite.set(true);
     try {
       const id = await this.inviteService.createInvitation(this.inviteRole());
-      this.generatedLink.set(`${window.location.origin}/invite/${id}`);
+      this.generatedLink.set(`${this.origin}/invite/${id}`);
     } finally {
       this.generatingInvite.set(false);
     }
   }
 
   async copyLink(link: string): Promise<void> {
-    await navigator.clipboard.writeText(link);
+    if (isPlatformBrowser(this.platformId)) {
+      await navigator.clipboard.writeText(link);
+    }
   }
 
   async deleteInvite(id: string): Promise<void> {

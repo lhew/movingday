@@ -1,5 +1,7 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { ApplicationConfig, provideZoneChangeDetection, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { provideRouter, withViewTransitions } from '@angular/router';
+import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { getApp } from 'firebase/app';
@@ -28,14 +30,23 @@ if (useCypressMocks) {
 export const appConfig: ApplicationConfig = {
   providers: [
     provideZoneChangeDetection({ eventCoalescing: true }),
+    provideClientHydration(withEventReplay()),
     provideRouter(appRoutes, withViewTransitions()),
     provideAnimationsAsync(),
     provideHttpClient(withFetch()),
 
-    // Firebase providers
-    provideFirebaseApp(() => initializeApp(environment.firebase)),
+    // Firebase providers - only initialize on browser
+    provideFirebaseApp(() => {
+      if (!isPlatformBrowser(inject(PLATFORM_ID))) {
+        return null as unknown as ReturnType<typeof initializeApp>;
+      }
+      return initializeApp(environment.firebase);
+    }),
 
     provideFirestore(() => {
+      if (!isPlatformBrowser(inject(PLATFORM_ID))) {
+        return null as unknown as ReturnType<typeof getFirestore>;
+      }
       if (environment.useEmulators) {
         // experimentalForceLongPolling switches Firestore from WebChannel streaming
         // to complete HTTP responses. Cypress's proxy buffers chunked streams, so
@@ -55,24 +66,32 @@ export const appConfig: ApplicationConfig = {
     }),
 
     provideAuth(() => {
+      if (!isPlatformBrowser(inject(PLATFORM_ID))) {
+        return null as unknown as Auth;
+      }
       const auth = getAuth();
       // In Cypress mode auth is fully mocked — no emulator needed.
       if (environment.useEmulators && !useCypressMocks) {
         connectAuthEmulator(auth, environment.emulators.authUrl, { disableWarnings: true });
         // Expose auth helpers on window so manual dev/CI E2E runs can sign in/out
         // from within the AUT's JS context.
-        Object.assign(window, {
-          __cy: {
-            signIn: (email: string, password: string) =>
-              signInWithEmailAndPassword(auth, email, password),
-            signOut: () => signOut(auth),
-          },
-        });
+        if (typeof window !== 'undefined') {
+          Object.assign(window, {
+            __cy: {
+              signIn: (email: string, password: string) =>
+                signInWithEmailAndPassword(auth, email, password),
+              signOut: () => signOut(auth),
+            },
+          });
+        }
       }
       return auth;
     }),
 
     provideStorage(() => {
+      if (!isPlatformBrowser(inject(PLATFORM_ID))) {
+        return null as unknown as ReturnType<typeof getStorage>;
+      }
       const storage = getStorage();
       if (environment.useEmulators) {
         connectStorageEmulator(
@@ -85,6 +104,9 @@ export const appConfig: ApplicationConfig = {
     }),
 
     provideFunctions(() => {
+      if (!isPlatformBrowser(inject(PLATFORM_ID))) {
+        return null as unknown as ReturnType<typeof getFunctions>;
+      }
       const functions = getFunctions();
       if (environment.useEmulators) {
         connectFunctionsEmulator(
