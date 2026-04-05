@@ -47,8 +47,7 @@
             }
           ],
           "prerender": {
-            "browserTarget": "movingday:build:production",
-            "routes": ["/showcase"]
+            "routesFile": "prerender-routes.txt"
           }
         },
         "development": {

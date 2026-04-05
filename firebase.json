@@ -30,6 +30,14 @@
     ],
     "rewrites": [
       {
+        "source": "/storybook",
+        "destination": "/storybook/index.html"
+      },
+      {
+        "source": "/storybook/**",
+        "destination": "/storybook/index.html"
+      },
+      {
         "source": "**",
         "destination": "/index.html"
       }

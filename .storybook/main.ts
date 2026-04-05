@@ -17,6 +17,9 @@ const config: StorybookConfig = {
       ...config.resolve.alias,
       '@angular/fire/firestore': path.resolve(__dirname, './firebase-firestore.mock.ts'),
     };
+    // Serve storybook under /storybook/ when deployed alongside the main app
+    config.output ??= {};
+    config.output.publicPath = '/storybook/';
     return config;
   },
 };
