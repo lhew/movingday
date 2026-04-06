@@ -91,9 +91,6 @@ jobs:
       - name: Build app
         run: npx nx build --configuration=production
 
-      - name: Add modulepreload hints
-        run: node scripts/add-preloads.mjs
-
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
         with:

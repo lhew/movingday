@@ -72,10 +72,6 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: npx nx build --configuration=production
 
-      - name: Add modulepreload hints
-        if: github.event_name == 'workflow_dispatch'
-        run: node scripts/add-preloads.mjs
-
       # ── Build Functions ──────────────────────────────────────────────────────
       - name: Install Functions dependencies
         run: npm ci --prefix functions
