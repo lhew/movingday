@@ -40,10 +40,10 @@ jobs:
         if: github.event_name == 'workflow_run'
         uses: actions/download-artifact@v4
         with:
-          name: dist
+          name: deploy-dist
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          path: dist/
+          path: dist/movingday/
 
       # ── workflow_dispatch path: build fresh with injected env secrets ────────
       - name: Inject environment values into environment.prod.ts
@@ -83,6 +83,16 @@ jobs:
       - name: Build Functions (TypeScript → JS)
         run: npm run build --prefix functions
 
+      # ── Copy Angular dist into Functions for SSR ─────────────────────────────
+      # The ssrApp Cloud Function dynamically imports server.mjs from
+      # functions/dist/movingday/server/. Copying browser/ too lets express.static
+      # fall back to local files (though Firebase Hosting CDN handles statics first).
+      - name: Copy Angular dist into Functions for SSR
+        run: |
+          mkdir -p functions/dist/movingday
+          cp -r dist/movingday/server functions/dist/movingday/
+          cp -r dist/movingday/browser functions/dist/movingday/
+
       # ── Deploy ───────────────────────────────────────────────────────────────
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -90,8 +100,6 @@ jobs:
           credentials_json: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
 
       - name: Deploy to Firebase (Hosting + Functions)
-        env:
-          FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
         run: |
           npx firebase-tools deploy \
             --only hosting,functions \
