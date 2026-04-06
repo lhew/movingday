@@ -6,4 +6,8 @@ export const showcaseRoutes: Routes = [
     loadComponent: () =>
       import('./showcase.component').then((m) => m.ShowcaseComponent),
   },
+  {
+    path: '**',
+    redirectTo: '',
+  },
 ];

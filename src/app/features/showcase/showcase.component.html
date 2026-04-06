@@ -19,7 +19,7 @@
   </div>
 
   <!-- Items grid (deferred) -->
-  @defer (when showDeferred) {
+
     @if (loadError()) {
       <div class="flex flex-col items-center justify-center py-20 gap-4">
         <p class="text-5xl">😕</p>
@@ -38,22 +38,18 @@
       }
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        @for (item of filtered; track item.id; let i = $index) {
+        @for (item of filtered; track item.id) {
           <div class="item-card" [class.opacity-60]="item.status === 'gone'">
 
             <!-- Image -->
             <figure class="relative aspect-square overflow-hidden bg-base-200">
               @if (item.imageUrl) {
-                @if (i < 4) {
-                  <!-- First 4 images: prefetch eagerly -->
-                  <img [src]="item.imageUrl" [alt]="item.name" class="w-full h-full object-cover" loading="eager" [attr.fetchpriority]="'high'" />
-                } @else {
-                  <!-- Remaining images: lazy load with defer when scrolled into view -->
-                  @defer (on viewport; prefetch on idle) {
-                    <img [src]="item.imageUrl" [alt]="item.name" class="w-full h-full object-cover" loading="lazy" />
-                  } @placeholder {
-                    <div class="w-full h-full bg-base-300 animate-pulse"></div>
-                  }
+                <!-- All images deferred until in viewport; first 4 are preloaded
+                     via <link rel="preload"> injected into <head> during SSR -->
+                @defer (on viewport; prefetch on idle) {
+                  <img [src]="item.imageUrl" [alt]="item.name" class="w-full h-full object-cover" />
+                } @placeholder {
+                  <div class="w-full h-full bg-base-300 animate-pulse"></div>
                 }
               } @else {
                 <div class="w-full h-full flex items-center justify-center text-6xl">📦</div>
@@ -172,23 +168,7 @@
         }
       </div>
     }
-  } @placeholder {
-    <!-- Loading skeleton — shown during defer prefetch -->
-    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-      @for (_ of [1,2,3,4]; track $index) {
-        <div class="card bg-base-100 shadow-sm animate-pulse">
-          <figure class="aspect-square overflow-hidden bg-base-200">
-            <img src="/assets/placeholder.svg" alt="" class="w-full h-full object-cover opacity-30" />
-          </figure>
-          <div class="card-body p-4 gap-3">
-            <div class="h-4 bg-base-300 rounded w-3/4"></div>
-            <div class="h-3 bg-base-300 rounded w-full"></div>
-            <div class="h-3 bg-base-300 rounded w-2/3"></div>
-          </div>
-        </div>
-      }
-    </div>
-  }
+
 
 </div>
 

@@ -1,13 +1,14 @@
-import { Component, inject, signal, afterNextRender } from '@angular/core';
-import { AsyncPipe, NgClass } from '@angular/common';
+import { Component, inject, signal, afterNextRender, PLATFORM_ID } from '@angular/core';
+import { AsyncPipe, NgClass, DOCUMENT, isPlatformServer } from '@angular/common';
 import { Auth, user } from '@angular/fire/auth';
 import { Timestamp } from '@angular/fire/firestore';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ItemsService } from '../../shared/services/items.service';
 import { UserService } from '../../shared/services/user.service';
 import { Item, CONDITION_LABELS, CONDITION_BADGE_CLASS } from '../../shared/models/item.model';
 import { InlineAlertComponent } from '../../shared/components/inline-alert/inline-alert.component';
 import { combineLatest, of } from 'rxjs';
-import { catchError, map, switchMap } from 'rxjs/operators';
+import { catchError, map, switchMap, take } from 'rxjs/operators';
 
 @Component({
   selector: 'app-showcase',
@@ -49,11 +50,34 @@ export class ShowcaseComponent {
   readonly conditionLabels = CONDITION_LABELS;
   readonly conditionBadge = CONDITION_BADGE_CLASS;
 
+  private readonly doc = inject(DOCUMENT);
+  private readonly platformId = inject(PLATFORM_ID);
+
   constructor() {
-    // After the next render, enable deferred content
     afterNextRender(() => {
       this.showDeferred.set(true);
     });
+
+    // On the server, inject <link rel="preload"> for the first 4 item images
+    // so they appear in the SSR HTML and are discovered by the browser preload
+    // scanner before any JS executes — maximising Lighthouse LCP score.
+    if (isPlatformServer(this.platformId)) {
+      this.itemsService.getItems().pipe(
+        take(1),
+        takeUntilDestroyed(),
+      ).subscribe(items => {
+        items
+          .filter(item => item.imageUrl)
+          .slice(0, 4)
+          .forEach(item => {
+            const link = this.doc.createElement('link');
+            link.rel = 'preload';
+            link.as = 'image';
+            link.href = item.imageUrl!;
+            this.doc.head.appendChild(link);
+          });
+      });
+    }
   }
 
   async callDibs(item: Item) {
