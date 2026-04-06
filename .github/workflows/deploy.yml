@@ -33,7 +33,7 @@ jobs:
       # workflow_run: only firebase-tools needed — dist artifact already built
       - name: Install firebase-tools
         if: github.event_name == 'workflow_run'
-        run: npm install -g firebase-tools
+        run: npm install -g firebase-tools@15
 
       # ── workflow_run path: reuse the artifact built (and tested) by CI ──────
       - name: Download build artifact from CI

@@ -1,4 +1,5 @@
-import * as functions from 'firebase-functions';
+import { onRequest, onCall, HttpsError } from 'firebase-functions/v2/https';
+import { auth } from 'firebase-functions/v1';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import Anthropic from '@anthropic-ai/sdk';
@@ -8,7 +9,7 @@ const db = admin.firestore();
 
 // ── Auth trigger: auto-register new users as basic/unauthorized ─────────────
 
-export const onUserCreate = functions.auth.user().onCreate(async (user) => {
+export const onUserCreate = auth.user().onCreate(async (user) => {
   await db.collection('users').doc(user.uid).set({
     uid: user.uid,
     email: user.email ?? '',
@@ -21,17 +22,17 @@ export const onUserCreate = functions.auth.user().onCreate(async (user) => {
 
 // ── acceptInvitation: claim an invite, set nickname, update claims ──────────
 
-export const acceptInvitation = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError('unauthenticated', 'Must be signed in.');
+export const acceptInvitation = onCall(async (request) => {
+  if (!request.auth) {
+    throw new HttpsError('unauthenticated', 'Must be signed in.');
   }
 
-  const { inviteId, nickname } = data as { inviteId: string; nickname: string };
-  const uid = context.auth.uid;
-  const email = context.auth.token.email ?? '';
+  const { inviteId, nickname } = request.data as { inviteId: string; nickname: string };
+  const uid = request.auth.uid;
+  const email = request.auth.token['email'] as string ?? '';
 
   if (!nickname || nickname.length > 32 || !/^[a-z0-9-]+$/.test(nickname)) {
-    throw new functions.https.HttpsError(
+    throw new HttpsError(
       'invalid-argument',
       'Nickname must be non-empty, max 32 chars, lowercase alphanumeric and hyphens only.'
     );
@@ -41,12 +42,12 @@ export const acceptInvitation = functions.https.onCall(async (data, context) => 
   const inviteSnap = await inviteRef.get();
 
   if (!inviteSnap.exists) {
-    throw new functions.https.HttpsError('not-found', 'Invitation not found.');
+    throw new HttpsError('not-found', 'Invitation not found.');
   }
 
   const invite = inviteSnap.data()!;
   if (invite['usedBy']) {
-    throw new functions.https.HttpsError('already-exists', 'Invitation already used.');
+    throw new HttpsError('already-exists', 'Invitation already used.');
   }
 
   const role: string = invite['role'];
@@ -84,19 +85,19 @@ export const acceptInvitation = functions.https.onCall(async (data, context) => 
 
 // ── createInvitation: admin creates a shareable invite link ────────────────
 
-export const createInvitation = functions.https.onCall(async (data, context) => {
-  if (context.auth?.token['role'] !== 'admin') {
-    throw new functions.https.HttpsError('permission-denied', 'Admin only.');
+export const createInvitation = onCall(async (request) => {
+  if (!request.auth || request.auth.token['role'] !== 'admin') {
+    throw new HttpsError('permission-denied', 'Admin only.');
   }
 
-  const { role } = data as { role: 'editor' | 'basic' };
+  const { role } = request.data as { role: 'editor' | 'basic' };
   if (role !== 'editor' && role !== 'basic') {
-    throw new functions.https.HttpsError('invalid-argument', 'Role must be editor or basic.');
+    throw new HttpsError('invalid-argument', 'Role must be editor or basic.');
   }
 
   const ref = await db.collection('invitations').add({
     role,
-    createdBy: context.auth.uid,
+    createdBy: request.auth.uid,
     createdAt: FieldValue.serverTimestamp(),
   });
 
@@ -105,13 +106,13 @@ export const createInvitation = functions.https.onCall(async (data, context) => 
 
 // ── authorizeUser: admin/editor authorizes a pending basic user ────────────
 
-export const authorizeUser = functions.https.onCall(async (data, context) => {
-  const callerRole = context.auth?.token['role'];
+export const authorizeUser = onCall(async (request) => {
+  const callerRole = request.auth?.token['role'];
   if (callerRole !== 'admin' && callerRole !== 'editor') {
-    throw new functions.https.HttpsError('permission-denied', 'Admin or editor only.');
+    throw new HttpsError('permission-denied', 'Admin or editor only.');
   }
 
-  const { uid } = data as { uid: string };
+  const { uid } = request.data as { uid: string };
   const userRecord = await admin.auth().getUser(uid);
   const currentClaims = userRecord.customClaims ?? {};
 
@@ -123,13 +124,13 @@ export const authorizeUser = functions.https.onCall(async (data, context) => {
 
 // ── deauthorizeUser: admin blocks/revokes access from a user ─────────────
 
-export const deauthorizeUser = functions.https.onCall(async (data, context) => {
-  const callerRole = context.auth?.token['role'];
+export const deauthorizeUser = onCall(async (request) => {
+  const callerRole = request.auth?.token['role'];
   if (callerRole !== 'admin') {
-    throw new functions.https.HttpsError('permission-denied', 'Admin only.');
+    throw new HttpsError('permission-denied', 'Admin only.');
   }
 
-  const { uid } = data as { uid: string };
+  const { uid } = request.data as { uid: string };
   const userRecord = await admin.auth().getUser(uid);
   const currentClaims = userRecord.customClaims ?? {};
 
@@ -209,9 +210,9 @@ async function executeTool(
 
 // ── Cloud Function ──────────────────────────────────────────────────────────
 
-export const agent = functions
-  .runWith({ secrets: ['ANTHROPIC_API_KEY'], timeoutSeconds: 120 })
-  .https.onRequest(async (req, res) => {
+export const agent = onRequest(
+  { secrets: ['ANTHROPIC_API_KEY'], timeoutSeconds: 120 },
+  async (req, res) => {
     // CORS
     res.set('Access-Control-Allow-Origin', '*');
     res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
@@ -330,9 +331,9 @@ async function getSsrHandler(): Promise<AnyHandler> {
   return _ssrHandler;
 }
 
-export const ssrApp = functions
-  .runWith({ memory: '512MB', timeoutSeconds: 60 })
-  .https.onRequest(async (req, res) => {
+export const ssrApp = onRequest(
+  { memory: '512MiB', timeoutSeconds: 60 },
+  async (req, res) => {
   const handler = await getSsrHandler();
   await handler(req, res);
 });
