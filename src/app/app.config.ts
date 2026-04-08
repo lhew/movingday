@@ -3,6 +3,7 @@ import { provideRouter, withViewTransitions } from '@angular/router';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideNgIconsConfig } from '@ng-icons/core';
 
 import { appRoutes } from './app.routes';
 
@@ -16,5 +17,6 @@ export const appConfig: ApplicationConfig = {
     provideRouter(appRoutes, withViewTransitions({ skipInitialTransition: true })),
     provideAnimationsAsync(),
     provideHttpClient(withFetch()),
+    provideNgIconsConfig({ size: '1.2em' }),
   ],
 };

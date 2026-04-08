@@ -69,11 +69,14 @@ export class ShowcaseComponent {
         items
           .filter(item => item.imageUrl)
           .slice(0, 4)
-          .forEach(item => {
+          .forEach((item, index) => {
             const link = this.doc.createElement('link');
             link.rel = 'preload';
             link.as = 'image';
             link.href = item.imageUrl!;
+            if (index === 0) {
+              link.setAttribute('fetchpriority', 'high');
+            }
             this.doc.head.appendChild(link);
           });
       });

@@ -4,6 +4,7 @@ import {
   isMainModule,
   writeResponseToNodeResponse,
 } from '@angular/ssr/node';
+import compression from 'compression';
 import express from 'express';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -12,6 +13,7 @@ const serverDistFolder = dirname(fileURLToPath(import.meta.url));
 const browserDistFolder = join(serverDistFolder, '../browser');
 
 const app = express();
+app.use(compression());
 const angularApp = new AngularNodeAppEngine({
   // In production Firebase Hosting validates the domain at the CDN level before requests
   // reach the Cloud Function, so we use '*' to allow all hosts here.

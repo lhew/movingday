@@ -38,18 +38,23 @@
       }
 
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        @for (item of filtered; track item.id) {
+        @for (item of filtered; track item.id; let isFirst = $first) {
           <div class="item-card" [class.opacity-60]="item.status === 'gone'">
 
             <!-- Image -->
             <figure class="relative aspect-square overflow-hidden bg-base-200">
               @if (item.imageUrl) {
-                <!-- All images deferred until in viewport; first 4 are preloaded
-                     via <link rel="preload"> injected into <head> during SSR -->
-                @defer (on viewport; prefetch on idle) {
-                  <img [src]="item.imageUrl" [alt]="item.name" class="w-full h-full object-cover" />
-                } @placeholder {
-                  <div class="w-full h-full bg-base-300 animate-pulse"></div>
+                @if (isFirst) {
+                  <!-- LCP image: load eagerly with high fetch priority, no defer -->
+                  <img [src]="item.imageUrl" [alt]="item.name" class="w-full h-full object-cover" fetchpriority="high" loading="eager" />
+                } @else {
+                  <!-- Remaining images deferred until in viewport; first 4 are preloaded
+                       via <link rel="preload"> injected into <head> during SSR -->
+                  @defer (on viewport; prefetch on idle) {
+                    <img [src]="item.imageUrl" [alt]="item.name" class="w-full h-full object-cover" />
+                  } @placeholder {
+                    <div class="w-full h-full bg-base-300 animate-pulse"></div>
+                  }
                 }
               } @else {
                 <div class="w-full h-full flex items-center justify-center text-6xl">📦</div>
