@@ -44,7 +44,7 @@ export class ImageUploadService {
             if (blob) resolve(blob);
             else reject(new Error('canvas.toBlob returned null'));
           },
-          'image/webp',
+          'image/avif',
           0.3
         );
       };
@@ -62,9 +62,9 @@ export class ImageUploadService {
    * Upload a blob to Firebase Storage under items/ and return the download URL.
    */
   async uploadItemImage(blob: Blob): Promise<string> {
-    const filename = `${crypto.randomUUID()}.webp`;
+    const filename = `${crypto.randomUUID()}.avif`;
     const imageRef = ref(this.storage, `items/${filename}`);
-    await uploadBytes(imageRef, blob, { contentType: 'image/webp' });
+    await uploadBytes(imageRef, blob, { contentType: 'image/avif' });
     return getDownloadURL(imageRef);
   }
 }

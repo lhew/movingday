@@ -10,7 +10,7 @@ vi.mock('firebase/storage', async (importOriginal) => {
     ...actual,
     ref: vi.fn(() => ({})),
     uploadBytes: vi.fn(() => Promise.resolve({})),
-    getDownloadURL: vi.fn(() => Promise.resolve('https://storage.example.com/img.webp')),
+    getDownloadURL: vi.fn(() => Promise.resolve('https://storage.example.com/img.avif')),
   };
 });
 
@@ -119,6 +119,16 @@ describe('ImageUploadService', () => {
       expect(getCanvas()?.height).toBe(300);
     });
 
+    it('should encode the image as avif at 30% quality', async () => {
+      const { getCanvas } = setupResizeMock(400, 400);
+      const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
+
+      await spectator.service.resizeImage(file);
+
+      const canvas = getCanvas() as unknown as { toBlob: ReturnType<typeof vi.fn> };
+      expect(canvas.toBlob).toHaveBeenCalledWith(expect.any(Function), 'image/avif', 0.3);
+    });
+
     it('should reject when canvas.toBlob returns null', async () => {
       setupResizeMock(100, 100, null);
       const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
@@ -171,22 +181,22 @@ describe('ImageUploadService', () => {
     it('should call uploadBytes and return the download URL', async () => {
       const { uploadBytes, getDownloadURL } = await import('firebase/storage');
 
-      const blob = new Blob(['data'], { type: 'image/webp' });
+      const blob = new Blob(['data'], { type: 'image/avif' });
       const url = await spectator.service.uploadItemImage(blob);
 
       expect(uploadBytes).toHaveBeenCalled();
       expect(getDownloadURL).toHaveBeenCalled();
-      expect(url).toBe('https://storage.example.com/img.webp');
+      expect(url).toBe('https://storage.example.com/img.avif');
     });
 
     it('should upload under the items/ path', async () => {
       const { ref } = await import('firebase/storage');
 
-      const blob = new Blob(['data'], { type: 'image/webp' });
+      const blob = new Blob(['data'], { type: 'image/avif' });
       await spectator.service.uploadItemImage(blob);
 
       const callArg = (ref as ReturnType<typeof vi.fn>).mock.calls[0][1] as string;
-      expect(callArg).toMatch(/^items\/.*\.webp$/);
+      expect(callArg).toMatch(/^items\/.*\.avif$/);
     });
   });
 });
