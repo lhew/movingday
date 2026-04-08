@@ -11,7 +11,7 @@ import { readFileSync, writeFileSync, readdirSync } from 'fs';
 import { join } from 'path';
 
 const distDir = 'dist/movingday/browser';
-const indexPath = join(distDir, 'index.html');
+const indexPath = join(distDir, 'index.csr.html');
 
 const files = readdirSync(distDir);
 const bundles = files.filter(
