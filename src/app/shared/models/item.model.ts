@@ -26,11 +26,19 @@ export interface Item {
 }
 
 export const CONDITION_LABELS: Record<ItemCondition, string> = {
-  'new': '✨ Brand new',
-  'like-new': '💫 Like new',
-  'good': '👍 Good',
-  'fair': '🙂 Fair',
-  'worn': '😅 Worn',
+  'new': 'Brand new',
+  'like-new': 'Like new',
+  'good': 'Good',
+  'fair': 'Fair',
+  'worn': 'Worn',
+};
+
+export const CONDITION_ICONS: Record<ItemCondition, string> = {
+  'new': 'cssTrophy',
+  'like-new': 'cssSmileMouthOpen',
+  'good': 'cssSmile',
+  'fair': 'cssSmileNeutral',
+  'worn': 'cssSmileSad',
 };
 
 export const CONDITION_BADGE_CLASS: Record<ItemCondition, string> = {

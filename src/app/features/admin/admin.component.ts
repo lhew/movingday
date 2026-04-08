@@ -7,6 +7,8 @@ import { Item } from '../../shared/models/item.model';
 import { UserProfile } from '../../shared/models/user.model';
 import { ItemFormComponent } from './item-form/item-form.component';
 import { CanDeactivateFn } from '@angular/router';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { cssBox, cssLink, cssUser } from '@ng-icons/css.gg';
 
 export const canDeactivateAdmin: CanDeactivateFn<AdminComponent> = (component) =>
   component.canDeactivate();
@@ -14,7 +16,8 @@ export const canDeactivateAdmin: CanDeactivateFn<AdminComponent> = (component) =
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [AsyncPipe, SlicePipe, ItemFormComponent],
+  imports: [AsyncPipe, SlicePipe, ItemFormComponent, NgIcon],
+  providers: [provideIcons({ cssBox, cssLink, cssUser })],
   templateUrl: './admin.component.html',
 })
 export class AdminComponent {

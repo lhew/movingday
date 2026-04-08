@@ -5,15 +5,18 @@ import { Timestamp } from '@angular/fire/firestore';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ItemsService } from '../../shared/services/items.service';
 import { UserService } from '../../shared/services/user.service';
-import { Item, CONDITION_LABELS, CONDITION_BADGE_CLASS } from '../../shared/models/item.model';
+import { Item, CONDITION_LABELS, CONDITION_BADGE_CLASS, CONDITION_ICONS } from '../../shared/models/item.model';
 import { InlineAlertComponent } from '../../shared/components/inline-alert/inline-alert.component';
 import { combineLatest, of } from 'rxjs';
 import { catchError, map, switchMap, take } from 'rxjs/operators';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { cssCheckO, cssProfile, cssSearch, cssMathPlus, cssClose, cssTrophy, cssSmileMouthOpen, cssSmile, cssSmileNeutral, cssSmileSad } from '@ng-icons/css.gg';
 
 @Component({
   selector: 'app-showcase',
   standalone: true,
-  imports: [AsyncPipe, NgClass, InlineAlertComponent],
+  imports: [AsyncPipe, NgClass, InlineAlertComponent, NgIcon],
+  providers: [provideIcons({ cssCheckO, cssProfile, cssSearch, cssMathPlus, cssClose, cssTrophy, cssSmileMouthOpen, cssSmile, cssSmileNeutral, cssSmileSad })],
   templateUrl: './showcase.component.html',
 })
 export class ShowcaseComponent {
@@ -49,6 +52,7 @@ export class ShowcaseComponent {
 
   readonly conditionLabels = CONDITION_LABELS;
   readonly conditionBadge = CONDITION_BADGE_CLASS;
+  readonly conditionIcons = CONDITION_ICONS;
 
   private readonly doc = inject(DOCUMENT);
   private readonly platformId = inject(PLATFORM_ID);

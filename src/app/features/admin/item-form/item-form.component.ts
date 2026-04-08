@@ -4,11 +4,14 @@ import { deleteField } from '@angular/fire/firestore';
 import { ItemsService } from '../../../shared/services/items.service';
 import { ImageUploadService } from '../../../shared/services/image-upload.service';
 import { Item, ItemCondition, ItemStatus } from '../../../shared/models/item.model';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import { cssClose, cssCamera } from '@ng-icons/css.gg';
 
 @Component({
   selector: 'app-item-form',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, NgIcon],
+  providers: [provideIcons({ cssClose, cssCamera })],
   templateUrl: './item-form.component.html',
 })
 export class ItemFormComponent implements OnInit {

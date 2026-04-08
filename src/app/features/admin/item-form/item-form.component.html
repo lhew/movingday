@@ -2,7 +2,7 @@
   <div class="modal-box w-full max-w-xl">
 
     <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2"
-            type="button" aria-label="Close" (click)="cancel()">✕</button>
+            type="button" aria-label="Close" (click)="cancel()"><ng-icon name="cssClose" /></button>
 
     <h3 class="font-bold text-lg mb-4">
       {{ isEditing ? 'Edit item' : 'New item' }}
@@ -115,7 +115,7 @@
                  class="rounded-lg w-full max-h-56 object-cover" />
             <button type="button"
                     class="btn btn-xs btn-circle btn-neutral absolute top-2 right-2"
-                    (click)="clearImage()">✕</button>
+                    aria-label="Clear image" (click)="clearImage()"><ng-icon name="cssClose" /></button>
           </div>
         }
 
@@ -130,7 +130,7 @@
             </label>
             <!-- Camera (opens camera on mobile, file picker fallback on desktop) -->
             <label class="btn btn-outline cursor-pointer">
-              📷 Camera
+              <ng-icon name="cssCamera" aria-hidden="true" /> Camera
               <input type="file" class="hidden" accept="image/*" capture="environment"
                      (change)="onFileSelected($event)" />
             </label>

@@ -10,13 +10,13 @@
   <!-- Tabs -->
   <div class="tabs tabs-bordered mb-6">
     <a class="tab tab-lg" [class.tab-active]="activeTab() === 'items'" (click)="setTab('items')">
-      📦 Items
+      <ng-icon name="cssBox" aria-hidden="true" /> Items
     </a>
     <a class="tab tab-lg" [class.tab-active]="activeTab() === 'invitations'" (click)="setTab('invitations')">
-      🔗 Invitations
+      <ng-icon name="cssLink" aria-hidden="true" /> Invitations
     </a>
     <a class="tab tab-lg" [class.tab-active]="activeTab() === 'users'" (click)="setTab('users')">
-      👥 Users
+      <ng-icon name="cssUser" aria-hidden="true" /> Users
     </a>
   </div>
 
