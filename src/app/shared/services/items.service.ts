@@ -1,4 +1,5 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, PLATFORM_ID, TransferState, makeStateKey } from '@angular/core';
+import { isPlatformServer } from '@angular/common';
 import {
   Firestore,
   collection,
@@ -8,21 +9,27 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  getDocs,
   query,
   orderBy,
   where,
   serverTimestamp,
 } from '@angular/fire/firestore';
 import { Auth } from '@angular/fire/auth';
-import { Observable, of } from 'rxjs';
+import { Observable, of, from, concat } from 'rxjs';
+import { map, tap } from 'rxjs/operators';
 import { Item, ItemStatus } from '../models/item.model';
 import { UserService } from './user.service';
+
+const ITEMS_STATE_KEY = makeStateKey<Item[]>('items');
 
 @Injectable({ providedIn: 'root' })
 export class ItemsService {
   private firestore = inject(Firestore, { optional: true });
   private auth = inject(Auth, { optional: true });
   private userService = inject(UserService);
+  private platformId = inject(PLATFORM_ID);
+  private transferState = inject(TransferState);
 
   private get itemsRef() {
     if (!this.firestore) {
@@ -33,12 +40,27 @@ export class ItemsService {
 
   /** Stream all items ordered by creation date */
   getItems(): Observable<Item[]> {
-    // On server (SSR/prerender), Firestore is null — return empty array
     if (!this.firestore) {
       return of([]);
     }
     const q = query(this.itemsRef, orderBy('createdAt', 'desc'));
-    return collectionData(q, { idField: 'id' }) as Observable<Item[]>;
+
+    if (isPlatformServer(this.platformId)) {
+      // One-shot fetch on server; store result in TransferState for the browser
+      return from(getDocs(q)).pipe(
+        map(snap => snap.docs.map(d => ({ id: d.id, ...d.data() } as Item))),
+        tap(items => this.transferState.set(ITEMS_STATE_KEY, items)),
+      );
+    }
+
+    // Browser: seed from TransferState if available, then switch to live listener
+    const live$ = collectionData(q, { idField: 'id' }) as Observable<Item[]>;
+    if (this.transferState.hasKey(ITEMS_STATE_KEY)) {
+      const cached = this.transferState.get(ITEMS_STATE_KEY, []);
+      this.transferState.remove(ITEMS_STATE_KEY);
+      return concat(of(cached), live$);
+    }
+    return live$;
   }
 
   /** Stream only available items */

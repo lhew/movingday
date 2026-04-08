@@ -7,6 +7,7 @@ vi.mock('@angular/fire/firestore', () => ({
   Firestore: class MockFirestore {},
   collection: vi.fn().mockReturnValue('mock-collection'),
   collectionData: vi.fn().mockReturnValue(of([])),
+  getDocs: vi.fn().mockResolvedValue({ docs: [] }),
   doc: vi.fn().mockReturnValue('mock-doc'),
   docData: vi.fn().mockReturnValue(of(undefined)),
   addDoc: vi.fn().mockResolvedValue({ id: 'new-id' }),
@@ -22,16 +23,25 @@ vi.mock('@angular/fire/auth', () => ({
   Auth: class MockAuth {},
 }));
 
+vi.mock('@angular/common', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@angular/common')>();
+  return { ...original, isPlatformServer: vi.fn().mockReturnValue(false) };
+});
+
 import { ItemsService } from './items.service';
 import { Firestore } from '@angular/fire/firestore';
 import { Auth } from '@angular/fire/auth';
 import * as fs from '@angular/fire/firestore';
+import * as common from '@angular/common';
 import { UserService } from './user.service';
+import { TransferState } from '@angular/core';
+import type { Item } from '../models/item.model';
 
 describe('ItemsService', () => {
   let spectator: SpectatorService<ItemsService>;
   let mockAuth: { currentUser: null | { uid: string; displayName: string | null; email: string | null; photoURL: string | null } };
   let mockUserService: { getProfile: ReturnType<typeof vi.fn> };
+  let mockTransferState: { set: ReturnType<typeof vi.fn>; hasKey: ReturnType<typeof vi.fn>; get: ReturnType<typeof vi.fn>; remove: ReturnType<typeof vi.fn> };
 
   const createService = createServiceFactory({
     service: ItemsService,
@@ -46,20 +56,23 @@ describe('ItemsService', () => {
     vi.mocked(fs.orderBy).mockReturnValue('mock-orderby' as unknown as ReturnType<typeof fs.orderBy>);
     vi.mocked(fs.where).mockReturnValue('mock-where' as unknown as ReturnType<typeof fs.where>);
     vi.mocked(fs.serverTimestamp).mockReturnValue('SERVER_TS' as unknown as ReturnType<typeof fs.serverTimestamp>);
+    vi.mocked(common.isPlatformServer).mockReturnValue(false);
 
     mockAuth = { currentUser: null };
     mockUserService = { getProfile: vi.fn().mockResolvedValue({ authorized: true, nickname: undefined }) };
+    mockTransferState = { set: vi.fn(), hasKey: vi.fn().mockReturnValue(false), get: vi.fn().mockReturnValue(null), remove: vi.fn() };
 
     spectator = createService({
       providers: [
         { provide: Auth, useValue: mockAuth },
         { provide: UserService, useValue: mockUserService },
+        { provide: TransferState, useValue: mockTransferState },
       ],
     });
   });
 
   describe('getItems()', () => {
-    it('should return an observable of all items', async () => {
+    it('should return an observable of all items on browser (no cache)', async () => {
       const items = [{ id: '1', name: 'Bookcase', status: 'available' }];
       vi.mocked(fs.collectionData).mockReturnValue(of(items) as unknown as ReturnType<typeof fs.collectionData>);
 
@@ -67,6 +80,41 @@ describe('ItemsService', () => {
 
       expect(result).toEqual(items);
       expect(fs.orderBy).toHaveBeenCalledWith('createdAt', 'desc');
+      expect(fs.getDocs).not.toHaveBeenCalled();
+      expect(mockTransferState.set).not.toHaveBeenCalled();
+    });
+
+    it('should use getDocs on the server and store items in TransferState', async () => {
+      vi.mocked(common.isPlatformServer).mockReturnValue(true);
+      const mockDocs = [{ id: 'item-1', data: () => ({ name: 'Sofa', status: 'available' }) }];
+      vi.mocked(fs.getDocs).mockResolvedValue({ docs: mockDocs } as unknown as Awaited<ReturnType<typeof fs.getDocs>>);
+
+      const result = await firstValueFrom(spectator.service.getItems());
+
+      expect(result).toEqual([{ id: 'item-1', name: 'Sofa', status: 'available' }]);
+      expect(fs.getDocs).toHaveBeenCalledWith('mock-query');
+      expect(fs.collectionData).not.toHaveBeenCalled();
+      expect(mockTransferState.set).toHaveBeenCalledWith(
+        expect.any(String),
+        [{ id: 'item-1', name: 'Sofa', status: 'available' }],
+      );
+    });
+
+    it('should emit cached items from TransferState first then live items on browser', () => {
+      const cached: Item[] = [{ id: 'cached-1', name: 'Chair' } as Item];
+      const live: Item[] = [{ id: 'live-1', name: 'Chair (updated)' } as Item];
+      mockTransferState.hasKey.mockReturnValue(true);
+      mockTransferState.get.mockReturnValue(cached);
+      vi.mocked(fs.collectionData).mockReturnValue(of(live) as unknown as ReturnType<typeof fs.collectionData>);
+
+      const results: Item[][] = [];
+      spectator.service.getItems().subscribe(items => results.push(items));
+
+      expect(results).toHaveLength(2);
+      expect(results[0]).toEqual(cached);
+      expect(results[1]).toEqual(live);
+      expect(mockTransferState.remove).toHaveBeenCalled();
+      expect(fs.getDocs).not.toHaveBeenCalled();
     });
   });
 
