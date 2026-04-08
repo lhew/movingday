@@ -13,9 +13,10 @@ const browserDistFolder = join(serverDistFolder, '../browser');
 
 const app = express();
 const angularApp = new AngularNodeAppEngine({
-  // Allow localhost during local dev/testing; in production allow all hosts (Firebase Hosting
-  // validates the domain at the CDN level before requests reach the Cloud Function).
-  allowedHosts: process.env['NODE_ENV'] === 'production' ? undefined : ['localhost'],
+  // In production Firebase Hosting validates the domain at the CDN level before requests
+  // reach the Cloud Function, so we use '*' to allow all hosts here.
+  // In development, restrict to localhost only.
+  allowedHosts: process.env['NODE_ENV'] === 'production' ? ['*'] : ['localhost'],
 });
 
 // Serve static files (JS, CSS, images) with long-lived cache; skip index.html
