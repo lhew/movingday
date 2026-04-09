@@ -1,54 +1,38 @@
 import { Component, inject, signal, afterNextRender, PLATFORM_ID } from '@angular/core';
 import { AsyncPipe, NgClass, DOCUMENT, isPlatformServer } from '@angular/common';
-import { Auth, user } from '@angular/fire/auth';
 import { Timestamp } from '@angular/fire/firestore';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ItemsService } from '../../shared/services/items.service';
-import { UserService } from '../../shared/services/user.service';
 import { Item, CONDITION_LABELS, CONDITION_BADGE_CLASS, CONDITION_ICONS } from '../../shared/models/item.model';
-import { InlineAlertComponent } from '../../shared/components/inline-alert/inline-alert.component';
-import { combineLatest, of } from 'rxjs';
-import { catchError, map, switchMap, take } from 'rxjs/operators';
+import { ShowcaseCardActionsComponent } from './showcase-card-actions.component';
+import { of } from 'rxjs';
+import { catchError, take } from 'rxjs/operators';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { cssCheckO, cssProfile, cssSearch, cssMathPlus, cssClose, cssTrophy, cssSmileMouthOpen, cssSmile, cssSmileNeutral, cssSmileSad } from '@ng-icons/css.gg';
+import { cssCheckO, cssProfile, cssClose, cssTrophy, cssSmileMouthOpen, cssSmile, cssSmileNeutral, cssSmileSad } from '@ng-icons/css.gg';
 
 @Component({
   selector: 'app-showcase',
   standalone: true,
-  imports: [AsyncPipe, NgClass, InlineAlertComponent, NgIcon],
-  providers: [provideIcons({ cssCheckO, cssProfile, cssSearch, cssMathPlus, cssClose, cssTrophy, cssSmileMouthOpen, cssSmile, cssSmileNeutral, cssSmileSad })],
+  imports: [AsyncPipe, NgClass, NgIcon, ShowcaseCardActionsComponent],
+  providers: [provideIcons({ cssCheckO, cssProfile, cssClose, cssTrophy, cssSmileMouthOpen, cssSmile, cssSmileNeutral, cssSmileSad })],
   templateUrl: './showcase.component.html',
 })
 export class ShowcaseComponent {
   private itemsService = inject(ItemsService);
-  private auth = inject(Auth, { optional: true });
-  private userService = inject(UserService);
 
-  readonly claimingId = signal<string | null>(null);
-  readonly claimError = signal<{ itemId: string; message: string } | null>(null);
   readonly filter = signal<'all' | 'available' | 'claimed'>('all');
   readonly loadError = signal<string | null>(null);
   readonly selectedItem = signal<Item | null>(null);
   readonly showDeferred = signal(false);
 
-  private readonly currentUser$ = this.auth ? user(this.auth) : of(null);
-
-  readonly vm$ = combineLatest({
-    items: this.itemsService.getItems().pipe(
-      catchError((err: unknown) => {
-        const message =
-          err instanceof Error ? err.message : 'Unable to load items. Please try again later.';
-        this.loadError.set(message);
-        return of([] as Item[]);
-      })
-    ),
-    uid: this.currentUser$.pipe(map((u) => u?.uid ?? null)),
-    isSignedIn: this.currentUser$.pipe(map((u) => !!u)),
-    isAuthorized: this.currentUser$.pipe(
-      switchMap((u) => (u ? this.userService.streamProfile(u.uid) : of(null))),
-      map((profile) => !!profile?.authorized),
-    ),
-  });
+  readonly items$ = this.itemsService.getItems().pipe(
+    catchError((err: unknown) => {
+      const message =
+        err instanceof Error ? err.message : 'Unable to load items. Please try again later.';
+      this.loadError.set(message);
+      return of([] as Item[]);
+    })
+  );
 
   readonly conditionLabels = CONDITION_LABELS;
   readonly conditionBadge = CONDITION_BADGE_CLASS;
@@ -77,38 +61,16 @@ export class ShowcaseComponent {
             const link = this.doc.createElement('link');
             link.rel = 'preload';
             link.as = 'image';
-            link.href = item.imageUrl!;
+            link.href = item.imageUrlLg ?? item.imageUrl!;
+            const srcset = item.imageUrl + ' 370w' + (item.imageUrlLg ? ', ' + item.imageUrlLg + ' 450w' : '');
+            link.setAttribute('imagesrcset', srcset);
+            link.setAttribute('imagesizes', '(min-width: 496px) 450px, 370px');
             if (index === 0) {
               link.setAttribute('fetchpriority', 'high');
             }
             this.doc.head.appendChild(link);
           });
       });
-    }
-  }
-
-  async callDibs(item: Item) {
-    if (item.status !== 'available') return;
-    this.claimingId.set(item.id);
-    this.claimError.set(null);
-    try {
-      await this.itemsService.callDibs(item.id);
-    } catch (err) {
-      this.claimError.set({
-        itemId: item.id,
-        message: err instanceof Error ? err.message : 'Failed to call dibs. Please try again.',
-      });
-    } finally {
-      this.claimingId.set(null);
-    }
-  }
-
-  async releaseDibs(item: Item) {
-    this.claimingId.set(item.id);
-    try {
-      await this.itemsService.releaseDibs(item.id);
-    } finally {
-      this.claimingId.set(null);
     }
   }
 
@@ -120,10 +82,6 @@ export class ShowcaseComponent {
 
   setFilter(f: 'all' | 'available' | 'claimed') {
     this.filter.set(f);
-  }
-
-  isClaimedByMe(item: Item, uid: string | null | undefined): boolean {
-    return item.claimedBy?.uid === uid;
   }
 
   trackById(_: number, item: Item): string {

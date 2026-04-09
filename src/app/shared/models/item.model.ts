@@ -9,6 +9,7 @@ export interface Item {
   description: string;
   condition: ItemCondition;
   imageUrl?: string;
+  imageUrlLg?: string;
   status: ItemStatus;
   /** Price in euro cents (e.g. 599 = €5,99). Absent or undefined means free. */
   price?: number;

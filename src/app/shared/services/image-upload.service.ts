@@ -3,7 +3,8 @@ import { isPlatformBrowser } from '@angular/common';
 import { Storage } from '@angular/fire/storage';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 
-const MAX_DIMENSION = 600;
+const SM_DIMENSION = 370;
+const LG_DIMENSION = 450;
 
 @Injectable({ providedIn: 'root' })
 export class ImageUploadService {
@@ -11,10 +12,10 @@ export class ImageUploadService {
   private platformId = inject(PLATFORM_ID);
 
   /**
-   * Resize an image file so neither dimension exceeds MAX_DIMENSION,
-   * then encode as JPEG via canvas.
+   * Resize an image file so neither dimension exceeds maxDimension,
+   * then encode as AVIF via canvas.
    */
-  resizeImage(file: File): Promise<Blob> {
+  resizeImage(file: File, maxDimension: number): Promise<Blob> {
     if (!isPlatformBrowser(this.platformId)) {
       return Promise.reject(new Error('resizeImage is only available in the browser'));
     }
@@ -26,7 +27,7 @@ export class ImageUploadService {
         URL.revokeObjectURL(objectUrl);
 
         const { naturalWidth: w, naturalHeight: h } = img;
-        const scale = Math.min(MAX_DIMENSION / w, MAX_DIMENSION / h, 1);
+        const scale = Math.min(maxDimension / w, maxDimension / h, 1);
 
         const canvas = document.createElement('canvas');
         canvas.width = Math.round(w * scale);
@@ -66,5 +67,21 @@ export class ImageUploadService {
     const imageRef = ref(this.storage, `items/${filename}`);
     await uploadBytes(imageRef, blob, { contentType: 'image/avif' });
     return getDownloadURL(imageRef);
+  }
+
+  /**
+   * Resize a file to both SM (370px) and LG (450px) and upload both in parallel.
+   * Returns download URLs for each variant.
+   */
+  async resizeAndUploadImages(file: File): Promise<{ sm: string; lg: string }> {
+    const [smBlob, lgBlob] = await Promise.all([
+      this.resizeImage(file, SM_DIMENSION),
+      this.resizeImage(file, LG_DIMENSION),
+    ]);
+    const [sm, lg] = await Promise.all([
+      this.uploadItemImage(smBlob),
+      this.uploadItemImage(lgBlob),
+    ]);
+    return { sm, lg };
   }
 }

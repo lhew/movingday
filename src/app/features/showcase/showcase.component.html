@@ -27,8 +27,8 @@
         <p class="text-base-content/60 text-sm max-w-sm text-center">{{ loadError() }}</p>
         <button class="btn btn-primary btn-sm" (click)="loadError.set(null)">Try again</button>
       </div>
-    } @else if (vm$ | async; as vm) {
-      @let filtered = filterItems(vm.items);
+    } @else if (items$ | async; as items) {
+      @let filtered = filterItems(items);
 
       @if (filtered.length === 0) {
         <div class="text-center py-20 text-base-content/50">
@@ -44,14 +44,15 @@
             <!-- Image -->
             <figure class="relative aspect-square overflow-hidden bg-base-200">
               @if (item.imageUrl) {
+                @let srcset = item.imageUrl + ' 370w' + (item.imageUrlLg ? ', ' + item.imageUrlLg + ' 450w' : '');
                 @if (isFirst) {
                   <!-- LCP image: load eagerly with high fetch priority, no defer -->
-                  <img [src]="item.imageUrl" [alt]="item.name" class="w-full h-full object-cover" fetchpriority="high" loading="eager" />
+                  <img [srcset]="srcset" [src]="item.imageUrl" sizes="(min-width: 496px) 450px, 370px" [alt]="item.name" class="w-full h-full object-cover" fetchpriority="high" loading="eager" />
                 } @else {
                   <!-- Remaining images deferred until in viewport; first 4 are preloaded
                        via <link rel="preload"> injected into <head> during SSR -->
                   @defer (on viewport; prefetch on idle) {
-                    <img [src]="item.imageUrl" [alt]="item.name" class="w-full h-full object-cover" />
+                    <img [srcset]="srcset" [src]="item.imageUrl" sizes="(min-width: 496px) 450px, 370px" [alt]="item.name" class="w-full h-full object-cover" />
                   } @placeholder {
                     <div class="w-full h-full bg-base-300 animate-pulse"></div>
                   }
@@ -86,73 +87,17 @@
                   <span class="badge badge-success badge-sm self-start">Free</span>
                 }
 
-                <!-- Claimed by -->
-                @if (item.status === 'claimed' && item.claimedBy) {
-                  <div class="flex items-center gap-2 text-xs text-base-content/75">
-                    <div class="avatar">
-                      <div class="w-5 rounded-full">
-                        @if (item.claimedBy.photoURL) {
-                          <img [src]="item.claimedBy.photoURL" />
-                        }
-                      </div>
-                    </div>
-                    <span>Claimed by {{ item.claimedBy.name }}</span>
-                    @if (isClaimedByMe(item, vm.uid)) {
-                      <span class="badge badge-xs badge-primary">you!</span>
-                    }
-                  </div>
-                }
-
-              <!-- Actions -->
-              <div class="card-actions mt-2 flex-col">
-                @if (claimError()?.itemId === item.id) {
-                  <app-inline-alert
-                    [message]="claimError()!.message"
-                    (dismiss)="claimError.set(null)"
-                  />
-                }
-                <button (click)="openDetail(item)" class="btn btn-ghost btn-xs w-full"><ng-icon name="cssSearch" aria-hidden="true" /> Details</button>
-                @if (vm.isSignedIn) {
-                  @if (!vm.isAuthorized) {
-                    <p class="text-xs text-warning/80 w-full text-center">⏳ Waiting for admin approval</p>
-                  } @else {
-                    <!-- Release my own claim -->
-                    @if (isClaimedByMe(item, vm.uid)) {
-                      <button (click)="releaseDibs(item)"
-                              [disabled]="claimingId() === item.id"
-                              class="btn btn-sm btn-outline btn-error w-full">
-                        @if (claimingId() === item.id) {
-                          <span class="loading loading-spinner loading-xs"></span>
-                        }
-                        Release my dibs
-                      </button>
-                    }
-
-                    <!-- Call dibs -->
-                    @if (item.status === 'available') {
-                      <button (click)="callDibs(item)"
-                              [disabled]="claimingId() === item.id"
-                              class="btn btn-sm btn-primary w-full">
-                        @if (claimingId() === item.id) {
-                          <span class="loading loading-spinner loading-xs"></span>
-                        }
-                        <ng-icon name="cssMathPlus" aria-hidden="true" /> Call dibs!
-                      </button>
-                    }
-
-                    <!-- Someone else claimed it -->
-                    @if (item.status === 'claimed' && !isClaimedByMe(item, vm.uid)) {
-                      <button disabled class="btn btn-sm btn-disabled w-full">
-                        Already claimed
-                      </button>
-                    }
-                  }
-                } @else {
-                  <p class="text-xs text-base-content/70 w-full text-center">
-                    Sign in to call dibs
-                  </p>
-                }
-              </div>
+                <!-- Claimed by + auth-gated actions (deferred until browser idle) -->
+              @defer (on idle) {
+                <app-showcase-card-actions
+                  [item]="item"
+                  (detailRequested)="openDetail(item)"
+                />
+              } @placeholder {
+                <div class="card-actions mt-2 flex-col">
+                  <p class="text-xs text-base-content/70 w-full text-center">Sign in to call dibs</p>
+                </div>
+              }
             </div>
           </div>
         }
@@ -191,7 +136,8 @@
         <!-- Image -->
         @if (detail.imageUrl) {
           <figure class="aspect-video overflow-hidden rounded-lg bg-base-200 mb-5">
-            <img [src]="detail.imageUrl" [alt]="detail.name" class="w-full h-full object-cover" />
+            @let detailSrcset = detail.imageUrl + ' 370w' + (detail.imageUrlLg ? ', ' + detail.imageUrlLg + ' 450w' : '');
+            <img [srcset]="detailSrcset" [src]="detail.imageUrlLg ?? detail.imageUrl" sizes="(min-width: 496px) 450px, 370px" [alt]="detail.name" class="w-full h-full object-cover" />
           </figure>
         } @else {
           <div class="aspect-video rounded-lg bg-base-200 flex items-center justify-center text-6xl mb-5">📦</div>

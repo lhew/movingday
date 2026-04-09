@@ -36,6 +36,7 @@ export class ItemFormComponent implements OnInit {
     condition:   ['good' as ItemCondition, Validators.required],
     status:      ['available' as ItemStatus, Validators.required],
     imageUrl:    [''],
+    imageUrlLg:  [''],
     category:    ['', [Validators.required, Validators.maxLength(40), Validators.pattern(this.categoryPattern)]],
     tags:        ['', [Validators.required, Validators.maxLength(120), Validators.pattern(this.tagsPattern)]],
     pricing:     ['free' as 'free' | 'priced', Validators.required],
@@ -59,6 +60,7 @@ export class ItemFormComponent implements OnInit {
         condition:   existing.condition,
         status:      existing.status,
         imageUrl:    existing.imageUrl ?? '',
+        imageUrlLg:  existing.imageUrlLg ?? '',
         category:    existing.category ?? '',
         tags:        existing.tags?.join(', ') ?? '',
         pricing:     hasPricing ? 'priced' : 'free',
@@ -143,7 +145,7 @@ export class ItemFormComponent implements OnInit {
   clearImage() {
     this.pendingFile.set(null);
     this.imagePreview.set(null);
-    this.form.patchValue({ imageUrl: '' });
+    this.form.patchValue({ imageUrl: '', imageUrlLg: '' });
   }
 
   async save() {
@@ -157,9 +159,8 @@ export class ItemFormComponent implements OnInit {
       // Upload new image if one was selected
       if (this.pendingFile()) {
         this.uploading.set(true);
-        const blob = await this.imageUploadService.resizeImage(this.pendingFile()!);
-        const url = await this.imageUploadService.uploadItemImage(blob);
-        this.form.patchValue({ imageUrl: url });
+        const { sm, lg } = await this.imageUploadService.resizeAndUploadImages(this.pendingFile()!);
+        this.form.patchValue({ imageUrl: sm, imageUrlLg: lg });
         this.uploading.set(false);
       }
 
@@ -170,6 +171,7 @@ export class ItemFormComponent implements OnInit {
         condition:   raw.condition as ItemCondition,
         status:      raw.status as ItemStatus,
         imageUrl:    raw.imageUrl?.trim() || undefined,
+        imageUrlLg:  raw.imageUrlLg?.trim() || undefined,
         category:    raw.category?.trim() || undefined,
         tags:        raw.tags?.trim()
                        ? raw.tags.split(',').map(t => t.trim()).filter(Boolean)

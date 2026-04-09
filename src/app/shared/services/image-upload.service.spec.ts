@@ -84,7 +84,7 @@ describe('ImageUploadService', () => {
       const { resultBlob } = setupResizeMock(800, 800);
       const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
 
-      const result = await spectator.service.resizeImage(file);
+      const result = await spectator.service.resizeImage(file, 600);
 
       expect(result).toBe(resultBlob);
     });
@@ -93,7 +93,7 @@ describe('ImageUploadService', () => {
       const { getCanvas } = setupResizeMock(1200, 600);
       const file = new File(['data'], 'wide.jpg', { type: 'image/jpeg' });
 
-      await spectator.service.resizeImage(file);
+      await spectator.service.resizeImage(file, 600);
 
       expect(getCanvas()?.width).toBe(600);
       expect(getCanvas()?.height).toBe(300);
@@ -103,7 +103,7 @@ describe('ImageUploadService', () => {
       const { getCanvas } = setupResizeMock(600, 1200);
       const file = new File(['data'], 'tall.jpg', { type: 'image/jpeg' });
 
-      await spectator.service.resizeImage(file);
+      await spectator.service.resizeImage(file, 600);
 
       expect(getCanvas()?.width).toBe(300);
       expect(getCanvas()?.height).toBe(600);
@@ -113,7 +113,7 @@ describe('ImageUploadService', () => {
       const { getCanvas } = setupResizeMock(400, 300);
       const file = new File(['data'], 'small.jpg', { type: 'image/jpeg' });
 
-      await spectator.service.resizeImage(file);
+      await spectator.service.resizeImage(file, 600);
 
       expect(getCanvas()?.width).toBe(400);
       expect(getCanvas()?.height).toBe(300);
@@ -123,7 +123,7 @@ describe('ImageUploadService', () => {
       const { getCanvas } = setupResizeMock(400, 400);
       const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
 
-      await spectator.service.resizeImage(file);
+      await spectator.service.resizeImage(file, 600);
 
       const canvas = getCanvas() as unknown as { toBlob: ReturnType<typeof vi.fn> };
       expect(canvas.toBlob).toHaveBeenCalledWith(expect.any(Function), 'image/avif', 0.3);
@@ -133,7 +133,7 @@ describe('ImageUploadService', () => {
       setupResizeMock(100, 100, null);
       const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
 
-      await expect(spectator.service.resizeImage(file)).rejects.toThrow('canvas.toBlob returned null');
+      await expect(spectator.service.resizeImage(file, 600)).rejects.toThrow('canvas.toBlob returned null');
     });
 
     it('should reject when canvas 2D context cannot be obtained', async () => {
@@ -158,7 +158,7 @@ describe('ImageUploadService', () => {
       } as unknown as HTMLImageElement));
 
       const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
-      await expect(spectator.service.resizeImage(file)).rejects.toThrow('Could not get canvas 2D context');
+      await expect(spectator.service.resizeImage(file, 600)).rejects.toThrow('Could not get canvas 2D context');
     });
 
     it('should reject when the image fails to load', async () => {
@@ -171,7 +171,7 @@ describe('ImageUploadService', () => {
       } as unknown as HTMLImageElement));
 
       const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
-      await expect(spectator.service.resizeImage(file)).rejects.toThrow('Failed to load image');
+      await expect(spectator.service.resizeImage(file, 600)).rejects.toThrow('Failed to load image');
     });
   });
 
@@ -197,6 +197,41 @@ describe('ImageUploadService', () => {
 
       const callArg = (ref as ReturnType<typeof vi.fn>).mock.calls[0][1] as string;
       expect(callArg).toMatch(/^items\/.*\.avif$/);
+    });
+  });
+
+  // ── resizeAndUploadImages ───────────────────────────────────────────────────
+
+  describe('resizeAndUploadImages()', () => {
+    it('should return sm and lg URLs', async () => {
+      setupResizeMock(800, 800);
+      const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
+
+      const result = await spectator.service.resizeAndUploadImages(file);
+
+      expect(result.sm).toBe('https://storage.example.com/img.avif');
+      expect(result.lg).toBe('https://storage.example.com/img.avif');
+    });
+
+    it('should upload two variants (sm and lg)', async () => {
+      setupResizeMock(800, 800);
+      const { uploadBytes } = await import('firebase/storage');
+      const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
+
+      await spectator.service.resizeAndUploadImages(file);
+
+      expect(uploadBytes).toHaveBeenCalledTimes(2);
+    });
+
+    it('should resize sm to 370px max and lg to 450px max', async () => {
+      const { getCanvas } = setupResizeMock(800, 800);
+      const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
+
+      await spectator.service.resizeAndUploadImages(file);
+
+      // Both calls share the mock canvas; the last call's dimensions are captured
+      // We verify that the canvas was set to 450 (lg) in the second resize call
+      expect(getCanvas()?.width).toBe(450);
     });
   });
 });

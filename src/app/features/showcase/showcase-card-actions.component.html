@@ -1,0 +1,68 @@
+@if (authState$ | async; as auth) {
+  <!-- Claimed by -->
+  @if (item().status === 'claimed' && item().claimedBy) {
+    <div class="flex items-center gap-2 text-xs text-base-content/75">
+      <div class="avatar">
+        <div class="w-5 rounded-full">
+          @if (item().claimedBy!.photoURL) {
+            <img [src]="item().claimedBy!.photoURL" />
+          }
+        </div>
+      </div>
+      <span>Claimed by {{ item().claimedBy!.name }}</span>
+      @if (isClaimedByMe(auth.uid)) {
+        <span class="badge badge-xs badge-primary">you!</span>
+      }
+    </div>
+  }
+
+  <div class="card-actions mt-2 flex-col">
+    @if (claimError()) {
+      <app-inline-alert
+        [message]="claimError()!"
+        (dismiss)="claimError.set(null)"
+      />
+    }
+    <button (click)="detailRequested.emit()" class="btn btn-ghost btn-xs w-full">
+      <ng-icon name="cssSearch" aria-hidden="true" /> Details
+    </button>
+    @if (auth.isSignedIn) {
+      @if (!auth.isAuthorized) {
+        <p class="text-xs text-warning/80 w-full text-center">⏳ Waiting for admin approval</p>
+      } @else {
+        <!-- Release my own claim -->
+        @if (isClaimedByMe(auth.uid)) {
+          <button (click)="releaseDibs()"
+                  [disabled]="claimingId() === item().id"
+                  class="btn btn-sm btn-outline btn-error w-full">
+            @if (claimingId() === item().id) {
+              <span class="loading loading-spinner loading-xs"></span>
+            }
+            Release my dibs
+          </button>
+        }
+        <!-- Call dibs -->
+        @if (item().status === 'available') {
+          <button (click)="callDibs()"
+                  [disabled]="claimingId() === item().id"
+                  class="btn btn-sm btn-primary w-full">
+            @if (claimingId() === item().id) {
+              <span class="loading loading-spinner loading-xs"></span>
+            }
+            <ng-icon name="cssMathPlus" aria-hidden="true" /> Call dibs!
+          </button>
+        }
+        <!-- Someone else claimed it -->
+        @if (item().status === 'claimed' && !isClaimedByMe(auth.uid)) {
+          <button disabled class="btn btn-sm btn-disabled w-full">
+            Already claimed
+          </button>
+        }
+      }
+    } @else {
+      <p class="text-xs text-base-content/70 w-full text-center">
+        Sign in to call dibs
+      </p>
+    }
+  </div>
+}
