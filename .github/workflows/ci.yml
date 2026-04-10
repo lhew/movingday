@@ -47,6 +47,13 @@ jobs:
       - name: Generate stats.json
         run: npm run stats
 
+      - name: Fetch Lighthouse scores (measures current production)
+        env:
+          PAGESPEED_URL: https://movingday-ed444.web.app/showcase
+          PAGESPEED_API_KEY: ${{ secrets.PAGESPEED_API_KEY }}
+        run: node scripts/fetch-lighthouse.mjs
+        continue-on-error: true
+
       - name: Upload stats artifact
         uses: actions/upload-artifact@v4
         with:
