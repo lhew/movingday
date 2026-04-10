@@ -168,6 +168,40 @@ Your app will be live at `https://YOUR_PROJECT_ID.web.app`.
 
 ---
 
+## Step 7.5 — Enable Cloud Storage CORS for browser image loads
+
+If production logs errors like `No 'Access-Control-Allow-Origin' header is present`
+for `https://firebasestorage.googleapis.com/...`, the fix is on the Cloud Storage
+bucket itself. This is not controlled by `firebase.json` or `storage.rules`.
+
+This repo includes a checked-in policy in `storage.cors.json`.
+
+```bash
+# Apply the checked-in policy to the production bucket
+npm run storage:cors:prod
+
+# Or apply it to a specific bucket
+npm run storage:cors -- movingday-ed444.firebasestorage.app
+```
+
+The helper script uses `gcloud` if available, otherwise `gsutil`.
+Install Google Cloud CLI first if neither command exists locally.
+
+To verify the current bucket CORS config:
+
+```bash
+gcloud storage buckets describe gs://movingday-ed444.firebasestorage.app --format='value(cors_config)'
+```
+
+The included policy allows `GET`, `HEAD`, and `OPTIONS` from:
+- `https://movingday-ed444.web.app`
+- `https://movingday-ed444.firebaseapp.com`
+- `http://localhost:4200`
+
+If you later add a custom domain, add that origin to `storage.cors.json` and re-run the command.
+
+---
+
 ## Step 8 — Set up GitHub CI/CD
 
 1. Push the repo to GitHub
@@ -196,8 +230,7 @@ Your app will be live at `https://YOUR_PROJECT_ID.web.app`.
 # Unit tests (Vitest)
 npx nx test
 
-# E2E tests (Cypress, needs app running)
-npx nx serve &   # or start it in another terminal
+# E2E tests (Cypress, starts the SSR app in internal mock mode)
 npx nx e2e
 
 # Open Cypress interactively

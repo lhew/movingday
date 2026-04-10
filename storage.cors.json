@@ -1,0 +1,18 @@
+[
+  {
+    "origin": [
+      "https://movingday-ed444.web.app",
+      "https://movingday-ed444.firebaseapp.com",
+      "http://localhost:4200"
+    ],
+    "method": ["GET", "HEAD", "OPTIONS"],
+    "responseHeader": [
+      "Content-Type",
+      "Cache-Control",
+      "Content-Length",
+      "Content-Disposition",
+      "Accept-Ranges"
+    ],
+    "maxAgeSeconds": 3600
+  }
+]

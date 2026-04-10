@@ -18,7 +18,9 @@
     "e2e:seed": "node scripts/seed-e2e.mjs",
     "dev": "concurrently \"npm run emulator:start\" \"nx serve\" --names \"firebase,angular\" --prefix-colors \"yellow,cyan\"",
     "bootstrap:admin": "ts-node --esm scripts/bootstrap-admin.ts",
-    "stats": "node scripts/generate-stats.mjs"
+    "stats": "node scripts/generate-stats.mjs",
+    "storage:cors": "bash scripts/set-storage-cors.sh",
+    "storage:cors:prod": "bash scripts/set-storage-cors.sh movingday-ed444.firebasestorage.app"
   },
   "private": true,
   "dependencies": {
