@@ -309,31 +309,3 @@ Always confirm what you did after taking actions.`,
     }
   });
 
-// ── Angular SSR ────────────────────────────────────────────────────────────
-// The Angular build outputs dist/movingday/server/server.mjs (ESM). This
-// function is compiled to CJS, so we use a Function-wrapped dynamic import to
-// prevent TypeScript from transforming import() → require(), which would break
-// ESM loading. The Angular dist is copied into functions/dist/movingday/ by CI
-// before deploying so the path resolves correctly at runtime.
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-type AnyHandler = (req: any, res: any) => Promise<void>;
-const importDynamic = new Function('p', 'return import(p)') as
-  (p: string) => Promise<{ reqHandler: AnyHandler }>;
-
-let _ssrHandler: AnyHandler | null = null;
-
-async function getSsrHandler(): Promise<AnyHandler> {
-  if (!_ssrHandler) {
-    const { reqHandler } = await importDynamic('../dist/movingday/server/server.mjs');
-    _ssrHandler = reqHandler;
-  }
-  return _ssrHandler;
-}
-
-export const ssrApp = onRequest(
-  { memory: '512MiB', timeoutSeconds: 60 },
-  async (req, res) => {
-  const handler = await getSsrHandler();
-  await handler(req, res);
-});
