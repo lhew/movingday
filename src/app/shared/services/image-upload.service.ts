@@ -5,6 +5,7 @@ import { ref, uploadBytes } from 'firebase/storage';
 
 const SM_DIMENSION = 370;
 const LG_DIMENSION = 450;
+const XL_DIMENSION = 900; // 2× retina variant
 
 @Injectable({ providedIn: 'root' })
 export class ImageUploadService {
@@ -46,7 +47,7 @@ export class ImageUploadService {
             else reject(new Error('canvas.toBlob returned null'));
           },
           'image/avif',
-          0.3
+          0.1
         );
       };
 
@@ -80,18 +81,20 @@ export class ImageUploadService {
   }
 
   /**
-   * Resize a file to both SM (370px) and LG (450px) and upload both in parallel.
-   * Returns download URLs for each variant.
+   * Resize a file to SM (370px), LG (450px), and XL (900px 2× retina) and
+   * upload all three in parallel. Returns download URLs for each variant.
    */
-  async resizeAndUploadImages(file: File): Promise<{ sm: string; lg: string }> {
-    const [smBlob, lgBlob] = await Promise.all([
+  async resizeAndUploadImages(file: File): Promise<{ sm: string; lg: string; xl: string }> {
+    const [smBlob, lgBlob, xlBlob] = await Promise.all([
       this.resizeImage(file, SM_DIMENSION),
       this.resizeImage(file, LG_DIMENSION),
+      this.resizeImage(file, XL_DIMENSION),
     ]);
-    const [sm, lg] = await Promise.all([
+    const [sm, lg, xl] = await Promise.all([
       this.uploadItemImage(smBlob),
       this.uploadItemImage(lgBlob),
+      this.uploadItemImage(xlBlob),
     ]);
-    return { sm, lg };
+    return { sm, lg, xl };
   }
 }

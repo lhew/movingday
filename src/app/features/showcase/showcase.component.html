@@ -44,7 +44,7 @@
             <!-- Image -->
             <figure class="relative aspect-square overflow-hidden bg-base-200">
               @if (item.imageUrl) {
-                @let srcset = item.imageUrl + ' 370w' + (item.imageUrlLg ? ', ' + item.imageUrlLg + ' 450w' : '');
+                @let srcset = item.imageUrl + ' 370w' + (item.imageUrlLg ? ', ' + item.imageUrlLg + ' 450w' : '') + (item.imageUrlXl ? ', ' + item.imageUrlXl + ' 900w' : '');
                 @if (isFirst) {
                   <!-- LCP image: load eagerly with high fetch priority, no defer -->
                   <img [srcset]="srcset" [src]="item.imageUrl" sizes="(min-width: 496px) 450px, 370px" [alt]="item.name" class="w-full h-full object-cover" fetchpriority="high" loading="eager" />
@@ -136,7 +136,7 @@
         <!-- Image -->
         @if (detail.imageUrl) {
           <figure class="aspect-video overflow-hidden rounded-lg bg-base-200 mb-5">
-            @let detailSrcset = detail.imageUrl + ' 370w' + (detail.imageUrlLg ? ', ' + detail.imageUrlLg + ' 450w' : '');
+            @let detailSrcset = detail.imageUrl + ' 370w' + (detail.imageUrlLg ? ', ' + detail.imageUrlLg + ' 450w' : '') + (detail.imageUrlXl ? ', ' + detail.imageUrlXl + ' 900w' : '');
             <img [srcset]="detailSrcset" [src]="detail.imageUrlLg ?? detail.imageUrl" sizes="(min-width: 496px) 450px, 370px" [alt]="detail.name" class="w-full h-full object-cover" />
           </figure>
         } @else {
