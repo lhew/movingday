@@ -54,10 +54,10 @@
     "estimatedTests": 21
   },
   "lighthouse": {
-    "performance": 95,
-    "accessibility": null,
-    "bestPractices": null,
-    "seo": null,
+    "performance": 91,
+    "accessibility": 100,
+    "bestPractices": 96,
+    "seo": 100,
     "measuredAt": "2026-04-10"
   }
 }

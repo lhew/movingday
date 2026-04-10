@@ -32,8 +32,9 @@ describe('Stats for Nerds page', () => {
   it('should show the Lighthouse card with a performance score', () => {
     cy.contains('h2', '🏆 Lighthouse').should('be.visible');
     cy.contains('Performance').should('be.visible');
-    // The seeded performance score is 95
-    cy.contains('95').should('be.visible');
+    cy.contains('Accessibility').should('be.visible');
+    cy.contains('Best Practices').should('be.visible');
+    cy.contains('SEO').should('be.visible');
   });
 
   it('should show the Coverage and E2E cards', () => {
