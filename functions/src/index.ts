@@ -4,6 +4,8 @@ import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import Anthropic from '@anthropic-ai/sdk';
 
+export { ssrApp } from './ssr';
+
 admin.initializeApp();
 const db = admin.firestore();
 
