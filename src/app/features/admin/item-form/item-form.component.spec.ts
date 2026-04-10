@@ -47,7 +47,7 @@ describe('ItemFormComponent', () => {
 
     vi.mocked(mockItemsService.createItem!).mockResolvedValue('new-id');
     vi.mocked(mockItemsService.updateItem!).mockResolvedValue(undefined);
-    vi.mocked(mockImageUploadService.resizeAndUploadImages!).mockResolvedValue({ sm: 'https://storage.example.com/img.jpg', lg: 'https://storage.example.com/img-lg.jpg', xl: 'https://storage.example.com/img-xl.jpg' });
+    vi.mocked(mockImageUploadService.resizeAndUploadImages!).mockResolvedValue({ sm: 'https://storage.example.com/img.jpg', lg: 'https://storage.example.com/img-lg.jpg' });
   });
 
   it('should create', () => {

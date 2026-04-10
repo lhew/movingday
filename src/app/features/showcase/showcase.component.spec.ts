@@ -12,7 +12,7 @@ import { ShowcaseComponent } from './showcase.component';
 import { ItemsService } from '../../shared/services/items.service';
 import { Item } from '../../shared/models/item.model';
 import { Timestamp } from '@angular/fire/firestore';
-import { firstValueFrom } from 'rxjs';
+
 
 function mockItem(overrides: Partial<Item> = {}): Item {
   return {
