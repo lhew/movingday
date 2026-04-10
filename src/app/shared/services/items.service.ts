@@ -16,7 +16,7 @@ import {
   serverTimestamp,
 } from '@angular/fire/firestore';
 import { Observable, of, from, concat } from 'rxjs';
-import { map, tap } from 'rxjs/operators';
+import { map, tap, timeout, catchError } from 'rxjs/operators';
 import { Item, ItemStatus } from '../models/item.model';
 import { UserService } from './user.service';
 import { LazyAuthService } from './lazy-auth.service';
@@ -46,10 +46,14 @@ export class ItemsService {
     const q = query(this.itemsRef, orderBy('createdAt', 'desc'));
 
     if (isPlatformServer(this.platformId)) {
-      // One-shot fetch on server; store result in TransferState for the browser
+      // One-shot fetch on server; store result in TransferState for the browser.
+      // 5 s timeout guards against a hanging Firestore connection in CI/CD where
+      // the real Firebase backend may be unreachable (e.g. no emulators).
       return from(getDocs(q)).pipe(
+        timeout(5000),
         map(snap => snap.docs.map(d => ({ id: d.id, ...d.data() } as Item))),
         tap(items => this.transferState.set(ITEMS_STATE_KEY, items)),
+        catchError(() => of([] as Item[])),
       );
     }
 

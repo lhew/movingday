@@ -1,4 +1,5 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformServer } from '@angular/common';
 import {
   Firestore,
   collection,
@@ -8,16 +9,19 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
+  getDocs,
   query,
   orderBy,
   serverTimestamp,
 } from '@angular/fire/firestore';
-import { Observable, of } from 'rxjs';
+import { Observable, of, from } from 'rxjs';
+import { map, timeout, catchError } from 'rxjs/operators';
 import { MovingUpdate } from '../models/update.model';
 
 @Injectable({ providedIn: 'root' })
 export class UpdatesService {
   private firestore = inject(Firestore, { optional: true });
+  private platformId = inject(PLATFORM_ID);
 
   private get updatesRef() {
     if (!this.firestore) {
@@ -31,6 +35,17 @@ export class UpdatesService {
       return of([]);
     }
     const q = query(this.updatesRef, orderBy('publishedAt', 'desc'));
+
+    if (isPlatformServer(this.platformId)) {
+      // One-shot fetch on server; 5 s timeout guards against a hanging
+      // Firestore connection in CI/CD where Firebase may be unreachable.
+      return from(getDocs(q)).pipe(
+        timeout(5000),
+        map(snap => snap.docs.map(d => ({ id: d.id, ...d.data() } as MovingUpdate))),
+        catchError(() => of([] as MovingUpdate[])),
+      );
+    }
+
     return collectionData(q, { idField: 'id' }) as Observable<MovingUpdate[]>;
   }
 

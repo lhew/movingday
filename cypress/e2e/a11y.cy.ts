@@ -22,7 +22,7 @@ describe('Accessibility audits (all routes)', () => {
     describe(name, () => {
       beforeEach(() => {
         cy.visit(path, { failOnStatusCode: false });
-        cy.get('h1').should('be.visible');
+        cy.get('h1', { timeout: 10000 }).should('be.visible');
       });
 
       it('has no critical/serious a11y violations', () => {

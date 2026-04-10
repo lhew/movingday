@@ -6,6 +6,7 @@ vi.mock('@angular/fire/firestore', () => ({
   Firestore: class MockFirestore {},
   collection: vi.fn().mockReturnValue('mock-collection'),
   collectionData: vi.fn().mockReturnValue(of([])),
+  getDocs: vi.fn().mockResolvedValue({ docs: [] }),
   doc: vi.fn().mockReturnValue('mock-doc'),
   docData: vi.fn().mockReturnValue(of(undefined)),
   addDoc: vi.fn().mockResolvedValue({ id: 'new-id' }),
