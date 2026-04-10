@@ -2,10 +2,12 @@ import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter, withViewTransitions } from '@angular/router';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideNgIconsConfig } from '@ng-icons/core';
 
 import { appRoutes } from './app.routes';
+import { provideMockStatsInterceptor } from './e2e-mock-stats';
+import { useInternalE2eMocks } from './e2e-mock.providers';
 
 // Shared config for both browser and server.
 // Firebase providers live in app.config.browser.ts and are merged in only on
@@ -16,7 +18,10 @@ export const appConfig: ApplicationConfig = {
     provideClientHydration(withEventReplay()),
     provideRouter(appRoutes, withViewTransitions({ skipInitialTransition: true })),
     provideAnimationsAsync(),
-    provideHttpClient(withFetch()),
+    provideHttpClient(
+      withFetch(),
+      ...(useInternalE2eMocks ? [withInterceptors([provideMockStatsInterceptor])] : [])
+    ),
     provideNgIconsConfig({ size: '1.2em' }),
   ],
 };

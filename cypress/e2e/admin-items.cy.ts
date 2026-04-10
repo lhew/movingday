@@ -10,7 +10,7 @@ describe('Admin items — add new item', () => {
   });
 
   it('should block submit until required fields are valid', () => {
-    cy.contains('a', '📦 Items').click();
+    cy.contains('.tab', 'Items').click();
     cy.contains('button', '+ New item').click();
 
     cy.contains('h3', 'New item').should('be.visible');
@@ -28,7 +28,7 @@ describe('Admin items — add new item', () => {
   });
 
   it('should show price input only when "Priced" is selected', () => {
-    cy.contains('a', '📦 Items').click();
+    cy.contains('.tab', 'Items').click();
     cy.contains('button', '+ New item').click();
 
     cy.get('#item-price').should('not.exist');
@@ -41,7 +41,7 @@ describe('Admin items — add new item', () => {
   });
 
   it('should block submit when priced is selected but price is empty', () => {
-    cy.contains('a', '📦 Items').click();
+    cy.contains('.tab', 'Items').click();
     cy.contains('button', '+ New item').click();
 
     cy.get('input[formControlName="name"]').type('Fancy Lamp');
@@ -60,7 +60,7 @@ describe('Admin items — add new item', () => {
   it('should create a new item from the modal form', () => {
     const itemName = 'Wooden Side Table';
 
-    cy.contains('a', '📦 Items').click();
+    cy.contains('.tab', 'Items').click();
     cy.contains('button', '+ New item').click();
 
     cy.get('input[formControlName="name"]').type(itemName);

@@ -116,11 +116,22 @@ export class StatsForNerdsComponent implements OnInit {
     return Math.round((tests.passed / tests.total) * 100);
   }
 
+  unitTestProgressColor(tests: Stats['unitTests']): string {
+    return this.passRate(tests) >= 90 ? 'progress-success' : 'progress-warning';
+  }
+
   coverageBadge(pct: number | null): string {
     if (pct === null) return 'badge-ghost';
     if (pct >= 80) return 'badge-success';
     if (pct >= 60) return 'badge-warning';
     return 'badge-error';
+  }
+
+  coverageTextColor(pct: number | null): string {
+    if (pct === null) return 'text-base-content/40';
+    if (pct >= 80) return 'text-green-800';
+    if (pct >= 60) return 'text-yellow-800';
+    return 'text-red-800';
   }
 
   formatDuration(ms: number): string {

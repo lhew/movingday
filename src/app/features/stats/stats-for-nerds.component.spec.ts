@@ -118,8 +118,29 @@ describe('StatsForNerdsComponent', () => {
     expect(component.coverageBadge(null)).toBe('badge-ghost');
   });
 
+  it('should return correct coverage text classes', () => {
+    const component = spectator.component;
+    expect(component.coverageTextColor(95)).toBe('text-green-800');
+    expect(component.coverageTextColor(70)).toBe('text-yellow-800');
+    expect(component.coverageTextColor(40)).toBe('text-red-800');
+    expect(component.coverageTextColor(null)).toBe('text-base-content/40');
+  });
+
   it('should format duration in ms for sub-second values', () => {
     expect(spectator.component.formatDuration(500)).toBe('500ms');
+  });
+
+  it('should return success progress color for pass rates at or above 90%', () => {
+    expect(spectator.component.unitTestProgressColor(mockStats.unitTests)).toBe('progress-success');
+    expect(
+      spectator.component.unitTestProgressColor({ ...mockStats.unitTests, passed: 45, total: 50 })
+    ).toBe('progress-success');
+  });
+
+  it('should return warning progress color for pass rates below 90%', () => {
+    expect(
+      spectator.component.unitTestProgressColor({ ...mockStats.unitTests, passed: 44, total: 50 })
+    ).toBe('progress-warning');
   });
 
   it('should format duration in seconds for values >= 1000ms', () => {

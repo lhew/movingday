@@ -46,7 +46,7 @@
                 <p class="text-xs text-base-content/75 mb-1">Commit</p>
                 @if (commitUrl(b); as url) {
                   <a [href]="url" target="_blank" rel="noopener"
-                     class="font-mono text-sm font-bold text-primary link link-hover">
+                     class="font-mono text-sm font-bold text-base-content underline decoration-primary/60 underline-offset-2 hover:text-primary">
                     {{ b.commitShort ?? '—' }}
                   </a>
                 } @else {
@@ -206,7 +206,7 @@
             </div>
             <progress
               class="progress w-full"
-              [class]="passRate(s.unitTests) === 100 ? 'progress-success' : 'progress-warning'"
+              [class]="unitTestProgressColor(s.unitTests)"
               [value]="passRate(s.unitTests)"
               max="100">
             </progress>
@@ -237,7 +237,7 @@
                 ];
                 @for (m of metrics; track m.label) {
                   <div class="bg-base-100 rounded-lg p-3 text-center">
-                    <div class="text-xl font-bold" [class]="coverageBadge(m.value).replace('badge-', 'text-')">
+                    <div class="text-xl font-bold" [class]="coverageTextColor(m.value)">
                       {{ m.value !== null ? (m.value | number:'1.1-1') + '%' : '—' }}
                     </div>
                     <div class="text-xs text-base-content/75 mt-1">{{ m.label }}</div>
