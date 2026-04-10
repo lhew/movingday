@@ -76,6 +76,16 @@ jobs:
         if: github.event_name == 'workflow_dispatch'
         run: node scripts/add-preloads.mjs
 
+      - name: Build Storybook
+        if: github.event_name == 'workflow_dispatch'
+        run: npx nx build-storybook --configuration=ci
+
+      - name: Merge Storybook into app dist
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          mkdir -p dist/movingday/browser/storybook
+          cp -r dist/storybook/movingday/. dist/movingday/browser/storybook/
+
       # ── Build Functions ──────────────────────────────────────────────────────
       - name: Install Functions dependencies
         run: npm ci --prefix functions

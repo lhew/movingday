@@ -135,6 +135,9 @@
       "configurations": {
         "production": {
           "devServerTarget": "movingday:serve:production"
+        },
+        "ci": {
+          "ciBaseUrl": "http://localhost:4200"
         }
       }
     },
