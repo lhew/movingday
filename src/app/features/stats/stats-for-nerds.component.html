@@ -98,7 +98,7 @@
           <div class="stats stats-vertical bg-base-100 rounded-xl shadow-none">
             <div class="stat py-3">
               <div class="stat-title">Total commits</div>
-              <div class="stat-value text-primary">{{ s.git.totalCommits | number }}</div>
+              <div class="stat-value text-base-content">{{ s.git.totalCommits | number }}</div>
               <div class="stat-desc">{{ s.git.recentCommits }} in the last 30 days</div>
             </div>
             <div class="stat py-3">
@@ -146,14 +146,14 @@
           <div class="stats stats-vertical bg-base-100 rounded-xl shadow-none">
             <div class="stat py-3">
               <div class="stat-title">Files analyzed</div>
-              <div class="stat-value text-primary">{{ s.lint.filesAnalyzed | number }}</div>
+              <div class="stat-value text-base-content">{{ s.lint.filesAnalyzed | number }}</div>
             </div>
             <div class="stat py-3">
               <div class="stat-title">Errors / Warnings</div>
               <div class="stat-value text-2xl">
                 <span class="text-error">{{ s.lint.errors }}</span>
                 <span class="text-base-content/75 mx-1">/</span>
-                <span class="text-warning">{{ s.lint.warnings }}</span>
+                <span class="text-base-content">{{ s.lint.warnings }}</span>
               </div>
             </div>
           </div>
@@ -182,18 +182,18 @@
           <div class="stats stats-vertical bg-base-100 rounded-xl shadow-none">
             <div class="stat py-3">
               <div class="stat-title">Test suites</div>
-              <div class="stat-value text-primary">{{ s.unitTests.suites }}</div>
+              <div class="stat-value text-base-content">{{ s.unitTests.suites }}</div>
             </div>
             <div class="stat py-3">
               <div class="stat-title">Tests</div>
               <div class="stat-value text-2xl">{{ s.unitTests.total }}</div>
               <div class="stat-desc">
-                <span class="text-success">{{ s.unitTests.passed }} passed</span>
+                <span class="text-base-content">{{ s.unitTests.passed }} passed</span>
                 @if (s.unitTests.failed) {
                   · <span class="text-error">{{ s.unitTests.failed }} failed</span>
                 }
                 @if (s.unitTests.skipped) {
-                  · <span class="text-warning">{{ s.unitTests.skipped }} skipped</span>
+                  · <span class="text-base-content">{{ s.unitTests.skipped }} skipped</span>
                 }
               </div>
             </div>
@@ -279,7 +279,7 @@
             <div class="flex items-center justify-between flex-wrap gap-2">
               <h2 class="card-title text-lg">🏆 Lighthouse</h2>
               @if (lh.measuredAt) {
-                <span class="text-xs text-base-content/60">measured {{ lh.measuredAt | date:'mediumDate' }}</span>
+                <span class="text-xs text-base-content/80">measured {{ lh.measuredAt | date:'mediumDate' }}</span>
               }
             </div>
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -299,10 +299,10 @@
                 </div>
               }
             </div>
-            <p class="text-xs text-base-content/60 text-center">
+            <p class="text-xs text-base-content/80 text-center">
               Scores from
               <a href="https://developer.chrome.com/docs/lighthouse" target="_blank" rel="noopener"
-                 class="link link-hover">Google Lighthouse</a> ·
+                 class="link text-base-content">Google Lighthouse</a> ·
               90+ is green ✓
             </p>
           </div>

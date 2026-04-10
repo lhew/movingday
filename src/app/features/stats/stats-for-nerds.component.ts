@@ -130,9 +130,9 @@ export class StatsForNerdsComponent implements OnInit {
 
   lhScoreColor(score: number | null): string {
     if (score === null) return 'text-base-content/25';
-    if (score >= 90) return 'text-success';
-    if (score >= 50) return 'text-warning';
-    return 'text-error';
+    if (score >= 90) return 'text-green-800';
+    if (score >= 50) return 'text-yellow-700';
+    return 'text-red-800';
   }
 
   lhProgressColor(score: number | null): string {
