@@ -165,26 +165,35 @@ jobs:
           retention-days: 1
 
   # ── E2E ──────────────────────────────────────────────────────
-  # e2e:
-  #   name: E2E Tests
-  #   runs-on: ubuntu-latest
-  #   needs: test
-  #
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #
-  #     - name: Setup Node.js
-  #       uses: actions/setup-node@v4
-  #       with:
-  #         cache: 'npm'
-  #
-  #     - name: Install dependencies
-  #       run: npm ci --legacy-peer-deps
-  #
-  #     # No emulators needed — Auth, ItemsService, and UpdatesService are all
-  #     # replaced with in-memory mocks when Cypress is detected (useCypressMocks).
-  #     # Firebase SDK emulator connectors are configured but never exercised.
-  #
-  #     - name: Run E2E tests
-  #       run: npx nx e2e --browser=chrome --env CI=true
+  e2e:
+    name: E2E Tests
+    runs-on: ubuntu-latest
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      # No emulators needed — all Firebase services are replaced with in-memory
+      # mocks when Cypress is detected (useCypressMocks in app.config.browser.ts).
+      - name: Run E2E tests
+        env:
+          CYPRESS_CI: true
+        run: npx nx e2e --browser=chrome
+
+      - name: Upload Cypress screenshots on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: cypress-screenshots
+          path: cypress/screenshots/
+          retention-days: 5
 
