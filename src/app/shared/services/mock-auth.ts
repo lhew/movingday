@@ -75,6 +75,26 @@ export const mockAuth = {
   },
 };
 
+/**
+ * Minimal LazyAuthService-shaped object for Cypress tests.
+ * Satisfies the LazyAuthService interface so components that inject
+ * LazyAuthService work correctly in E2E tests without the real Firebase Auth SDK.
+ */
+export const mockLazyAuth = {
+  user$: _userSubject.asObservable(),
+  get currentUser() {
+    return _userSubject.value;
+  },
+  getAuth: () => Promise.resolve(mockAuth as unknown),
+  signIn: async () => {
+    /* noop – Cypress controls auth via window.__cy.signIn */
+  },
+  signOut: async () => {
+    sessionStorage.removeItem(SESSION_KEY);
+    _userSubject.next(null);
+  },
+};
+
 /** Called once at app bootstrap (Cypress mode only). */
 export function installCypressAuthHelpers(): void {
   if (typeof window === 'undefined') return;

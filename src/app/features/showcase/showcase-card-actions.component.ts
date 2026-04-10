@@ -1,6 +1,5 @@
 import { Component, inject, signal, input, output } from '@angular/core';
 import { AsyncPipe } from '@angular/common';
-import { Auth, user } from '@angular/fire/auth';
 import { combineLatest, of } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { NgIcon, provideIcons } from '@ng-icons/core';
@@ -9,6 +8,7 @@ import { Item } from '../../shared/models/item.model';
 import { UserService } from '../../shared/services/user.service';
 import { ItemsService } from '../../shared/services/items.service';
 import { InlineAlertComponent } from '../../shared/components/inline-alert/inline-alert.component';
+import { LazyAuthService } from '../../shared/services/lazy-auth.service';
 
 @Component({
   selector: 'app-showcase-card-actions',
@@ -18,7 +18,7 @@ import { InlineAlertComponent } from '../../shared/components/inline-alert/inlin
   templateUrl: './showcase-card-actions.component.html',
 })
 export class ShowcaseCardActionsComponent {
-  private auth = inject(Auth, { optional: true });
+  private lazyAuth = inject(LazyAuthService);
   private userService = inject(UserService);
   private itemsService = inject(ItemsService);
 
@@ -28,7 +28,7 @@ export class ShowcaseCardActionsComponent {
   readonly claimingId = signal<string | null>(null);
   readonly claimError = signal<string | null>(null);
 
-  private readonly currentUser$ = this.auth ? user(this.auth) : of(null);
+  private readonly currentUser$ = this.lazyAuth.user$;
 
   readonly authState$ = combineLatest({
     uid: this.currentUser$.pipe(map((u) => u?.uid ?? null)),

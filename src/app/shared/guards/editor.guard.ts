@@ -1,14 +1,15 @@
 import { inject } from '@angular/core';
 import { CanActivateFn, Router } from '@angular/router';
-import { Auth, user } from '@angular/fire/auth';
 import { from, of } from 'rxjs';
 import { map, switchMap, take } from 'rxjs/operators';
+import { LazyAuthService } from '../services/lazy-auth.service';
 
 export const editorGuard: CanActivateFn = () => {
-  const auth = inject(Auth);
+  const lazyAuth = inject(LazyAuthService);
   const router = inject(Router);
 
-  return user(auth).pipe(
+  return from(lazyAuth.getAuth()).pipe(
+    switchMap(() => lazyAuth.user$),
     take(1),
     switchMap((currentUser) => {
       if (!currentUser) {

@@ -19,10 +19,6 @@ vi.mock('@angular/fire/firestore', () => ({
   serverTimestamp: vi.fn().mockReturnValue('SERVER_TS'),
 }));
 
-vi.mock('@angular/fire/auth', () => ({
-  Auth: class MockAuth {},
-}));
-
 vi.mock('@angular/common', async (importOriginal) => {
   const original = await importOriginal<typeof import('@angular/common')>();
   return { ...original, isPlatformServer: vi.fn().mockReturnValue(false) };
@@ -30,16 +26,16 @@ vi.mock('@angular/common', async (importOriginal) => {
 
 import { ItemsService } from './items.service';
 import { Firestore } from '@angular/fire/firestore';
-import { Auth } from '@angular/fire/auth';
 import * as fs from '@angular/fire/firestore';
 import * as common from '@angular/common';
 import { UserService } from './user.service';
+import { LazyAuthService } from './lazy-auth.service';
 import { TransferState } from '@angular/core';
 import type { Item } from '../models/item.model';
 
 describe('ItemsService', () => {
   let spectator: SpectatorService<ItemsService>;
-  let mockAuth: { currentUser: null | { uid: string; displayName: string | null; email: string | null; photoURL: string | null } };
+  let mockLazyAuth: { currentUser: null | { uid: string; displayName: string | null; email: string | null; photoURL: string | null } };
   let mockUserService: { getProfile: ReturnType<typeof vi.fn> };
   let mockTransferState: { set: ReturnType<typeof vi.fn>; hasKey: ReturnType<typeof vi.fn>; get: ReturnType<typeof vi.fn>; remove: ReturnType<typeof vi.fn> };
 
@@ -58,13 +54,13 @@ describe('ItemsService', () => {
     vi.mocked(fs.serverTimestamp).mockReturnValue('SERVER_TS' as unknown as ReturnType<typeof fs.serverTimestamp>);
     vi.mocked(common.isPlatformServer).mockReturnValue(false);
 
-    mockAuth = { currentUser: null };
+    mockLazyAuth = { currentUser: null };
     mockUserService = { getProfile: vi.fn().mockResolvedValue({ authorized: true, nickname: undefined }) };
     mockTransferState = { set: vi.fn(), hasKey: vi.fn().mockReturnValue(false), get: vi.fn().mockReturnValue(null), remove: vi.fn() };
 
     spectator = createService({
       providers: [
-        { provide: Auth, useValue: mockAuth },
+        { provide: LazyAuthService, useValue: mockLazyAuth },
         { provide: UserService, useValue: mockUserService },
         { provide: TransferState, useValue: mockTransferState },
       ],
@@ -181,20 +177,20 @@ describe('ItemsService', () => {
 
   describe('callDibs()', () => {
     it('should throw if user is not signed in', async () => {
-      mockAuth.currentUser = null;
+      mockLazyAuth.currentUser = null;
 
       await expect(spectator.service.callDibs('item-1')).rejects.toThrow('You must be signed in');
     });
 
     it('should throw if user is not authorized', async () => {
-      mockAuth.currentUser = { uid: 'user-123', displayName: 'Leo', email: 'leo@test.com', photoURL: null };
+      mockLazyAuth.currentUser = { uid: 'user-123', displayName: 'Leo', email: 'leo@test.com', photoURL: null };
       mockUserService.getProfile.mockResolvedValue({ authorized: false });
 
       await expect(spectator.service.callDibs('item-1')).rejects.toThrow('You need to be authorized');
     });
 
     it('should update item status to claimed with user info', async () => {
-      mockAuth.currentUser = {
+      mockLazyAuth.currentUser = {
         uid: 'user-123',
         displayName: 'Leo',
         email: 'leo@test.com',
@@ -220,7 +216,7 @@ describe('ItemsService', () => {
     });
 
     it('should use the nickname from profile when available', async () => {
-      mockAuth.currentUser = { uid: 'user-123', displayName: 'Leo', email: 'leo@test.com', photoURL: null };
+      mockLazyAuth.currentUser = { uid: 'user-123', displayName: 'Leo', email: 'leo@test.com', photoURL: null };
       mockUserService.getProfile.mockResolvedValue({ authorized: true, nickname: 'cool-leo' });
       vi.mocked(fs.updateDoc).mockResolvedValue(undefined);
 
@@ -235,7 +231,7 @@ describe('ItemsService', () => {
     });
 
     it('should use "Anonymous" if displayName is null and no nickname', async () => {
-      mockAuth.currentUser = {
+      mockLazyAuth.currentUser = {
         uid: 'user-123',
         displayName: null,
         email: 'leo@test.com',
@@ -255,7 +251,7 @@ describe('ItemsService', () => {
     });
 
     it('should use empty string if email is null', async () => {
-      mockAuth.currentUser = {
+      mockLazyAuth.currentUser = {
         uid: 'user-123',
         displayName: 'Leo',
         email: null,

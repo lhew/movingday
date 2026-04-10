@@ -1,12 +1,12 @@
 import { Component, inject, signal, OnInit, DestroyRef, Injector, runInInjectionContext } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { Auth, GoogleAuthProvider, signInWithPopup } from '@angular/fire/auth';
 import { Firestore, doc, docData } from '@angular/fire/firestore';
 import { Functions, httpsCallable, HttpsCallable } from '@angular/fire/functions';
 import { Subject, debounceTime, distinctUntilChanged, switchMap, of } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Invitation } from '../../shared/models/user.model';
+import { LazyAuthService } from '../../shared/services/lazy-auth.service';
 
 type Step = 'loading' | 'sign-in' | 'nickname' | 'done' | 'error';
 
@@ -120,7 +120,7 @@ type Step = 'loading' | 'sign-in' | 'nickname' | 'done' | 'error';
 export class InviteComponent implements OnInit {
   private route = inject(ActivatedRoute);
   private router = inject(Router);
-  private auth = inject(Auth);
+  private lazyAuth = inject(LazyAuthService);
   private firestore = inject(Firestore);
   private functions = inject(Functions);
   private destroyRef = inject(DestroyRef);
@@ -159,7 +159,7 @@ export class InviteComponent implements OnInit {
         }
         this.invitation.set(invite);
 
-        const currentUser = this.auth.currentUser;
+        const currentUser = this.lazyAuth.currentUser;
         if (!currentUser) {
           this.step.set('sign-in');
         } else {
@@ -191,8 +191,7 @@ export class InviteComponent implements OnInit {
   }
 
   async signIn(): Promise<void> {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(this.auth, provider);
+    await this.lazyAuth.signIn();
     this.step.set('nickname');
   }
 
@@ -224,7 +223,7 @@ export class InviteComponent implements OnInit {
         return;
       }
 
-      await this.auth.currentUser!.getIdToken(true);
+      await this.lazyAuth.currentUser!.getIdToken(true);
       this.step.set('done');
     } catch (err: unknown) {
       this.errorMessage.set(err instanceof Error ? err.message : 'Something went wrong.');

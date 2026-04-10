@@ -1,20 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createComponentFactory, Spectator } from '@ngneat/spectator/vitest';
 import { provideRouter } from '@angular/router';
-import { of } from 'rxjs';
-
-vi.mock('@angular/fire/auth', () => ({
-  Auth: class MockAuth {},
-  user: vi.fn().mockReturnValue(of(null)),
-  signInWithPopup: vi.fn(),
-  signOut: vi.fn().mockResolvedValue(undefined),
-  GoogleAuthProvider: class {},
-}));
+import { BehaviorSubject } from 'rxjs';
 
 import { AuthMenuComponent } from './auth-menu.component';
-import { Auth } from '@angular/fire/auth';
-import * as fireAuth from '@angular/fire/auth';
+import { LazyAuthService } from '../../services/lazy-auth.service';
 import { UserService } from '../../services/user.service';
+
+// Module-level singleton — tests mutate the subject instead of re-creating TestBed
+const userSubject = new BehaviorSubject<unknown>(null);
+const mockLazyAuth: Partial<LazyAuthService> = {
+  get user$() { return userSubject.asObservable() as LazyAuthService['user$']; },
+  getAuth: vi.fn().mockResolvedValue({}),
+  signIn: vi.fn().mockResolvedValue(undefined),
+  signOut: vi.fn().mockResolvedValue(undefined),
+};
 
 describe('AuthMenuComponent', () => {
   let spectator: Spectator<AuthMenuComponent>;
@@ -23,7 +23,7 @@ describe('AuthMenuComponent', () => {
   const createComponent = createComponentFactory({
     component: AuthMenuComponent,
     providers: [
-      { provide: Auth, useValue: {} },
+      { provide: LazyAuthService, useValue: mockLazyAuth },
       { provide: UserService, useValue: mockUserService },
       provideRouter([]),
     ],
@@ -31,7 +31,10 @@ describe('AuthMenuComponent', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(fireAuth.user).mockReturnValue(of(null));
+    vi.mocked(mockLazyAuth.getAuth!).mockResolvedValue({} as never);
+    vi.mocked(mockLazyAuth.signIn!).mockResolvedValue(undefined);
+    vi.mocked(mockLazyAuth.signOut!).mockResolvedValue(undefined);
+    userSubject.next(null);
     spectator = createComponent();
   });
 
@@ -40,8 +43,6 @@ describe('AuthMenuComponent', () => {
   });
 
   it('should show sign-in button when not authenticated', () => {
-    vi.mocked(fireAuth.user).mockReturnValue(of(null));
-    spectator = createComponent();
     expect(spectator.component.isSignedIn$).toBeDefined();
   });
 
@@ -52,8 +53,7 @@ describe('AuthMenuComponent', () => {
       displayName: 'Leo',
       getIdTokenResult: vi.fn().mockResolvedValue({ claims: { role: 'viewer' } }),
     };
-    vi.mocked(fireAuth.user).mockReturnValue(of(mockUser as never));
-    spectator = createComponent();
+    userSubject.next(mockUser);
 
     const { firstValueFrom } = await import('rxjs');
     const isAdmin = await firstValueFrom(spectator.component.isAdmin$);
@@ -67,22 +67,21 @@ describe('AuthMenuComponent', () => {
       displayName: 'Admin',
       getIdTokenResult: vi.fn().mockResolvedValue({ claims: { role: 'admin' } }),
     };
-    vi.mocked(fireAuth.user).mockReturnValue(of(mockUser as never));
-    spectator = createComponent();
+    userSubject.next(mockUser);
 
     const { firstValueFrom } = await import('rxjs');
     const isAdmin = await firstValueFrom(spectator.component.isAdmin$);
     expect(isAdmin).toBe(true);
   });
 
-  it('should call signInWithPopup on signIn()', () => {
+  it('should call lazyAuth.signIn() on signIn()', () => {
     spectator.component.signIn();
-    expect(fireAuth.signInWithPopup).toHaveBeenCalled();
+    expect(mockLazyAuth.signIn).toHaveBeenCalled();
   });
 
-  it('should call signOut on signOut()', async () => {
+  it('should call lazyAuth.signOut() on signOut()', async () => {
     await spectator.component.signOut();
-    expect(fireAuth.signOut).toHaveBeenCalled();
+    expect(mockLazyAuth.signOut).toHaveBeenCalled();
   });
 
   it('should use nickname from profile when available', async () => {
@@ -93,11 +92,11 @@ describe('AuthMenuComponent', () => {
       photoURL: null,
       getIdTokenResult: vi.fn().mockResolvedValue({ claims: {} }),
     };
-    vi.mocked(fireAuth.user).mockReturnValue(of(mockUser as never));
-    spectator = createComponent();
+    userSubject.next(mockUser);
 
     const { firstValueFrom } = await import('rxjs');
     const name = await firstValueFrom(spectator.component.displayName$);
     expect(name).toBe('Leo The Cat');
   });
 });
+

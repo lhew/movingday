@@ -1,22 +1,26 @@
 import { TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
-import { Auth, User } from '@angular/fire/auth';
-import * as fireAuth from '@angular/fire/auth';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { firstValueFrom, Observable, of } from 'rxjs';
 import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { adminGuard } from './admin.guard';
+import { LazyAuthService } from '../services/lazy-auth.service';
 
 describe('adminGuard', () => {
   let mockRouter: { navigate: ReturnType<typeof vi.fn> };
+  let mockLazyAuth: Partial<LazyAuthService>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockRouter = { navigate: vi.fn() };
+    mockLazyAuth = {
+      user$: of(null),
+      getAuth: vi.fn().mockResolvedValue({}),
+    };
 
     TestBed.configureTestingModule({
       providers: [
-        { provide: Auth, useValue: {} },
+        { provide: LazyAuthService, useValue: mockLazyAuth },
         { provide: Router, useValue: mockRouter },
       ],
     });
@@ -29,7 +33,7 @@ describe('adminGuard', () => {
   }
 
   it('should redirect and return false when no user is signed in', async () => {
-    vi.spyOn(fireAuth, 'user').mockReturnValue(of<User | null>(null));
+    mockLazyAuth.user$ = of(null);
 
     const result = await firstValueFrom(runGuard());
 
@@ -41,7 +45,7 @@ describe('adminGuard', () => {
     const mockUser = {
       getIdTokenResult: vi.fn().mockResolvedValue({ claims: { role: 'admin' } }),
     };
-    vi.spyOn(fireAuth, 'user').mockReturnValue(of(mockUser as unknown as User));
+    mockLazyAuth.user$ = of(mockUser as never);
 
     const result = await firstValueFrom(runGuard());
 
@@ -53,7 +57,7 @@ describe('adminGuard', () => {
     const mockUser = {
       getIdTokenResult: vi.fn().mockResolvedValue({ claims: { role: 'viewer' } }),
     };
-    vi.spyOn(fireAuth, 'user').mockReturnValue(of(mockUser as unknown as User));
+    mockLazyAuth.user$ = of(mockUser as never);
 
     const result = await firstValueFrom(runGuard());
 
@@ -65,7 +69,7 @@ describe('adminGuard', () => {
     const mockUser = {
       getIdTokenResult: vi.fn().mockResolvedValue({ claims: {} }),
     };
-    vi.spyOn(fireAuth, 'user').mockReturnValue(of(mockUser as unknown as User));
+    mockLazyAuth.user$ = of(mockUser as never);
 
     const result = await firstValueFrom(runGuard());
 
@@ -73,3 +77,4 @@ describe('adminGuard', () => {
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
   });
 });
+

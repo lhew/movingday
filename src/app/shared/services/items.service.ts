@@ -15,18 +15,18 @@ import {
   where,
   serverTimestamp,
 } from '@angular/fire/firestore';
-import { Auth } from '@angular/fire/auth';
 import { Observable, of, from, concat } from 'rxjs';
 import { map, tap } from 'rxjs/operators';
 import { Item, ItemStatus } from '../models/item.model';
 import { UserService } from './user.service';
+import { LazyAuthService } from './lazy-auth.service';
 
 const ITEMS_STATE_KEY = makeStateKey<Item[]>('items');
 
 @Injectable({ providedIn: 'root' })
 export class ItemsService {
   private firestore = inject(Firestore, { optional: true });
-  private auth = inject(Auth, { optional: true });
+  private lazyAuth = inject(LazyAuthService);
   private userService = inject(UserService);
   private platformId = inject(PLATFORM_ID);
   private transferState = inject(TransferState);
@@ -110,10 +110,10 @@ export class ItemsService {
 
   /** Call dibs on an item — authorized users only */
   async callDibs(itemId: string): Promise<void> {
-    if (!this.firestore || !this.auth) {
-      throw new Error('Firestore/Auth not available');
+    if (!this.firestore) {
+      throw new Error('Firestore not available');
     }
-    const currentUser = this.auth.currentUser;
+    const currentUser = this.lazyAuth.currentUser;
     if (!currentUser) throw new Error('You must be signed in to call dibs!');
 
     const profile = await this.userService.getProfile(currentUser.uid);

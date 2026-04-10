@@ -61,12 +61,14 @@ export class ShowcaseComponent {
             const link = this.doc.createElement('link');
             link.rel = 'preload';
             link.as = 'image';
+
             link.href = item.imageUrlLg ?? item.imageUrl!;
             const srcset = item.imageUrl + ' 370w' + (item.imageUrlLg ? ', ' + item.imageUrlLg + ' 450w' : '');
             link.setAttribute('imagesrcset', srcset);
             link.setAttribute('imagesizes', '(min-width: 496px) 450px, 370px');
             if (index === 0) {
               link.setAttribute('fetchpriority', 'high');
+              link.as = 'image';
             }
             this.doc.head.appendChild(link);
           });

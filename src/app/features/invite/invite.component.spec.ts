@@ -9,12 +9,6 @@ vi.mock('@angular/fire/firestore', () => ({
   docData: vi.fn().mockReturnValue(of(undefined)),
 }));
 
-vi.mock('@angular/fire/auth', () => ({
-  Auth: class {},
-  GoogleAuthProvider: class {},
-  signInWithPopup: vi.fn(),
-}));
-
 vi.mock('@angular/fire/functions', () => ({
   Functions: class {},
   httpsCallable: vi.fn(),
@@ -27,12 +21,11 @@ vi.mock('@angular/router', async (importOriginal) => {
 
 import { InviteComponent } from './invite.component';
 import { Firestore } from '@angular/fire/firestore';
-import { Auth } from '@angular/fire/auth';
 import { Functions } from '@angular/fire/functions';
 import * as fs from '@angular/fire/firestore';
 import { Timestamp } from '@angular/fire/firestore';
 import * as fns from '@angular/fire/functions';
-import * as fireAuth from '@angular/fire/auth';
+import { LazyAuthService } from '../../shared/services/lazy-auth.service';
 
 const INVITE_DOC = { id: 'inv-1', role: 'basic', createdBy: 'uid-x', createdAt: null as unknown as Timestamp };
 
@@ -41,13 +34,19 @@ const INVITE_DOC = { id: 'inv-1', role: 'basic', createdBy: 'uid-x', createdAt: 
 describe('InviteComponent (unauthenticated)', () => {
   let spectator: Spectator<InviteComponent>;
   let mockRouter: { navigate: ReturnType<typeof vi.fn> };
-  const mockAuth = { currentUser: null };
+  const mockLazyAuth = {
+    currentUser: null as object | null,
+    signIn: vi.fn().mockResolvedValue(undefined),
+    signOut: vi.fn().mockResolvedValue(undefined),
+    getAuth: vi.fn().mockResolvedValue({}),
+    user$: of(null),
+  };
 
   const createComponent = createComponentFactory({
     component: InviteComponent,
     providers: [
       { provide: Firestore, useValue: {} },
-      { provide: Auth, useValue: mockAuth },
+      { provide: LazyAuthService, useValue: mockLazyAuth },
       { provide: Functions, useValue: {} },
       { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'invite-123' } } } },
     ],
@@ -86,7 +85,7 @@ describe('InviteComponent (unauthenticated)', () => {
   });
 
   it('should set step to nickname after successful Google sign-in', async () => {
-    vi.mocked(fireAuth.signInWithPopup).mockResolvedValue({} as unknown as Awaited<ReturnType<typeof fireAuth.signInWithPopup>>);
+    mockLazyAuth.signIn.mockResolvedValue(undefined);
     await spectator.component.signIn();
     expect(spectator.component.step()).toBe('nickname');
   });
@@ -115,13 +114,19 @@ describe('InviteComponent (authenticated)', () => {
   let mockRouter: { navigate: ReturnType<typeof vi.fn> };
   let mockAcceptFn: ReturnType<typeof vi.fn>;
   const mockCurrentUser = { getIdToken: vi.fn().mockResolvedValue('token') };
-  const mockAuth = { currentUser: mockCurrentUser };
+  const mockLazyAuth = {
+    currentUser: mockCurrentUser as object | null,
+    signIn: vi.fn().mockResolvedValue(undefined),
+    signOut: vi.fn().mockResolvedValue(undefined),
+    getAuth: vi.fn().mockResolvedValue({}),
+    user$: of(mockCurrentUser),
+  };
 
   const createComponent = createComponentFactory({
     component: InviteComponent,
     providers: [
       { provide: Firestore, useValue: {} },
-      { provide: Auth, useValue: mockAuth },
+      { provide: LazyAuthService, useValue: mockLazyAuth },
       { provide: Functions, useValue: {} },
       { provide: ActivatedRoute, useValue: { snapshot: { paramMap: { get: () => 'invite-123' } } } },
     ],

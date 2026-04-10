@@ -1,18 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createComponentFactory, Spectator } from '@ngneat/spectator/vitest';
-import { of } from 'rxjs';
+import { of, BehaviorSubject } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
-
-vi.mock('@angular/fire/auth', () => ({
-  Auth: class MockAuth {},
-  user: vi.fn().mockReturnValue(of(null)),
-}));
 
 import { ShowcaseCardActionsComponent } from './showcase-card-actions.component';
 import { InlineAlertComponent } from '../../shared/components/inline-alert/inline-alert.component';
 import { ItemsService } from '../../shared/services/items.service';
 import { UserService } from '../../shared/services/user.service';
-import { Auth } from '@angular/fire/auth';
+import { LazyAuthService } from '../../shared/services/lazy-auth.service';
 import { Item } from '../../shared/models/item.model';
 import { Timestamp } from '@angular/fire/firestore';
 import { firstValueFrom } from 'rxjs';
@@ -31,6 +26,7 @@ function mockItem(overrides: Partial<Item> = {}): Item {
 
 describe('ShowcaseCardActionsComponent', () => {
   let spectator: Spectator<ShowcaseCardActionsComponent>;
+  let userSubject: BehaviorSubject<unknown>;
 
   const mockItemsService: Partial<ItemsService> = {
     callDibs: vi.fn().mockResolvedValue(undefined),
@@ -47,7 +43,6 @@ describe('ShowcaseCardActionsComponent', () => {
     providers: [
       { provide: ItemsService, useValue: mockItemsService },
       { provide: UserService, useValue: mockUserService },
-      { provide: Auth, useValue: { currentUser: null } },
     ],
   });
 
@@ -57,8 +52,18 @@ describe('ShowcaseCardActionsComponent', () => {
     vi.mocked(mockItemsService.releaseDibs!).mockResolvedValue(undefined);
     vi.mocked(mockUserService.streamProfile!).mockReturnValue(of(undefined));
 
+    userSubject = new BehaviorSubject<unknown>(null);
+    const mockLazyAuth: Partial<LazyAuthService> = {
+      user$: userSubject.asObservable() as LazyAuthService['user$'],
+      currentUser: null,
+      getAuth: vi.fn().mockResolvedValue({}),
+    };
+
     await TestBed.compileComponents();
-    spectator = createComponent({ props: { item: mockItem() } });
+    spectator = createComponent({
+      props: { item: mockItem() },
+      providers: [{ provide: LazyAuthService, useValue: mockLazyAuth }],
+    });
   });
 
   it('should create', () => {

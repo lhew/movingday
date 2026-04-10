@@ -2,12 +2,12 @@ import { ApplicationConfig } from '@angular/core';
 import { getApp } from 'firebase/app';
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getFirestore, provideFirestore, connectFirestoreEmulator, initializeFirestore } from '@angular/fire/firestore';
-import { Auth, getAuth, provideAuth, connectAuthEmulator, signInWithEmailAndPassword, signOut } from '@angular/fire/auth';
 import { getStorage, provideStorage, connectStorageEmulator } from '@angular/fire/storage';
 import { getFunctions, provideFunctions, connectFunctionsEmulator } from '@angular/fire/functions';
 
 import { environment } from '../environments/environment';
-import { mockAuth, installCypressAuthHelpers } from './shared/services/mock-auth';
+import { mockLazyAuth, installCypressAuthHelpers } from './shared/services/mock-auth';
+import { LazyAuthService } from './shared/services/lazy-auth.service';
 import { ItemsService } from './shared/services/items.service';
 import { UpdatesService } from './shared/services/updates.service';
 import { MockItemsService } from './shared/services/mock-items.service';
@@ -42,23 +42,6 @@ export const browserConfig: ApplicationConfig = {
       return getFirestore();
     }),
 
-    provideAuth(() => {
-      const auth = getAuth();
-      if (environment.useEmulators && !useCypressMocks) {
-        connectAuthEmulator(auth, environment.emulators.authUrl, { disableWarnings: true });
-        // Expose auth helpers on window so manual dev/CI E2E runs can sign in/out
-        // from within the AUT's JS context.
-        Object.assign(window, {
-          __cy: {
-            signIn: (email: string, password: string) =>
-              signInWithEmailAndPassword(auth, email, password),
-            signOut: () => signOut(auth),
-          },
-        });
-      }
-      return auth;
-    }),
-
     provideStorage(() => {
       const storage = getStorage();
       if (environment.useEmulators) {
@@ -87,7 +70,7 @@ export const browserConfig: ApplicationConfig = {
       ? [
           { provide: ItemsService, useClass: MockItemsService },
           { provide: UpdatesService, useClass: MockUpdatesService },
-          { provide: Auth, useValue: mockAuth },
+          { provide: LazyAuthService, useValue: mockLazyAuth },
         ]
       : []),
   ],

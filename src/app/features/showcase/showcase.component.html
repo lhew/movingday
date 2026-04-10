@@ -11,10 +11,10 @@
 
   <!-- Filter tabs -->
   <div class="flex justify-center mb-8">
-    <div class="tabs tabs-boxed">
-      <a class="tab text-base-content" [class.tab-active]="filter() === 'all'" (click)="setFilter('all')">All</a>
-      <a class="tab text-base-content" [class.tab-active]="filter() === 'available'" (click)="setFilter('available')"><ng-icon name="cssCheckO" aria-hidden="true" /> Available</a>
-      <a class="tab text-base-content" [class.tab-active]="filter() === 'claimed'" (click)="setFilter('claimed')"><ng-icon name="cssProfile" aria-hidden="true" /> Claimed</a>
+    <div class="flex gap-3">
+      <button class="btn" [class.btn-primary]="filter() === 'all'" (click)="setFilter('all')">All</button>
+      <button class="btn" [class.btn-primary]="filter() === 'available'" (click)="setFilter('available')"><ng-icon name="cssCheckO" aria-hidden="true" /> Available</button>
+      <button class="btn" [class.btn-primary]="filter() === 'claimed'" (click)="setFilter('claimed')"><ng-icon name="cssProfile" aria-hidden="true" /> Claimed</button>
     </div>
   </div>
 
