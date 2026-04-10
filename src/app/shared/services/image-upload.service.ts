@@ -1,7 +1,7 @@
 import { Injectable, inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { Storage } from '@angular/fire/storage';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes } from 'firebase/storage';
 
 const SM_DIMENSION = 370;
 const LG_DIMENSION = 450;
@@ -61,12 +61,22 @@ export class ImageUploadService {
 
   /**
    * Upload a blob to Firebase Storage under items/ and return the download URL.
+   *
+   * We use the tokenless CDN URL (no ?token=) because:
+   * - items/ is publicly readable (storage.rules: allow read: if true)
+   * - Tokenized URLs bypass Firebase CDN caching — every request hits the origin
+   * - Tokenless URLs are served from CDN edge nodes with proper Cache-Control
    */
   async uploadItemImage(blob: Blob): Promise<string> {
     const filename = `${crypto.randomUUID()}.avif`;
     const imageRef = ref(this.storage, `items/${filename}`);
-    await uploadBytes(imageRef, blob, { contentType: 'image/avif' });
-    return getDownloadURL(imageRef);
+    await uploadBytes(imageRef, blob, {
+      contentType: 'image/avif',
+      cacheControl: 'public, max-age=31536000, immutable',
+    });
+    // Construct tokenless CDN URL — works for publicly readable Storage paths
+    const encodedPath = encodeURIComponent(imageRef.fullPath);
+    return `https://firebasestorage.googleapis.com/v0/b/${imageRef.bucket}/o/${encodedPath}?alt=media`;
   }
 
   /**

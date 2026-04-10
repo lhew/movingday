@@ -8,9 +8,8 @@ vi.mock('firebase/storage', async (importOriginal) => {
   const actual = await importOriginal<typeof import('firebase/storage')>();
   return {
     ...actual,
-    ref: vi.fn(() => ({})),
+    ref: vi.fn(() => ({ bucket: 'my-bucket', fullPath: 'items/test.avif' })),
     uploadBytes: vi.fn(() => Promise.resolve({})),
-    getDownloadURL: vi.fn(() => Promise.resolve('https://storage.example.com/img.avif')),
   };
 });
 
@@ -178,21 +177,36 @@ describe('ImageUploadService', () => {
   // ── uploadItemImage ─────────────────────────────────────────────────────────
 
   describe('uploadItemImage()', () => {
-    it('should call uploadBytes and return the download URL', async () => {
-      const { uploadBytes, getDownloadURL } = await import('firebase/storage');
+    it('should call uploadBytes with avif content type and long-lived cache-control', async () => {
+      const { uploadBytes } = await import('firebase/storage');
+      const blob = new Blob(['data'], { type: 'image/avif' });
 
+      await spectator.service.uploadItemImage(blob);
+
+      expect(uploadBytes).toHaveBeenCalledWith(
+        expect.anything(),
+        blob,
+        expect.objectContaining({
+          contentType: 'image/avif',
+          cacheControl: 'public, max-age=31536000, immutable',
+        }),
+      );
+    });
+
+    it('should return a tokenless CDN URL using the ref bucket and fullPath', async () => {
       const blob = new Blob(['data'], { type: 'image/avif' });
       const url = await spectator.service.uploadItemImage(blob);
 
-      expect(uploadBytes).toHaveBeenCalled();
-      expect(getDownloadURL).toHaveBeenCalled();
-      expect(url).toBe('https://storage.example.com/img.avif');
+      expect(url).toBe(
+        'https://firebasestorage.googleapis.com/v0/b/my-bucket/o/items%2Ftest.avif?alt=media',
+      );
+      expect(url).not.toContain('token=');
     });
 
     it('should upload under the items/ path', async () => {
       const { ref } = await import('firebase/storage');
-
       const blob = new Blob(['data'], { type: 'image/avif' });
+
       await spectator.service.uploadItemImage(blob);
 
       const callArg = (ref as ReturnType<typeof vi.fn>).mock.calls[0][1] as string;
@@ -209,8 +223,8 @@ describe('ImageUploadService', () => {
 
       const result = await spectator.service.resizeAndUploadImages(file);
 
-      expect(result.sm).toBe('https://storage.example.com/img.avif');
-      expect(result.lg).toBe('https://storage.example.com/img.avif');
+      expect(result.sm).toMatch(/^https:\/\/firebasestorage\.googleapis\.com/);
+      expect(result.lg).toMatch(/^https:\/\/firebasestorage\.googleapis\.com/);
     });
 
     it('should upload two variants (sm and lg)', async () => {
