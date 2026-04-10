@@ -33,7 +33,7 @@ describe('ItemFormComponent', () => {
     component: ItemFormComponent,
     providers: [
       { provide: ItemsService, useValue: { createItem: vi.fn(), updateItem: vi.fn() } },
-      { provide: ImageUploadService, useValue: { resizeImage: vi.fn(), uploadItemImage: vi.fn() } },
+      { provide: ImageUploadService, useValue: { resizeAndUploadImages: vi.fn() } },
     ],
   });
 
@@ -47,8 +47,7 @@ describe('ItemFormComponent', () => {
 
     vi.mocked(mockItemsService.createItem!).mockResolvedValue('new-id');
     vi.mocked(mockItemsService.updateItem!).mockResolvedValue(undefined);
-    vi.mocked(mockImageUploadService.resizeImage!).mockResolvedValue(new Blob(['img'], { type: 'image/jpeg' }));
-    vi.mocked(mockImageUploadService.uploadItemImage!).mockResolvedValue('https://storage.example.com/img.jpg');
+    vi.mocked(mockImageUploadService.resizeAndUploadImages!).mockResolvedValue({ sm: 'https://storage.example.com/img.jpg', lg: 'https://storage.example.com/img-lg.jpg' });
   });
 
   it('should create', () => {
@@ -345,8 +344,7 @@ describe('ItemFormComponent', () => {
 
       await spectator.component.save();
 
-      expect(mockImageUploadService.resizeImage).toHaveBeenCalledWith(fakeFile);
-      expect(mockImageUploadService.uploadItemImage).toHaveBeenCalled();
+      expect(mockImageUploadService.resizeAndUploadImages).toHaveBeenCalledWith(fakeFile);
       expect(mockItemsService.createItem).toHaveBeenCalledWith(
         expect.objectContaining({ imageUrl: 'https://storage.example.com/img.jpg' })
       );
