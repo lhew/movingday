@@ -57,6 +57,13 @@ export interface Stats {
     specFiles: number;
     estimatedTests: number;
   };
+  lighthouse: {
+    performance: number | null;
+    accessibility: number | null;
+    bestPractices: number | null;
+    seo: number | null;
+    measuredAt: string | null;
+  } | null;
 }
 
 @Component({
@@ -110,5 +117,28 @@ export class StatsForNerdsComponent implements OnInit {
   formatDuration(ms: number): string {
     if (ms < 1000) return `${ms}ms`;
     return `${(ms / 1000).toFixed(1)}s`;
+  }
+
+  lighthouseMetrics(lh: NonNullable<Stats['lighthouse']>): { label: string; value: number | null }[] {
+    return [
+      { label: 'Performance', value: lh.performance },
+      { label: 'Accessibility', value: lh.accessibility },
+      { label: 'Best Practices', value: lh.bestPractices },
+      { label: 'SEO', value: lh.seo },
+    ];
+  }
+
+  lhScoreColor(score: number | null): string {
+    if (score === null) return 'text-base-content/25';
+    if (score >= 90) return 'text-success';
+    if (score >= 50) return 'text-warning';
+    return 'text-error';
+  }
+
+  lhProgressColor(score: number | null): string {
+    if (score === null) return 'progress-ghost';
+    if (score >= 90) return 'progress-success';
+    if (score >= 50) return 'progress-warning';
+    return 'progress-error';
   }
 }

@@ -52,5 +52,12 @@
   "e2eTests": {
     "specFiles": 2,
     "estimatedTests": 21
+  },
+  "lighthouse": {
+    "performance": 95,
+    "accessibility": null,
+    "bestPractices": null,
+    "seo": null,
+    "measuredAt": "2026-04-10"
   }
 }
