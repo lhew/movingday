@@ -4,6 +4,7 @@
 export const environment = {
   production: false,
   useEmulators: true,   // set to false to point at real Firebase in dev
+  useInternalMocks: false,
   firebase: {
     apiKey: 'fake-api-key-emulator-only',
     authDomain: 'demo-movingday.firebaseapp.com',

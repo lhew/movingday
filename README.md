@@ -84,7 +84,7 @@ App runs at `http://localhost:4200`.
 npm start                               # Dev server
 npx nx build --configuration=production # Production build
 npx nx test                             # Unit tests (Vitest)
-npx nx e2e                              # E2E tests (Cypress)
+npx nx e2e                              # E2E tests (Cypress with SSR + internal mocks)
 npx nx lint                             # Lint
 firebase deploy                         # Deploy everything
 ```

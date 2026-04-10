@@ -1,6 +1,11 @@
 import { Component, inject, signal, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { DecimalPipe, DatePipe } from '@angular/common';
+import { NgIcon, provideIcons } from '@ng-icons/core';
+import {
+  cssChart, cssReadme, cssDanger, cssServer, cssGitBranch,
+  cssCodeClimate, cssCheck, cssDebug, cssTimer, cssRuler, cssGlobe, cssTrophy,
+} from '@ng-icons/css.gg';
 
 export interface BuildInfo {
   commitSha: string | null;
@@ -69,7 +74,11 @@ export interface Stats {
 @Component({
   selector: 'app-stats-for-nerds',
   standalone: true,
-  imports: [DecimalPipe, DatePipe],
+  imports: [DecimalPipe, DatePipe, NgIcon],
+  providers: [provideIcons({
+    cssChart, cssReadme, cssDanger, cssServer, cssGitBranch,
+    cssCodeClimate, cssCheck, cssDebug, cssTimer, cssRuler, cssGlobe, cssTrophy,
+  })],
   templateUrl: './stats-for-nerds.component.html',
 })
 export class StatsForNerdsComponent implements OnInit {

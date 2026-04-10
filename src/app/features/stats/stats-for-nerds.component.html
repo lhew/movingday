@@ -2,13 +2,13 @@
 
   <!-- Header -->
   <div class="text-center mb-10">
-    <h1 class="text-4xl font-bold mb-2">🤓 Stats for Nerds</h1>
-    <p class="text-base-content/80 text-sm">
-      Auto-generated dashboard — run <code class="kbd kbd-sm text-base-content">npm run stats</code> to refresh
+    <h1 class="text-4xl font-bold mb-2 flex items-center justify-center gap-2"><ng-icon name="cssChart" aria-hidden="true" /> Stats for Nerds</h1>
+    <p class="text-base-content text-sm">
+      Auto-generated dashboard · refreshed on every deploy
     </p>
     <a href="/storybook/" target="_blank" rel="noopener"
        class="btn btn-outline btn-sm mt-4 gap-2">
-      <span>📖</span> View Storybook
+      <ng-icon name="cssReadme" aria-hidden="true" /> View Storybook
     </a>
   </div>
 
@@ -22,13 +22,13 @@
   <!-- Error -->
   @if (error()) {
     <div class="alert alert-warning max-w-lg mx-auto">
-      <span>⚠️ {{ error() }}</span>
+      <ng-icon name="cssDanger" aria-hidden="true" /><span>{{ error() }}</span>
     </div>
   }
 
   <!-- Dashboard -->
   @if (stats(); as s) {
-    <p class="text-center text-xs text-base-content/65 mb-8">
+    <p class="text-center text-xs text-base-content/90 mb-8">
       Generated {{ s.generatedAt | date:'medium' }}
     </p>
 
@@ -38,7 +38,7 @@
       @if (s.build; as b) {
         <div class="card bg-base-200 shadow md:col-span-2">
           <div class="card-body">
-            <h2 class="card-title text-lg">🏗 Build Info</h2>
+            <h2 class="card-title text-lg gap-2"><ng-icon name="cssServer" aria-hidden="true" /> Build Info</h2>
             <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
 
               <!-- Commit -->
@@ -69,7 +69,7 @@
                     #{{ b.runNumber }}
                   </a>
                 } @else {
-                  <span class="text-sm font-semibold text-base-content/40 italic">local</span>
+                  <span class="text-sm font-semibold text-base-content/70 italic">local</span>
                 }
               </div>
 
@@ -93,7 +93,7 @@
       <!-- ── Git ──────────────────────────────────────────────── -->
       <div class="card bg-base-200 shadow">
         <div class="card-body gap-4">
-          <h2 class="card-title text-lg">🗂 Git History</h2>
+          <h2 class="card-title text-lg gap-2"><ng-icon name="cssGitBranch" aria-hidden="true" /> Git History</h2>
 
           <div class="stats stats-vertical bg-base-100 rounded-xl shadow-none">
             <div class="stat py-3">
@@ -134,8 +134,8 @@
       <!-- ── Lint ─────────────────────────────────────────────── -->
       <div class="card bg-base-200 shadow">
         <div class="card-body gap-4">
-          <h2 class="card-title text-lg">
-            🧹 Lint
+          <h2 class="card-title text-lg gap-2">
+            <ng-icon name="cssCodeClimate" aria-hidden="true" /> Lint
             @if (s.lint.passed) {
               <span class="badge badge-success badge-sm">Passing</span>
             } @else {
@@ -151,7 +151,7 @@
             <div class="stat py-3">
               <div class="stat-title">Errors / Warnings</div>
               <div class="stat-value text-2xl">
-                <span class="text-error">{{ s.lint.errors }}</span>
+                <span class="badge badge-error badge-lg align-middle text-error-content">{{ s.lint.errors }}</span>
                 <span class="text-base-content/75 mx-1">/</span>
                 <span class="text-base-content">{{ s.lint.warnings }}</span>
               </div>
@@ -169,7 +169,7 @@
               }
             </div>
           } @else {
-            <p class="text-sm text-base-content/75 italic">No lint violations 🎉</p>
+            <p class="text-sm text-base-content/75 italic flex items-center gap-1"><ng-icon name="cssCheck" aria-hidden="true" /> No lint violations</p>
           }
         </div>
       </div>
@@ -177,7 +177,7 @@
       <!-- ── Unit Tests ────────────────────────────────────────── -->
       <div class="card bg-base-200 shadow">
         <div class="card-body gap-4">
-          <h2 class="card-title text-lg">🧪 Unit Tests</h2>
+          <h2 class="card-title text-lg gap-2"><ng-icon name="cssDebug" aria-hidden="true" /> Unit Tests</h2>
 
           <div class="stats stats-vertical bg-base-100 rounded-xl shadow-none">
             <div class="stat py-3">
@@ -190,7 +190,7 @@
               <div class="stat-desc">
                 <span class="text-base-content">{{ s.unitTests.passed }} passed</span>
                 @if (s.unitTests.failed) {
-                  · <span class="text-error">{{ s.unitTests.failed }} failed</span>
+                  · <span class="badge badge-error badge-sm align-middle text-error-content">{{ s.unitTests.failed }} failed</span>
                 }
                 @if (s.unitTests.skipped) {
                   · <span class="text-base-content">{{ s.unitTests.skipped }} skipped</span>
@@ -213,8 +213,8 @@
           </div>
 
           @if (s.unitTests.durationMs) {
-            <p class="text-xs text-base-content/75">
-              ⏱ Ran in {{ formatDuration(s.unitTests.durationMs) }}
+            <p class="text-xs text-base-content/75 flex items-center gap-1">
+              <ng-icon name="cssTimer" aria-hidden="true" /> Ran in {{ formatDuration(s.unitTests.durationMs) }}
             </p>
           }
         </div>
@@ -226,7 +226,7 @@
         <!-- Coverage -->
         <div class="card bg-base-200 shadow flex-1">
           <div class="card-body gap-3">
-            <h2 class="card-title text-lg">📐 Coverage</h2>
+            <h2 class="card-title text-lg gap-2"><ng-icon name="cssRuler" aria-hidden="true" /> Coverage</h2>
             @if (s.coverage.lines !== null) {
               <div class="grid grid-cols-2 gap-2">
                 @let metrics = [
@@ -246,7 +246,7 @@
               </div>
             } @else {
               <p class="text-sm text-base-content/75 italic">
-                Run <code class="kbd kbd-xs text-base-content">npm run stats</code> with coverage to see data.
+                Coverage data unavailable — not measured in the last build.
               </p>
             }
           </div>
@@ -255,7 +255,7 @@
         <!-- E2E -->
         <div class="card bg-base-200 shadow flex-1">
           <div class="card-body gap-3">
-            <h2 class="card-title text-lg">🌐 E2E Tests</h2>
+            <h2 class="card-title text-lg gap-2"><ng-icon name="cssGlobe" aria-hidden="true" /> E2E Tests</h2>
             <div class="stats stats-horizontal bg-base-100 rounded-xl shadow-none">
               <div class="stat py-3 place-items-center">
                 <div class="stat-title text-xs">Spec files</div>
@@ -266,7 +266,7 @@
                 <div class="stat-value text-3xl">{{ s.e2eTests.estimatedTests }}</div>
               </div>
             </div>
-            <p class="text-xs text-base-content/65">Cypress · count estimated from <code class="text-base-content">it(</code> calls</p>
+            <p class="text-xs text-base-content/80">Cypress · count estimated from <code class="text-base-content">it(</code> calls</p>
           </div>
         </div>
 
@@ -277,7 +277,7 @@
         <div class="card bg-base-200 shadow md:col-span-2">
           <div class="card-body gap-4">
             <div class="flex items-center justify-between flex-wrap gap-2">
-              <h2 class="card-title text-lg">🏆 Lighthouse</h2>
+              <h2 class="card-title text-lg gap-2"><ng-icon name="cssTrophy" aria-hidden="true" /> Lighthouse</h2>
               @if (lh.measuredAt) {
                 <span class="text-xs text-base-content/80">measured {{ lh.measuredAt | date:'mediumDate' }}</span>
               }

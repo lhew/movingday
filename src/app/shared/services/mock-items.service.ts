@@ -1,8 +1,8 @@
 import { Injectable, inject } from '@angular/core';
-import { Auth } from '@angular/fire/auth';
 import { Timestamp } from '@angular/fire/firestore';
 import { BehaviorSubject, Observable, map } from 'rxjs';
 import { Item, ItemStatus } from '../models/item.model';
+import { LazyAuthService } from './lazy-auth.service';
 
 function sortByCreatedAtDesc(items: Item[]): Item[] {
   return [...items].sort((a, b) => b.createdAt.toMillis() - a.createdAt.toMillis());
@@ -10,7 +10,7 @@ function sortByCreatedAtDesc(items: Item[]): Item[] {
 
 @Injectable()
 export class MockItemsService {
-  private auth = inject(Auth);
+  private lazyAuth = inject(LazyAuthService);
 
   private readonly itemsSubject = new BehaviorSubject<Item[]>(
     sortByCreatedAtDesc([
@@ -106,7 +106,7 @@ export class MockItemsService {
   }
 
   async callDibs(itemId: string): Promise<void> {
-    const currentUser = this.auth.currentUser;
+    const currentUser = this.lazyAuth.currentUser;
     if (!currentUser) throw new Error('You must be signed in to call dibs!');
 
     this.itemsSubject.next(

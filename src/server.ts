@@ -7,10 +7,19 @@ import {
 import compression from 'compression';
 import express from 'express';
 import { dirname, join } from 'node:path';
+import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 
 const serverDistFolder = dirname(fileURLToPath(import.meta.url));
 const browserDistFolder = join(serverDistFolder, '../browser');
+let cachedCsrIndexHtml: string | null = null;
+
+function getCsrIndexHtml(): string {
+  if (!cachedCsrIndexHtml) {
+    cachedCsrIndexHtml = readFileSync(join(browserDistFolder, 'index.csr.html'), 'utf-8');
+  }
+  return cachedCsrIndexHtml;
+}
 
 const app = express();
 app.use(compression());
@@ -34,9 +43,21 @@ app.use(
 app.use((req, res, next) => {
   angularApp
     .handle(req)
-    .then((response) =>
-      response ? writeResponseToNodeResponse(response, res) : next(),
-    )
+    .then((response) => {
+      if (response) {
+        return writeResponseToNodeResponse(response, res);
+      }
+
+      // Some lazy and client-rendered routes can fall through Angular's SSR engine
+      // in the built Node server. Serve the CSR shell instead of returning Express's
+      // raw "Cannot GET ..." 404 so deep links still boot the Angular router.
+      if (req.method === 'GET' && !req.path.includes('.')) {
+        res.status(200).type('html').send(getCsrIndexHtml());
+        return;
+      }
+
+      next();
+    })
     .catch(next);
 });
 

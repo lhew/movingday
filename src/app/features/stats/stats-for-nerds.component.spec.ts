@@ -7,6 +7,17 @@ import { StatsForNerdsComponent, Stats } from './stats-for-nerds.component';
 
 const mockStats: Stats = {
   generatedAt: '2026-04-01T12:00:00.000Z',
+  build: {
+    commitSha: 'abcdef1234567890',
+    commitShort: 'abcdef1',
+    runId: '123456789',
+    runNumber: 42,
+    workflow: 'CI',
+    actor: 'leo',
+    ref: 'main',
+    repository: 'leo/movingday',
+    serverUrl: 'https://github.com',
+  },
   git: {
     totalCommits: 42,
     lastCommitMsg: 'feat: add stats page',
@@ -41,6 +52,13 @@ const mockStats: Stats = {
   e2eTests: {
     specFiles: 2,
     estimatedTests: 8,
+  },
+  lighthouse: {
+    performance: 96,
+    accessibility: 98,
+    bestPractices: 92,
+    seo: 90,
+    measuredAt: '2026-04-01T12:00:00.000Z',
   },
 };
 
@@ -106,5 +124,19 @@ describe('StatsForNerdsComponent', () => {
 
   it('should format duration in seconds for values >= 1000ms', () => {
     expect(spectator.component.formatDuration(3200)).toBe('3.2s');
+  });
+
+  it('should return correct lighthouse score classes', () => {
+    expect(spectator.component.lhScoreColor(95)).toBe('text-green-800');
+    expect(spectator.component.lhScoreColor(65)).toBe('text-yellow-700');
+    expect(spectator.component.lhScoreColor(20)).toBe('text-red-800');
+    expect(spectator.component.lhScoreColor(null)).toBe('text-base-content/25');
+  });
+
+  it('should return correct lighthouse progress classes', () => {
+    expect(spectator.component.lhProgressColor(95)).toBe('progress-success');
+    expect(spectator.component.lhProgressColor(65)).toBe('progress-warning');
+    expect(spectator.component.lhProgressColor(20)).toBe('progress-error');
+    expect(spectator.component.lhProgressColor(null)).toBe('progress-ghost');
   });
 });

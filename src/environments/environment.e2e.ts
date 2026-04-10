@@ -1,0 +1,25 @@
+export const environment = {
+  production: false,
+  useEmulators: false,
+  useInternalMocks: true,
+  firebase: {
+    apiKey: 'e2e-internal-mocks',
+    authDomain: 'e2e-internal-mocks.local',
+    projectId: 'e2e-internal-mocks',
+    storageBucket: 'e2e-internal-mocks.appspot.com',
+    messagingSenderId: '000000000000',
+    appId: '1:000000000000:web:e2einternalmocks',
+    measurementId: '',
+  },
+  emulators: {
+    firestoreHost: '',
+    firestorePort: 0,
+    authUrl: '',
+    functionsHost: '',
+    functionsPort: 0,
+    storageHost: '',
+    storagePort: 0,
+  },
+  agentEndpointUrl: 'http://localhost:4200/__unused_e2e_agent__',
+  adminEmail: 'e2e-admin@movingday.test',
+};

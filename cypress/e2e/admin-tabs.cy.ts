@@ -1,7 +1,7 @@
 // ── Admin Panel — Invitations & Users tabs ────────────────────────────────────
 // The Items tab is covered by admin-items.cy.ts.
-// Invitations and Users tabs call Firestore (no mock) so we assert UI structure
-// only — not live data content (it never loads without an emulator).
+// In E2E mock mode these tabs use internal mock services, so they can load
+// deterministically without Firestore or Functions.
 
 describe('Admin Panel — Invitations tab', () => {
   beforeEach(() => {

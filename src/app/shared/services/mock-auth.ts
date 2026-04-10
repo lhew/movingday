@@ -107,7 +107,7 @@ export const mockLazyAuth = {
   },
 };
 
-/** Called once at app bootstrap (Cypress mode only). */
+/** Called once at app bootstrap whenever internal E2E mocks are enabled. */
 export function installCypressAuthHelpers(): void {
   if (typeof window === 'undefined') return;
   Object.assign(window, {

@@ -3,6 +3,7 @@
 export const environment = {
   production: true,
   useEmulators: false,
+  useInternalMocks: false,
   emulators: {
     firestoreHost: '',
     firestorePort: 0,

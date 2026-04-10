@@ -10,12 +10,9 @@ const routes = [
   { name: 'Not found', path: '/this-page-does-not-exist' },
 ];
 
-// Invite requires a live Firestore connection (no CI mock exists).
-// Only run it locally; in CI (no Firestore) the page stays on the loading spinner.
-const isCI = Cypress.env('CI') === true || Cypress.env('CI') === 'true';
-if (!isCI) {
-  routes.push({ name: 'Invite (invalid id)', path: '/invite/nonexistent-id' });
-}
+// Invite still uses direct Firestore/Functions access in the component itself,
+// so it is intentionally excluded from the global a11y sweep until that flow
+// has an internal mock path as well.
 
 describe('Accessibility audits (all routes)', () => {
   routes.forEach(({ name, path }) => {
