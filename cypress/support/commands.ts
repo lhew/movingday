@@ -4,7 +4,7 @@
 // that app.config.ts installs in Cypress mode.
 interface Window {
   __cy: {
-    signIn(role: 'user' | 'admin'): void;
+    signIn(role: 'user' | 'admin' | 'editor'): void;
     signOut(): void;
   };
 }
@@ -19,6 +19,9 @@ declare namespace Cypress {
 
     /** Sign in as an admin user (role=admin claim). MUST be called AFTER cy.visit(). */
     signInAsAdminUser(): Chainable<void>;
+
+    /** Sign in as an editor user (role=editor claim). MUST be called AFTER cy.visit(). */
+    signInAsEditorUser(): Chainable<void>;
 
     /**
      * Inject axe-core and assert zero accessibility violations on the current page.
@@ -35,6 +38,10 @@ Cypress.Commands.add('signInAsTestUser', () => {
 
 Cypress.Commands.add('signInAsAdminUser', () => {
   cy.window().then((win) => win.__cy.signIn('admin'));
+});
+
+Cypress.Commands.add('signInAsEditorUser', () => {
+  cy.window().then((win) => win.__cy.signIn('editor'));
 });
 
 Cypress.Commands.add('signOutTestUser', () => {

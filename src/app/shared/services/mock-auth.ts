@@ -1,23 +1,35 @@
 import { BehaviorSubject } from 'rxjs';
 
-type MockRole = 'user' | 'admin';
+type MockRole = 'user' | 'admin' | 'editor';
 
 /** SessionStorage key used to persist mock auth role across cy.visit() reloads. */
 const SESSION_KEY = '__cypress_mock_auth_role__';
 
 function makeMockUser(role: MockRole) {
-  const isAdmin = role === 'admin';
+  const uid =
+    role === 'admin' ? 'mock-admin-uid' :
+    role === 'editor' ? 'mock-editor-uid' :
+    'mock-user-uid';
+  const email =
+    role === 'admin' ? 'e2e-admin@movingday.test' :
+    role === 'editor' ? 'e2e-editor@movingday.test' :
+    'e2e-test@movingday.test';
+  const displayName =
+    role === 'admin' ? 'E2E Admin User' :
+    role === 'editor' ? 'E2E Editor User' :
+    'E2E Test User';
+  const claims: Record<string, string> = role !== 'user' ? { role } : {};
   return {
-    uid: isAdmin ? 'mock-admin-uid' : 'mock-user-uid',
-    email: isAdmin ? 'e2e-admin@movingday.test' : 'e2e-test@movingday.test',
-    displayName: isAdmin ? 'E2E Admin User' : 'E2E Test User',
+    uid,
+    email,
+    displayName,
     photoURL: null as string | null,
     emailVerified: true,
     isAnonymous: false,
     getIdToken: () => Promise.resolve('mock-token'),
     getIdTokenResult: () =>
       Promise.resolve({
-        claims: isAdmin ? { role: 'admin' } : {},
+        claims,
         token: 'mock-token',
         authTime: new Date().toISOString(),
         expirationTime: new Date(Date.now() + 3_600_000).toISOString(),
