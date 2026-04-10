@@ -11,6 +11,7 @@ export const environment = {
     storageBucket: 'demo-movingday.appspot.com',
     messagingSenderId: '000000000000',
     appId: '1:000000000000:web:0000000000000000',
+    measurementId: '', // empty disables analytics in dev/emulator
   },
   emulators: {
     firestoreHost: 'localhost',

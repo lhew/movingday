@@ -14,6 +14,7 @@ vi.mock('@angular/fire/auth', () => ({
 import { AppComponent } from './app.component';
 import { Auth } from '@angular/fire/auth';
 import { UserService } from './shared/services/user.service';
+import { AnalyticsService } from './shared/services/analytics.service';
 
 describe('AppComponent', () => {
   let spectator: Spectator<AppComponent>;
@@ -23,6 +24,7 @@ describe('AppComponent', () => {
     providers: [
       { provide: Auth, useValue: {} },
       { provide: UserService, useValue: { getProfile: vi.fn().mockResolvedValue(null) } },
+      { provide: AnalyticsService, useValue: { init: vi.fn() } },
       provideRouter([]),
     ],
     overrideTemplate: '<router-outlet />',
@@ -35,6 +37,11 @@ describe('AppComponent', () => {
 
   it('should create', () => {
     expect(spectator.component).toBeTruthy();
+  });
+
+  it('should call analytics.init() on construction', () => {
+    const analytics = spectator.inject(AnalyticsService);
+    expect(analytics.init).toHaveBeenCalledOnce();
   });
 });
 

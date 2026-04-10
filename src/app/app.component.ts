@@ -1,8 +1,9 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { cssBox, cssNotes, cssChart } from '@ng-icons/css.gg';
 import { AuthMenuComponent } from './shared/components/auth-menu/auth-menu.component';
+import { AnalyticsService } from './shared/services/analytics.service';
 
 const SLOGANS = [
   'Your stuff deserves a second chapter.',
@@ -21,4 +22,8 @@ const SLOGANS = [
 })
 export class AppComponent {
   readonly slogan = SLOGANS[Math.floor(Math.random() * SLOGANS.length)];
+
+  constructor() {
+    inject(AnalyticsService).init();
+  }
 }
