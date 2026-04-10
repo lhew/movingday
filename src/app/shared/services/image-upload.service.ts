@@ -1,97 +1,36 @@
-import { Injectable, inject, PLATFORM_ID } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
-import { Storage } from '@angular/fire/storage';
-import { ref, uploadBytes } from 'firebase/storage';
-
-const SM_DIMENSION = 370;
-const LG_DIMENSION = 450;
+import { Injectable, inject } from '@angular/core';
+import { Functions, httpsCallable } from '@angular/fire/functions';
 
 @Injectable({ providedIn: 'root' })
 export class ImageUploadService {
-  private storage = inject(Storage);
-  private platformId = inject(PLATFORM_ID);
+  private functions = inject(Functions);
 
   /**
-   * Resize an image file so neither dimension exceeds maxDimension,
-   * then encode as AVIF via canvas.
-   */
-  resizeImage(file: File, maxDimension: number): Promise<Blob> {
-    if (!isPlatformBrowser(this.platformId)) {
-      return Promise.reject(new Error('resizeImage is only available in the browser'));
-    }
-    return new Promise((resolve, reject) => {
-      const img = new Image();
-      const objectUrl = URL.createObjectURL(file);
-
-      img.onload = () => {
-        URL.revokeObjectURL(objectUrl);
-
-        const { naturalWidth: w, naturalHeight: h } = img;
-        const scale = Math.min(maxDimension / w, maxDimension / h, 1);
-
-        const canvas = document.createElement('canvas');
-        canvas.width = Math.round(w * scale);
-        canvas.height = Math.round(h * scale);
-
-        const ctx = canvas.getContext('2d');
-        if (!ctx) {
-          reject(new Error('Could not get canvas 2D context'));
-          return;
-        }
-
-        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-        canvas.toBlob(
-          (blob) => {
-            if (blob) resolve(blob);
-            else reject(new Error('canvas.toBlob returned null'));
-          },
-          'image/avif',
-          0.3
-        );
-      };
-
-      img.onerror = () => {
-        URL.revokeObjectURL(objectUrl);
-        reject(new Error('Failed to load image'));
-      };
-
-      img.src = objectUrl;
-    });
-  }
-
-  /**
-   * Upload a blob to Firebase Storage under items/ and return the download URL.
-   *
-   * We use the tokenless CDN URL (no ?token=) because:
-   * - items/ is publicly readable (storage.rules: allow read: if true)
-   * - Tokenized URLs bypass Firebase CDN caching — every request hits the origin
-   * - Tokenless URLs are served from CDN edge nodes with proper Cache-Control
-   */
-  async uploadItemImage(blob: Blob): Promise<string> {
-    const filename = `${crypto.randomUUID()}.avif`;
-    const imageRef = ref(this.storage, `items/${filename}`);
-    await uploadBytes(imageRef, blob, {
-      contentType: 'image/avif',
-      cacheControl: 'public, max-age=31536000, immutable',
-    });
-    // Construct tokenless CDN URL — works for publicly readable Storage paths
-    const encodedPath = encodeURIComponent(imageRef.fullPath);
-    return `https://firebasestorage.googleapis.com/v0/b/${imageRef.bucket}/o/${encodedPath}?alt=media`;
-  }
-
-  /**
-   * Resize a file to both SM (370px) and LG (450px) and upload both in parallel.
-   * Returns download URLs for each variant.
+   * Send the raw image file to the processUploadedImage Cloud Function,
+   * which uses Sharp/libavif server-side to produce properly compressed
+   * AVIF variants and upload them to Firebase Storage.
+   * Returns tokenless CDN URLs for sm (370px) and lg (450px).
    */
   async resizeAndUploadImages(file: File): Promise<{ sm: string; lg: string }> {
-    const [smBlob, lgBlob] = await Promise.all([
-      this.resizeImage(file, SM_DIMENSION),
-      this.resizeImage(file, LG_DIMENSION),
-    ]);
-    const [sm, lg] = await Promise.all([
-      this.uploadItemImage(smBlob),
-      this.uploadItemImage(lgBlob),
-    ]);
-    return { sm, lg };
+    const base64 = await this.fileToBase64(file);
+    const fn = httpsCallable<
+      { data: string; contentType: string },
+      { sm: string; lg: string }
+    >(this.functions, 'processUploadedImage');
+    const result = await fn({ data: base64, contentType: file.type });
+    return result.data;
+  }
+
+  private fileToBase64(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result as string;
+        // Strip the "data:<mime>;base64," prefix
+        resolve(dataUrl.split(',')[1]);
+      };
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsDataURL(file);
+    });
   }
 }

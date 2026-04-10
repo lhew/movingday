@@ -3,6 +3,7 @@ import { auth } from 'firebase-functions/v1';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import Anthropic from '@anthropic-ai/sdk';
+import sharp from 'sharp';
 
 export { ssrApp } from './ssr';
 
@@ -310,4 +311,65 @@ Always confirm what you did after taking actions.`,
       res.status(500).json({ error: 'Agent failed', details: String(error) });
     }
   });
+
+// ── processUploadedImage: server-side Sharp resize + AVIF encode ────────────
+// Accepts a base64-encoded image, produces sm (370px) and lg (450px) AVIF
+// variants using libavif via Sharp, uploads to Firebase Storage, returns URLs.
+
+const SM_MAX = 370;
+const LG_MAX = 450;
+const AVIF_QUALITY = 50; // libavif CQ scale (0-100); 50 ≈ visually lossless for thumbnails
+
+async function resizeToAvif(input: Buffer, maxDim: number): Promise<Buffer> {
+  return sharp(input)
+    .resize(maxDim, maxDim, { fit: 'inside', withoutEnlargement: true })
+    .avif({ quality: AVIF_QUALITY })
+    .toBuffer();
+}
+
+async function uploadToStorage(buffer: Buffer, filename: string): Promise<string> {
+  const bucket = admin.storage().bucket();
+  const file = bucket.file(`items/${filename}`);
+  await file.save(buffer, {
+    metadata: {
+      contentType: 'image/avif',
+      cacheControl: 'public, max-age=31536000, immutable',
+    },
+  });
+  const encodedPath = encodeURIComponent(file.name);
+  return `https://firebasestorage.googleapis.com/v0/b/${bucket.name}/o/${encodedPath}?alt=media`;
+}
+
+export const processUploadedImage = onCall(
+  { timeoutSeconds: 120, memory: '512MiB' },
+  async (request) => {
+    if (!request.auth) {
+      throw new HttpsError('unauthenticated', 'Must be signed in.');
+    }
+    const role = request.auth.token['role'];
+    if (role !== 'admin' && role !== 'editor') {
+      throw new HttpsError('permission-denied', 'Admin or editor only.');
+    }
+
+    const { data: base64, contentType } = request.data as { data: string; contentType: string };
+    if (!base64 || !contentType) {
+      throw new HttpsError('invalid-argument', 'data and contentType are required.');
+    }
+
+    const input = Buffer.from(base64, 'base64');
+    const id = crypto.randomUUID();
+
+    const [smBuffer, lgBuffer] = await Promise.all([
+      resizeToAvif(input, SM_MAX),
+      resizeToAvif(input, LG_MAX),
+    ]);
+
+    const [sm, lg] = await Promise.all([
+      uploadToStorage(smBuffer, `${id}-sm.avif`),
+      uploadToStorage(lgBuffer, `${id}-lg.avif`),
+    ]);
+
+    return { sm, lg };
+  }
+);
 

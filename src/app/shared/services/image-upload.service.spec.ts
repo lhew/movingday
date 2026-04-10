@@ -1,251 +1,60 @@
-import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/vitest';
-import { Storage } from '@angular/fire/storage';
+import { Functions } from '@angular/fire/functions';
 import { ImageUploadService } from './image-upload.service';
 
-// ── ESM mock for firebase/storage ─────────────────────────────────────────────
-vi.mock('firebase/storage', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('firebase/storage')>();
-  return {
-    ...actual,
-    ref: vi.fn(() => ({ bucket: 'my-bucket', fullPath: 'items/test.avif' })),
-    uploadBytes: vi.fn(() => Promise.resolve({})),
-  };
-});
+vi.mock('@angular/fire/functions', () => ({
+  Functions: class {},
+  httpsCallable: vi.fn(),
+}));
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-
-function setupResizeMock(naturalWidth: number, naturalHeight: number, toBlobResult: Blob | null = new Blob(['img'], { type: 'image/jpeg' })) {
-  let capturedCanvas: { width: number; height: number } | null = null;
-  const resultBlob = toBlobResult;
-
-  const realCreateElement = document.createElement.bind(document);
-  vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
-    if (tag === 'canvas') {
-      capturedCanvas = {
-        width: 0,
-        height: 0,
-        getContext: vi.fn().mockReturnValue({ drawImage: vi.fn() }),
-        toBlob: vi.fn((cb: (b: Blob | null) => void) => cb(resultBlob)),
-      } as unknown as { width: number; height: number };
-      return capturedCanvas as unknown as HTMLElement;
-    }
-    return realCreateElement(tag);
-  });
-
-  vi.spyOn(globalThis, 'Image').mockImplementation(() => ({
-    naturalWidth,
-    naturalHeight,
-    onload: undefined as (() => void) | undefined,
-    onerror: undefined,
-    set src(_: string) { setTimeout(() => (this as { onload?: () => void }).onload?.(), 0); },
-  } as unknown as HTMLImageElement));
-
-  return {
-    resultBlob,
-    getCanvas: () => capturedCanvas,
-  };
-}
-
-// ── Tests ─────────────────────────────────────────────────────────────────────
+import { httpsCallable } from '@angular/fire/functions';
 
 describe('ImageUploadService', () => {
   let spectator: SpectatorService<ImageUploadService>;
+  let mockCallableFn: ReturnType<typeof vi.fn>;
 
   const createService = createServiceFactory({
     service: ImageUploadService,
-    providers: [{ provide: Storage, useValue: {} }],
-  });
-
-  // jsdom doesn't implement these browser APIs
-  beforeAll(() => {
-    Object.defineProperty(URL, 'createObjectURL', {
-      value: vi.fn(() => 'blob:fake'),
-      writable: true,
-      configurable: true,
-    });
-    Object.defineProperty(URL, 'revokeObjectURL', {
-      value: vi.fn(),
-      writable: true,
-      configurable: true,
-    });
+    providers: [{ provide: Functions, useValue: {} }],
   });
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockCallableFn = vi.fn().mockResolvedValue({
+      data: {
+        sm: 'https://firebasestorage.googleapis.com/v0/b/bucket/o/items%2Fid-sm.avif?alt=media',
+        lg: 'https://firebasestorage.googleapis.com/v0/b/bucket/o/items%2Fid-lg.avif?alt=media',
+      },
+    });
+    vi.mocked(httpsCallable).mockReturnValue(mockCallableFn);
     spectator = createService();
-  });
-
-  // ── resizeImage ─────────────────────────────────────────────────────────────
-
-  describe('resizeImage()', () => {
-    it('should resolve with a Blob', async () => {
-      const { resultBlob } = setupResizeMock(800, 800);
-      const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
-
-      const result = await spectator.service.resizeImage(file, 600);
-
-      expect(result).toBe(resultBlob);
-    });
-
-    it('should scale down a wide image so width = 600px', async () => {
-      const { getCanvas } = setupResizeMock(1200, 600);
-      const file = new File(['data'], 'wide.jpg', { type: 'image/jpeg' });
-
-      await spectator.service.resizeImage(file, 600);
-
-      expect(getCanvas()?.width).toBe(600);
-      expect(getCanvas()?.height).toBe(300);
-    });
-
-    it('should scale down a tall image so height = 600px', async () => {
-      const { getCanvas } = setupResizeMock(600, 1200);
-      const file = new File(['data'], 'tall.jpg', { type: 'image/jpeg' });
-
-      await spectator.service.resizeImage(file, 600);
-
-      expect(getCanvas()?.width).toBe(300);
-      expect(getCanvas()?.height).toBe(600);
-    });
-
-    it('should not upscale an image already within the limit', async () => {
-      const { getCanvas } = setupResizeMock(400, 300);
-      const file = new File(['data'], 'small.jpg', { type: 'image/jpeg' });
-
-      await spectator.service.resizeImage(file, 600);
-
-      expect(getCanvas()?.width).toBe(400);
-      expect(getCanvas()?.height).toBe(300);
-    });
-
-    it('should encode the image as avif at 30% quality', async () => {
-      const { getCanvas } = setupResizeMock(400, 400);
-      const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
-
-      await spectator.service.resizeImage(file, 600);
-
-      const canvas = getCanvas() as unknown as { toBlob: ReturnType<typeof vi.fn> };
-      expect(canvas.toBlob).toHaveBeenCalledWith(expect.any(Function), 'image/avif', 0.3);
-    });
-
-    it('should reject when canvas.toBlob returns null', async () => {
-      setupResizeMock(100, 100, null);
-      const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
-
-      await expect(spectator.service.resizeImage(file, 600)).rejects.toThrow('canvas.toBlob returned null');
-    });
-
-    it('should reject when canvas 2D context cannot be obtained', async () => {
-      const realCreateElement = document.createElement.bind(document);
-      vi.spyOn(document, 'createElement').mockImplementation((tag: string) => {
-        if (tag === 'canvas') {
-          return {
-            width: 0,
-            height: 0,
-            getContext: vi.fn().mockReturnValue(null),
-            toBlob: vi.fn(),
-          } as unknown as HTMLElement;
-        }
-        return realCreateElement(tag);
-      });
-      vi.spyOn(globalThis, 'Image').mockImplementation(() => ({
-        naturalWidth: 100,
-        naturalHeight: 100,
-        onload: undefined as (() => void) | undefined,
-        onerror: undefined,
-        set src(_: string) { setTimeout(() => (this as { onload?: () => void }).onload?.(), 0); },
-      } as unknown as HTMLImageElement));
-
-      const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
-      await expect(spectator.service.resizeImage(file, 600)).rejects.toThrow('Could not get canvas 2D context');
-    });
-
-    it('should reject when the image fails to load', async () => {
-      vi.spyOn(globalThis, 'Image').mockImplementation(() => ({
-        naturalWidth: 0,
-        naturalHeight: 0,
-        onload: undefined,
-        onerror: undefined as (() => void) | undefined,
-        set src(_: string) { setTimeout(() => (this as { onerror?: () => void }).onerror?.(), 0); },
-      } as unknown as HTMLImageElement));
-
-      const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
-      await expect(spectator.service.resizeImage(file, 600)).rejects.toThrow('Failed to load image');
-    });
-  });
-
-  // ── uploadItemImage ─────────────────────────────────────────────────────────
-
-  describe('uploadItemImage()', () => {
-    it('should call uploadBytes with avif content type and long-lived cache-control', async () => {
-      const { uploadBytes } = await import('firebase/storage');
-      const blob = new Blob(['data'], { type: 'image/avif' });
-
-      await spectator.service.uploadItemImage(blob);
-
-      expect(uploadBytes).toHaveBeenCalledWith(
-        expect.anything(),
-        blob,
-        expect.objectContaining({
-          contentType: 'image/avif',
-          cacheControl: 'public, max-age=31536000, immutable',
-        }),
-      );
-    });
-
-    it('should return a tokenless CDN URL using the ref bucket and fullPath', async () => {
-      const blob = new Blob(['data'], { type: 'image/avif' });
-      const url = await spectator.service.uploadItemImage(blob);
-
-      expect(url).toBe(
-        'https://firebasestorage.googleapis.com/v0/b/my-bucket/o/items%2Ftest.avif?alt=media',
-      );
-      expect(url).not.toContain('token=');
-    });
-
-    it('should upload under the items/ path', async () => {
-      const { ref } = await import('firebase/storage');
-      const blob = new Blob(['data'], { type: 'image/avif' });
-
-      await spectator.service.uploadItemImage(blob);
-
-      const callArg = (ref as ReturnType<typeof vi.fn>).mock.calls[0][1] as string;
-      expect(callArg).toMatch(/^items\/.*\.avif$/);
-    });
   });
 
   // ── resizeAndUploadImages ───────────────────────────────────────────────────
 
   describe('resizeAndUploadImages()', () => {
-    it('should return sm and lg URLs', async () => {
-      setupResizeMock(800, 800);
-      const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
+    it('should call the processUploadedImage Cloud Function', async () => {
+      const file = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
+      await spectator.service.resizeAndUploadImages(file);
+      expect(httpsCallable).toHaveBeenCalledWith(expect.anything(), 'processUploadedImage');
+      expect(mockCallableFn).toHaveBeenCalledOnce();
+    });
 
+    it('should pass file base64 and contentType to the function', async () => {
+      const file = new File(['abc'], 'photo.jpg', { type: 'image/jpeg' });
+      await spectator.service.resizeAndUploadImages(file);
+      const [payload] = mockCallableFn.mock.calls[0] as [{ data: string; contentType: string }];
+      expect(payload.contentType).toBe('image/jpeg');
+      expect(typeof payload.data).toBe('string');
+      expect(payload.data.length).toBeGreaterThan(0);
+    });
+
+    it('should return sm and lg URLs from the function response', async () => {
+      const file = new File(['data'], 'photo.jpg', { type: 'image/jpeg' });
       const result = await spectator.service.resizeAndUploadImages(file);
-
-      expect(result.sm).toMatch(/^https:\/\/firebasestorage\.googleapis\.com/);
-      expect(result.lg).toMatch(/^https:\/\/firebasestorage\.googleapis\.com/);
-    });
-
-    it('should upload two variants (sm and lg)', async () => {
-      setupResizeMock(800, 800);
-      const { uploadBytes } = await import('firebase/storage');
-      const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
-
-      await spectator.service.resizeAndUploadImages(file);
-
-      expect(uploadBytes).toHaveBeenCalledTimes(2);
-    });
-
-    it('should resize sm to 370px max and lg to 450px max', async () => {
-      const { getCanvas } = setupResizeMock(800, 800);
-      const file = new File(['data'], 'test.jpg', { type: 'image/jpeg' });
-
-      await spectator.service.resizeAndUploadImages(file);
-
-      // Both calls share the mock canvas; the last call's dimensions are captured
-      // We verify that the canvas was set to 450 (lg) in the second resize call
-      expect(getCanvas()?.width).toBe(450);
+      expect(result.sm).toMatch(/firebasestorage\.googleapis\.com/);
+      expect(result.lg).toMatch(/firebasestorage\.googleapis\.com/);
     });
   });
 });
