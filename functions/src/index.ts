@@ -328,7 +328,13 @@ async function resizeToAvif(input: Buffer, maxDim: number): Promise<Buffer> {
 }
 
 async function uploadToStorage(buffer: Buffer, filename: string): Promise<string> {
-  const bucket = admin.storage().bucket();
+  // admin.storage().bucket() with no args triggers a Cloud Resource Manager API
+  // lookup for the default bucket — this fails with demo-* emulator projects.
+  // Instead, resolve the bucket name from app options (populated via FIREBASE_CONFIG
+  // in production) or fall back to the project-id-derived name for the emulator.
+  const bucketName =
+    admin.app().options.storageBucket ?? `${process.env['GCLOUD_PROJECT']}.appspot.com`;
+  const bucket = admin.storage().bucket(bucketName);
   const file = bucket.file(`items/${filename}`);
   await file.save(buffer, {
     metadata: {
