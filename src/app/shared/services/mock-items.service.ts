@@ -75,6 +75,9 @@ export class MockItemsService {
     return this.itemsSubject.asObservable();
   }
 
+  /** No-op in mock — real service defers Firestore listener until this is called. */
+  enableLiveUpdates(): void {}
+
   getAvailableItems(): Observable<Item[]> {
     return this.itemsSubject.pipe(map((items) => items.filter((i) => i.status === 'available')));
   }
