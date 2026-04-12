@@ -15,8 +15,8 @@ import {
   where,
   serverTimestamp,
 } from '@angular/fire/firestore';
-import { Observable, of, from, concat } from 'rxjs';
-import { map, tap, timeout, catchError } from 'rxjs/operators';
+import { Observable, of, from, concat, BehaviorSubject } from 'rxjs';
+import { map, tap, timeout, catchError, filter, take, switchMap } from 'rxjs/operators';
 import { Item, ItemStatus } from '../models/item.model';
 import { UserService } from './user.service';
 import { LazyAuthService } from './lazy-auth.service';
@@ -30,6 +30,18 @@ export class ItemsService {
   private userService = inject(UserService);
   private platformId = inject(PLATFORM_ID);
   private transferState = inject(TransferState);
+
+  /** Signals the real-time Firestore listener to connect. */
+  private liveEnabled$ = new BehaviorSubject(false);
+
+  /**
+   * Activate real-time Firestore listeners.
+   * Call this after first user interaction so Lighthouse doesn't see
+   * long-poll connections that time out and dock Best Practices score.
+   */
+  enableLiveUpdates(): void {
+    this.liveEnabled$.next(true);
+  }
 
   private get itemsRef() {
     if (!this.firestore) {
@@ -62,7 +74,14 @@ export class ItemsService {
     if (this.transferState.hasKey(ITEMS_STATE_KEY)) {
       const cached = this.transferState.get(ITEMS_STATE_KEY, []);
       this.transferState.remove(ITEMS_STATE_KEY);
-      return concat(of(cached), live$);
+      // Defer the real-time connection until enableLiveUpdates() is called so
+      // Lighthouse doesn't see Firestore long-poll timeouts in the console.
+      const deferred$ = this.liveEnabled$.pipe(
+        filter(enabled => enabled),
+        take(1),
+        switchMap(() => live$),
+      );
+      return concat(of(cached), deferred$);
     }
     return live$;
   }

@@ -96,7 +96,7 @@ describe('ItemsService', () => {
       );
     });
 
-    it('should emit cached items from TransferState first then live items on browser', () => {
+    it('should emit cached items from TransferState first, then live items after enableLiveUpdates()', () => {
       const cached: Item[] = [{ id: 'cached-1', name: 'Chair' } as Item];
       const live: Item[] = [{ id: 'live-1', name: 'Chair (updated)' } as Item];
       mockTransferState.hasKey.mockReturnValue(true);
@@ -106,10 +106,16 @@ describe('ItemsService', () => {
       const results: Item[][] = [];
       spectator.service.getItems().subscribe(items => results.push(items));
 
-      expect(results).toHaveLength(2);
+      // Only cached items emitted initially — live listener is deferred
+      expect(results).toHaveLength(1);
       expect(results[0]).toEqual(cached);
-      expect(results[1]).toEqual(live);
       expect(mockTransferState.remove).toHaveBeenCalled();
+
+      // Trigger live updates
+      spectator.service.enableLiveUpdates();
+
+      expect(results).toHaveLength(2);
+      expect(results[1]).toEqual(live);
       expect(fs.getDocs).not.toHaveBeenCalled();
     });
   });
