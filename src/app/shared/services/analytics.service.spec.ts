@@ -4,17 +4,12 @@ import { PLATFORM_ID } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { Subject } from 'rxjs';
 
-// In development (production: false), init() should always be a no-op.
+// Analytics is only enabled in production when a measurement ID is configured.
 vi.mock('../../../environments/environment', () => ({
   environment: {
-    production: false,
+    production: true,
     firebase: { measurementId: 'G-TEST123' },
   },
-}));
-
-vi.mock('firebase/analytics', () => ({
-  getAnalytics: vi.fn(() => ({})),
-  logEvent: vi.fn(),
 }));
 
 import { AnalyticsService } from './analytics.service';
@@ -22,12 +17,16 @@ import { AnalyticsService } from './analytics.service';
 describe('AnalyticsService', () => {
   let spectator: SpectatorService<AnalyticsService>;
   const routerEvents$ = new Subject<NavigationEnd>();
+  const routerStub = {
+    events: routerEvents$.asObservable(),
+    url: '/showcase',
+  };
 
   const createBrowserService = createServiceFactory({
     service: AnalyticsService,
     providers: [
       { provide: PLATFORM_ID, useValue: 'browser' },
-      { provide: Router, useValue: { events: routerEvents$.asObservable() } },
+      { provide: Router, useValue: routerStub },
     ],
   });
 
@@ -35,17 +34,23 @@ describe('AnalyticsService', () => {
     service: AnalyticsService,
     providers: [
       { provide: PLATFORM_ID, useValue: 'server' },
-      { provide: Router, useValue: { events: routerEvents$.asObservable() } },
+      { provide: Router, useValue: routerStub },
     ],
   });
 
   beforeEach(() => {
     vi.clearAllMocks();
+    routerStub.url = '/showcase';
+    document.head.querySelectorAll('script[data-analytics-id]').forEach((script) => script.remove());
+    delete window.dataLayer;
+    delete window.gtag;
     spectator = createBrowserService();
   });
 
   afterEach(() => {
-    delete (window as Window & { requestIdleCallback?: unknown }).requestIdleCallback;
+    document.head.querySelectorAll('script[data-analytics-id]').forEach((script) => script.remove());
+    delete window.dataLayer;
+    delete window.gtag;
   });
 
   it('should create', () => {
@@ -57,17 +62,49 @@ describe('AnalyticsService', () => {
     expect(() => serverSpectator.service.init()).not.toThrow();
   });
 
-  it('init() does not schedule anything in development (production guard)', () => {
-    // environment.production is false — init() should return immediately
-    const ricSpy = vi.fn();
-    (window as Window & { requestIdleCallback: unknown }).requestIdleCallback = ricSpy;
-    const setTimeoutSpy = vi.spyOn(window, 'setTimeout');
-
+  it('loads the analytics script and tracks page views after initialization', async () => {
     spectator.service.init();
 
-    expect(ricSpy).not.toHaveBeenCalled();
-    expect(setTimeoutSpy).not.toHaveBeenCalled();
-    setTimeoutSpy.mockRestore();
+    const script = document.head.querySelector<HTMLScriptElement>('script[data-analytics-id="G-TEST123"]');
+
+    expect(script).toBeTruthy();
+    expect(script?.src).toContain('https://www.googletagmanager.com/gtag/js?id=G-TEST123');
+
+    script?.dispatchEvent(new Event('load'));
+    await Promise.resolve();
+
+    expect(window.dataLayer).toEqual([
+      ['js', expect.any(Date)],
+      ['config', 'G-TEST123', { send_page_view: false }],
+      [
+        'event',
+        'page_view',
+        {
+          page_title: document.title,
+          page_location: window.location.href,
+          page_path: '/showcase',
+        },
+      ],
+    ]);
+
+    routerEvents$.next(new NavigationEnd(1, '/updates', '/updates'));
+
+    expect(window.dataLayer?.at(-1)).toEqual([
+      'event',
+      'page_view',
+      {
+        page_title: document.title,
+        page_location: window.location.href,
+        page_path: '/updates',
+      },
+    ]);
+  });
+
+  it('does not append a duplicate analytics script when init() is called twice', () => {
+    spectator.service.init();
+    spectator.service.init();
+
+    expect(document.head.querySelectorAll('script[data-analytics-id="G-TEST123"]')).toHaveLength(1);
   });
 });
 

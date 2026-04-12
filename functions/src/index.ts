@@ -313,8 +313,9 @@ Always confirm what you did after taking actions.`,
   });
 
 // ── processUploadedImage: server-side Sharp resize + AVIF encode ────────────
-// Accepts a base64-encoded image, produces sm (370px) and lg (450px) AVIF
-// variants using libavif via Sharp, uploads to Firebase Storage, returns URLs.
+// Accepts a base64-encoded image, auto-orients it from EXIF metadata, produces
+// sm (370px) and lg (450px) AVIF variants using libavif via Sharp, uploads to
+// Firebase Storage, and returns URLs.
 
 const SM_MAX = 370;
 const LG_MAX = 450;
@@ -322,6 +323,7 @@ const AVIF_QUALITY = 50; // libavif CQ scale (0-100); 50 ≈ visually lossless f
 
 async function resizeToAvif(input: Buffer, maxDim: number): Promise<Buffer> {
   return sharp(input)
+    .rotate()
     .resize(maxDim, maxDim, { fit: 'inside', withoutEnlargement: true })
     .avif({ quality: AVIF_QUALITY })
     .toBuffer();

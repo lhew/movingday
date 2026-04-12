@@ -121,8 +121,35 @@
 @layer components {
   /* Item card hover lift */
   .item-card {
-    @apply card bg-base-100 shadow-md transition-all duration-300
-           hover:-translate-y-1 hover:shadow-xl;
+    @apply card bg-base-100 shadow-md transform-gpu transition-transform duration-300 ease-out
+           hover:-translate-y-1;
+    will-change: transform;
+  }
+
+  /* Updates cards use the same motion pattern without animating shadows. */
+  app-updates-list a.card {
+    @apply transform-gpu transition-transform duration-200 ease-out;
+    will-change: transform;
+  }
+
+  @media (hover: hover) {
+    app-updates-list a.card:hover {
+      transform: translateY(-0.25rem);
+    }
+  }
+
+  /* Keep app shell controls responsive without animating color or radius changes. */
+  :is(app-root .navbar, app-auth-menu)
+    :is(.btn, .menu a, .dropdown-content, .avatar > div) {
+    transition-property: transform, opacity;
+    transition-duration: 180ms;
+    transition-timing-function: ease-out;
+  }
+
+  @media (hover: hover) {
+    :is(app-root .navbar, app-auth-menu) :is(.btn:hover, .menu a:hover) {
+      transform: translateY(-1px);
+    }
   }
 
   /* Status badge variants */

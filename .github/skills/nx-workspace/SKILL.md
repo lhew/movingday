@@ -196,7 +196,7 @@ Example output:
       "options": { "buildTarget": "my-app:build" }
     },
     "test": {
-      "executor": "@nx/vitest:test",
+      "executor": "@nx/vite:test",
       "options": {}
     }
   },
