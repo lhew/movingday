@@ -1,5 +1,10 @@
 @import "tailwindcss";
 
+/* ─── Disable overscroll bounce ─────────────────────────────── */
+html, body {
+  overscroll-behavior: none;
+}
+
 /* ─── DaisyUI ───────────────────────────────────────────────── */
 @plugin "daisyui" {
   logs: false;
