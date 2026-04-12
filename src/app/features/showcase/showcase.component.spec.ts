@@ -32,6 +32,7 @@ describe('ShowcaseComponent', () => {
   // Build mock objects first
   const mockItemsService: Partial<ItemsService> = {
     getItems: vi.fn().mockReturnValue(of([])),
+    enableLiveUpdates: vi.fn(),
   };
 
   const createComponent = createComponentFactory({
