@@ -29,6 +29,7 @@ const apiKey = process.env['PAGESPEED_API_KEY'] ?? '';
 const apiUrl =
   `https://www.googleapis.com/pagespeedonline/v5/runPagespeed` +
   `?url=${encodeURIComponent(url)}&strategy=mobile` +
+  `&category=performance&category=accessibility&category=best-practices&category=seo` +
   (apiKey ? `&key=${apiKey}` : '');
 
 console.log(`🔦 Fetching Lighthouse scores for ${url} …`);
