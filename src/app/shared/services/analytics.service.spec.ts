@@ -1,18 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/vitest';
-import { PLATFORM_ID } from '@angular/core';
 import { Router, NavigationEnd } from '@angular/router';
 import { Subject } from 'rxjs';
 
-// Analytics is only enabled in production when a measurement ID is configured.
-vi.mock('../../../environments/environment', () => ({
-  environment: {
-    production: true,
-    firebase: { measurementId: 'G-TEST123' },
-  },
-}));
-
 import { AnalyticsService } from './analytics.service';
+import { environment } from '../../../environments/environment';
+
+// Save originals so we can restore after each test.
+const origProduction = environment.production;
+const origMeasurementId = environment.firebase.measurementId;
 
 describe('AnalyticsService', () => {
   let spectator: SpectatorService<AnalyticsService>;
@@ -22,18 +18,9 @@ describe('AnalyticsService', () => {
     url: '/showcase',
   };
 
-  const createBrowserService = createServiceFactory({
+  const createService = createServiceFactory({
     service: AnalyticsService,
     providers: [
-      { provide: PLATFORM_ID, useValue: 'browser' },
-      { provide: Router, useValue: routerStub },
-    ],
-  });
-
-  const createServerService = createServiceFactory({
-    service: AnalyticsService,
-    providers: [
-      { provide: PLATFORM_ID, useValue: 'server' },
       { provide: Router, useValue: routerStub },
     ],
   });
@@ -44,13 +31,22 @@ describe('AnalyticsService', () => {
     document.head.querySelectorAll('script[data-analytics-id]').forEach((script) => script.remove());
     delete window.dataLayer;
     delete window.gtag;
-    spectator = createBrowserService();
+    // Enable analytics for tests by mutating the shared environment object.
+    environment.production = true;
+    (environment.firebase as Record<string, unknown>).measurementId = 'G-TEST123';
+    spectator = createService();
+    // PLATFORM_ID is 'server' in the jsdom test env and cannot be overridden
+    // at module level, so force the browser flag on the service instance.
+    Object.defineProperty(spectator.service, 'isBrowser', { value: true, writable: true });
   });
 
   afterEach(() => {
     document.head.querySelectorAll('script[data-analytics-id]').forEach((script) => script.remove());
     delete window.dataLayer;
     delete window.gtag;
+    // Restore original environment values.
+    environment.production = origProduction;
+    (environment.firebase as Record<string, unknown>).measurementId = origMeasurementId;
   });
 
   it('should create', () => {
@@ -58,8 +54,9 @@ describe('AnalyticsService', () => {
   });
 
   it('init() does not throw on server platform', () => {
-    const serverSpectator = createServerService();
-    expect(() => serverSpectator.service.init()).not.toThrow();
+    // Restore the server flag for this specific test.
+    Object.defineProperty(spectator.service, 'isBrowser', { value: false, writable: true });
+    expect(() => spectator.service.init()).not.toThrow();
   });
 
   it('loads the analytics script and tracks page views after initialization', async () => {
