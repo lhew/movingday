@@ -6,7 +6,6 @@ vi.mock('@angular/fire/firestore', () => ({
   Firestore: class MockFirestore {},
   collection: vi.fn().mockReturnValue('mock-collection'),
   collectionData: vi.fn().mockReturnValue(of([])),
-  getDocs: vi.fn().mockResolvedValue({ docs: [] }),
   doc: vi.fn().mockReturnValue('mock-doc'),
   docData: vi.fn().mockReturnValue(of(undefined)),
   addDoc: vi.fn().mockResolvedValue({ id: 'new-id' }),
@@ -17,9 +16,20 @@ vi.mock('@angular/fire/firestore', () => ({
   serverTimestamp: vi.fn().mockReturnValue('SERVER_TS'),
 }));
 
+vi.mock('firebase/firestore', () => ({
+  getDocs: vi.fn().mockResolvedValue({ docs: [] }),
+}));
+
+vi.mock('@angular/common', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@angular/common')>();
+  return { ...original, isPlatformServer: vi.fn().mockReturnValue(false) };
+});
+
 import { UpdatesService } from './updates.service';
 import { Firestore } from '@angular/fire/firestore';
 import * as fs from '@angular/fire/firestore';
+import * as firestore from 'firebase/firestore';
+import * as common from '@angular/common';
 
 describe('UpdatesService', () => {
   let spectator: SpectatorService<UpdatesService>;
@@ -36,8 +46,21 @@ describe('UpdatesService', () => {
     vi.mocked(fs.doc).mockReturnValue('mock-doc' as unknown as ReturnType<typeof fs.doc>);
     vi.mocked(fs.orderBy).mockReturnValue('mock-orderby' as unknown as ReturnType<typeof fs.orderBy>);
     vi.mocked(fs.serverTimestamp).mockReturnValue('SERVER_TS' as unknown as ReturnType<typeof fs.serverTimestamp>);
+    vi.mocked(common.isPlatformServer).mockReturnValue(false);
 
     spectator = createService();
+  });
+
+  describe('getUpdates() server mode', () => {
+    it('should use getDocs when running on the server', async () => {
+      vi.mocked(common.isPlatformServer).mockReturnValue(true);
+      vi.mocked(firestore.getDocs).mockResolvedValue({ docs: [{ id: 'u-1', data: () => ({ title: 'Server update' }) }] } as unknown as Awaited<ReturnType<typeof firestore.getDocs>>);
+
+      const result = await firstValueFrom(spectator.service.getUpdates());
+
+      expect(firestore.getDocs).toHaveBeenCalledWith('mock-query');
+      expect(result).toEqual([{ id: 'u-1', title: 'Server update' }]);
+    });
   });
 
   describe('getUpdates()', () => {

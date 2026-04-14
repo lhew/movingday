@@ -7,7 +7,6 @@ vi.mock('@angular/fire/firestore', () => ({
   Firestore: class MockFirestore {},
   collection: vi.fn().mockReturnValue('mock-collection'),
   collectionData: vi.fn().mockReturnValue(of([])),
-  getDocs: vi.fn().mockResolvedValue({ docs: [] }),
   doc: vi.fn().mockReturnValue('mock-doc'),
   docData: vi.fn().mockReturnValue(of(undefined)),
   addDoc: vi.fn().mockResolvedValue({ id: 'new-id' }),
@@ -19,6 +18,10 @@ vi.mock('@angular/fire/firestore', () => ({
   serverTimestamp: vi.fn().mockReturnValue('SERVER_TS'),
 }));
 
+vi.mock('firebase/firestore', () => ({
+  getDocs: vi.fn().mockResolvedValue({ docs: [] }),
+}));
+
 vi.mock('@angular/common', async (importOriginal) => {
   const original = await importOriginal<typeof import('@angular/common')>();
   return { ...original, isPlatformServer: vi.fn().mockReturnValue(false) };
@@ -27,6 +30,7 @@ vi.mock('@angular/common', async (importOriginal) => {
 import { ItemsService } from './items.service';
 import { Firestore } from '@angular/fire/firestore';
 import * as fs from '@angular/fire/firestore';
+import * as firestore from 'firebase/firestore';
 import * as common from '@angular/common';
 import { UserService } from './user.service';
 import { LazyAuthService } from './lazy-auth.service';
@@ -76,19 +80,19 @@ describe('ItemsService', () => {
 
       expect(result).toEqual(items);
       expect(fs.orderBy).toHaveBeenCalledWith('createdAt', 'desc');
-      expect(fs.getDocs).not.toHaveBeenCalled();
+      expect(firestore.getDocs).not.toHaveBeenCalled();
       expect(mockTransferState.set).not.toHaveBeenCalled();
     });
 
     it('should use getDocs on the server and store items in TransferState', async () => {
       vi.mocked(common.isPlatformServer).mockReturnValue(true);
       const mockDocs = [{ id: 'item-1', data: () => ({ name: 'Sofa', status: 'available' }) }];
-      vi.mocked(fs.getDocs).mockResolvedValue({ docs: mockDocs } as unknown as Awaited<ReturnType<typeof fs.getDocs>>);
+      vi.mocked(firestore.getDocs).mockResolvedValue({ docs: mockDocs } as unknown as Awaited<ReturnType<typeof firestore.getDocs>>);
 
       const result = await firstValueFrom(spectator.service.getItems());
 
       expect(result).toEqual([{ id: 'item-1', name: 'Sofa', status: 'available' }]);
-      expect(fs.getDocs).toHaveBeenCalledWith('mock-query');
+      expect(firestore.getDocs).toHaveBeenCalledWith('mock-query');
       expect(fs.collectionData).not.toHaveBeenCalled();
       expect(mockTransferState.set).toHaveBeenCalledWith(
         expect.any(String),
@@ -116,7 +120,7 @@ describe('ItemsService', () => {
 
       expect(results).toHaveLength(2);
       expect(results[1]).toEqual(live);
-      expect(fs.getDocs).not.toHaveBeenCalled();
+      expect(firestore.getDocs).not.toHaveBeenCalled();
     });
   });
 

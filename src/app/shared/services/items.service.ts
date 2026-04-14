@@ -9,12 +9,12 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
-  getDocs,
   query,
   orderBy,
   where,
   serverTimestamp,
 } from '@angular/fire/firestore';
+import { getDocs } from 'firebase/firestore';
 import { Observable, of, from, concat, BehaviorSubject } from 'rxjs';
 import { map, tap, timeout, catchError, filter, take, switchMap } from 'rxjs/operators';
 import { Item, ItemStatus } from '../models/item.model';

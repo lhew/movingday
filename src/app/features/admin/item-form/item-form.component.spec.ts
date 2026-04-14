@@ -5,6 +5,15 @@ import { ItemsService } from '../../../shared/services/items.service';
 import { ImageUploadService } from '../../../shared/services/image-upload.service';
 import { Item } from '../../../shared/models/item.model';
 import { Timestamp } from '@angular/fire/firestore';
+import * as firestore from 'firebase/firestore';
+
+vi.mock('firebase/firestore', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('firebase/firestore')>();
+  return {
+    ...actual,
+    deleteField: vi.fn().mockReturnValue('__DELETE_FIELD__'),
+  };
+});
 
 const mockItem: Item = {
   id: 'item-1',
@@ -401,6 +410,20 @@ describe('ItemFormComponent', () => {
         expect.objectContaining({ name: 'Updated Chair' })
       );
       expect(savedSpy).toHaveBeenCalled();
+    });
+
+    it('should send deleteField sentinel when switching priced item to free', async () => {
+      spectator = createComponent({ props: { item: mockPricedItem } });
+      mockItemsService = spectator.inject(ItemsService) as Partial<ItemsService>;
+      spectator.component.onPricingChange('free');
+
+      await spectator.component.save();
+
+      expect(mockItemsService.updateItem).toHaveBeenCalledWith(
+        'item-2',
+        expect.objectContaining({ price: '__DELETE_FIELD__' })
+      );
+      expect(firestore.deleteField).toHaveBeenCalled();
     });
   });
 

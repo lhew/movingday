@@ -1,6 +1,6 @@
 import { Component, inject, input, output, signal, OnInit, HostListener } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { deleteField } from '@angular/fire/firestore';
+import { deleteField } from 'firebase/firestore';
 import { ItemsService } from '../../../shared/services/items.service';
 import { ImageUploadService } from '../../../shared/services/image-upload.service';
 import { Item, ItemCondition, ItemStatus } from '../../../shared/models/item.model';

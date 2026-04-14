@@ -9,11 +9,11 @@ import {
   addDoc,
   updateDoc,
   deleteDoc,
-  getDocs,
   query,
   orderBy,
   serverTimestamp,
 } from '@angular/fire/firestore';
+import { getDocs } from 'firebase/firestore';
 import { Observable, of, from } from 'rxjs';
 import { map, timeout, catchError } from 'rxjs/operators';
 import { MovingUpdate } from '../models/update.model';
