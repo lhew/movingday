@@ -86,6 +86,7 @@ npx nx build --configuration=production # Production build
 npx nx test                             # Unit tests (Vitest)
 npx nx e2e                              # E2E tests (Cypress with SSR + internal mocks)
 npx nx lint                             # Lint
+npm run build:deploy                    # Production hosting build with Storybook
 firebase deploy                         # Deploy everything
 ```
 

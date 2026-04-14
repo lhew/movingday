@@ -154,8 +154,8 @@ The app will be at `http://localhost:4200`.
 ## Step 7 — Deploy to Firebase
 
 ```bash
-# Build production app
-npx nx build --configuration=production
+# Build production app + Storybook for Firebase Hosting
+npm run build:deploy
 
 # Build Cloud Functions
 cd functions && npm run build && cd ..

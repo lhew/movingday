@@ -5,6 +5,7 @@
   "scripts": {
     "start": "nx serve",
     "build": "nx build && node scripts/compress.mjs",
+    "build:deploy": "nx build --configuration=production && node scripts/add-preloads.mjs && nx build-storybook --configuration=ci && node scripts/merge-storybook.mjs && node scripts/compress.mjs",
     "test": "nx test",
     "e2e": "nx e2e",
     "lint": "nx lint",
