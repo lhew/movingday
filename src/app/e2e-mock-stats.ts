@@ -49,18 +49,26 @@ export const mockStatsResponse = {
     specFiles: 7,
     estimatedTests: 52,
   },
-  lighthouse: {
-    performance: 91,
-    accessibility: 98,
-    bestPractices: 96,
-    seo: 100,
-    measuredAt: '2026-04-10T00:00:00.000Z',
+};
+
+const mockPsiResponse = {
+  lighthouseResult: {
+    categories: {
+      performance: { score: 0.91 },
+      accessibility: { score: 0.98 },
+      'best-practices': { score: 0.96 },
+      seo: { score: 1.0 },
+    },
   },
 };
 
 export const provideMockStatsInterceptor: HttpInterceptorFn = (req, next) => {
   if (req.method === 'GET' && req.url === '/assets/stats.json') {
     return of(new HttpResponse({ status: 200, body: mockStatsResponse }));
+  }
+
+  if (req.method === 'GET' && req.url.includes('pagespeedonline')) {
+    return of(new HttpResponse({ status: 200, body: mockPsiResponse }));
   }
 
   return next(req);

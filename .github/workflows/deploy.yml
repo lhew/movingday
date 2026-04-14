@@ -83,9 +83,7 @@ jobs:
 
       - name: Merge Storybook into app dist
         if: github.event_name == 'workflow_dispatch'
-        run: |
-          mkdir -p dist/movingday/browser/storybook
-          cp -r dist/storybook/movingday/. dist/movingday/browser/storybook/
+        run: node scripts/merge-storybook.mjs
 
       # ── Build Functions ──────────────────────────────────────────────────────
       - name: Install Functions dependencies

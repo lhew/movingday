@@ -272,16 +272,41 @@
 
       </div>
 
-      <!-- ── Lighthouse ───────────────────────────────────────── -->
-      @if (s.lighthouse; as lh) {
-        <div class="card bg-base-200 shadow md:col-span-2">
-          <div class="card-body gap-4">
-            <div class="flex items-center justify-between flex-wrap gap-2">
-              <h2 class="card-title text-lg gap-2"><ng-icon name="cssTrophy" aria-hidden="true" /> Lighthouse</h2>
-              @if (lh.measuredAt) {
-                <span class="text-xs text-base-content/80">measured {{ lh.measuredAt | date:'mediumDate' }}</span>
+      <!-- ── Lighthouse (live from PageSpeed Insights) ─────── -->
+      <div class="card bg-base-200 shadow md:col-span-2">
+        <div class="card-body gap-4">
+          <div class="flex items-center justify-between flex-wrap gap-2">
+            <h2 class="card-title text-lg gap-2"><ng-icon name="cssTrophy" aria-hidden="true" /> Lighthouse</h2>
+            <div class="flex items-center gap-2">
+              @if (lighthouse(); as lh) {
+                @if (lh.measuredAt) {
+                  <span class="text-xs text-base-content/80">measured {{ lh.measuredAt | date:'medium' }}</span>
+                }
               }
+              <button class="btn btn-ghost btn-xs" (click)="fetchLighthouse()" [disabled]="lighthouseLoading()">
+                @if (lighthouseLoading()) {
+                  <span class="loading loading-spinner loading-xs"></span>
+                } @else {
+                  ↻ Refresh
+                }
+              </button>
             </div>
+          </div>
+
+          @if (lighthouseLoading() && !lighthouse()) {
+            <div class="flex flex-col items-center justify-center py-8 gap-3">
+              <span class="loading loading-spinner loading-md text-primary"></span>
+              <p class="text-sm text-base-content/75">Running Lighthouse audit…</p>
+            </div>
+          }
+
+          @if (lighthouseError(); as lhErr) {
+            <div class="alert alert-warning text-sm">
+              <ng-icon name="cssDanger" aria-hidden="true" /><span>{{ lhErr }}</span>
+            </div>
+          }
+
+          @if (lighthouse(); as lh) {
             <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
               @for (metric of lighthouseMetrics(lh); track metric.label) {
                 <div class="bg-base-100 rounded-xl p-4 text-center">
@@ -299,15 +324,16 @@
                 </div>
               }
             </div>
-            <p class="text-xs text-base-content/80 text-center">
-              Scores from
-              <a href="https://developer.chrome.com/docs/lighthouse" target="_blank" rel="noopener"
-                 class="link text-base-content">Google Lighthouse</a> ·
-              90+ is green ✓
-            </p>
-          </div>
+          }
+
+          <p class="text-xs text-base-content/80 text-center">
+            Live scores from
+            <a href="https://developer.chrome.com/docs/lighthouse" target="_blank" rel="noopener"
+               class="link text-base-content">Google PageSpeed Insights</a> ·
+            90+ is green ✓
+          </p>
         </div>
-      }
+      </div>
 
     </div>
   }

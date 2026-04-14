@@ -3,7 +3,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
-import { StatsForNerdsComponent, Stats } from './stats-for-nerds.component';
+import { StatsForNerdsComponent, Stats, LighthouseScores } from './stats-for-nerds.component';
 
 const mockStats: Stats = {
   generatedAt: '2026-04-01T12:00:00.000Z',
@@ -53,12 +53,16 @@ const mockStats: Stats = {
     specFiles: 2,
     estimatedTests: 8,
   },
-  lighthouse: {
-    performance: 96,
-    accessibility: 98,
-    bestPractices: 92,
-    seo: 90,
-    measuredAt: '2026-04-01T12:00:00.000Z',
+};
+
+const mockPsiResponse = {
+  lighthouseResult: {
+    categories: {
+      performance: { score: 0.96 },
+      accessibility: { score: 0.98 },
+      'best-practices': { score: 0.92 },
+      seo: { score: 0.90 },
+    },
   },
 };
 
@@ -84,10 +88,12 @@ describe('StatsForNerdsComponent', () => {
     expect(spectator.component.loading()).toBe(true);
     expect(spectator.component.stats()).toBeNull();
     httpMock.expectOne('/assets/stats.json').flush(mockStats);
+    httpMock.expectOne((req) => req.url.includes('pagespeedonline')).flush(mockPsiResponse);
   });
 
   it('should display stats after successful fetch', () => {
     httpMock.expectOne('/assets/stats.json').flush(mockStats);
+    httpMock.expectOne((req) => req.url.includes('pagespeedonline')).flush(mockPsiResponse);
     spectator.detectChanges();
 
     expect(spectator.component.loading()).toBe(false);
@@ -97,10 +103,63 @@ describe('StatsForNerdsComponent', () => {
 
   it('should set error when fetch fails', () => {
     httpMock.expectOne('/assets/stats.json').error(new ProgressEvent('error'));
+    httpMock.expectOne((req) => req.url.includes('pagespeedonline')).flush(mockPsiResponse);
     spectator.detectChanges();
 
     expect(spectator.component.loading()).toBe(false);
     expect(spectator.component.error()).toContain('npm run stats');
+  });
+
+  it('should fetch lighthouse scores live from PSI API', () => {
+    httpMock.expectOne('/assets/stats.json').flush(mockStats);
+    httpMock.expectOne((req) => req.url.includes('pagespeedonline')).flush(mockPsiResponse);
+    spectator.detectChanges();
+
+    const lh = spectator.component.lighthouse();
+    expect(lh).toBeTruthy();
+    expect(lh!.performance).toBe(96);
+    expect(lh!.accessibility).toBe(98);
+    expect(lh!.bestPractices).toBe(92);
+    expect(lh!.seo).toBe(90);
+    expect(lh!.measuredAt).toBeTruthy();
+    expect(spectator.component.lighthouseLoading()).toBe(false);
+  });
+
+  it('should show loading state while lighthouse is fetching', () => {
+    httpMock.expectOne('/assets/stats.json').flush(mockStats);
+    // Don't flush the PSI request yet
+    expect(spectator.component.lighthouseLoading()).toBe(true);
+    expect(spectator.component.lighthouse()).toBeNull();
+
+    httpMock.expectOne((req) => req.url.includes('pagespeedonline')).flush(mockPsiResponse);
+    expect(spectator.component.lighthouseLoading()).toBe(false);
+  });
+
+  it('should handle lighthouse fetch error gracefully', () => {
+    httpMock.expectOne('/assets/stats.json').flush(mockStats);
+    httpMock.expectOne((req) => req.url.includes('pagespeedonline')).error(new ProgressEvent('error'));
+    spectator.detectChanges();
+
+    expect(spectator.component.lighthouseLoading()).toBe(false);
+    expect(spectator.component.lighthouseError()).toContain('PageSpeed Insights');
+    expect(spectator.component.lighthouse()).toBeNull();
+  });
+
+  it('should allow refreshing lighthouse scores', () => {
+    httpMock.expectOne('/assets/stats.json').flush(mockStats);
+    httpMock.expectOne((req) => req.url.includes('pagespeedonline')).flush(mockPsiResponse);
+    spectator.detectChanges();
+
+    expect(spectator.component.lighthouse()).toBeTruthy();
+
+    // Trigger refresh
+    spectator.component.fetchLighthouse();
+    expect(spectator.component.lighthouseLoading()).toBe(true);
+    expect(spectator.component.lighthouse()).toBeNull();
+
+    httpMock.expectOne((req) => req.url.includes('pagespeedonline')).flush(mockPsiResponse);
+    expect(spectator.component.lighthouseLoading()).toBe(false);
+    expect(spectator.component.lighthouse()!.performance).toBe(96);
   });
 
   it('should compute passRate correctly', () => {
@@ -159,5 +218,22 @@ describe('StatsForNerdsComponent', () => {
     expect(spectator.component.lhProgressColor(65)).toBe('progress-warning');
     expect(spectator.component.lhProgressColor(20)).toBe('progress-error');
     expect(spectator.component.lhProgressColor(null)).toBe('progress-ghost');
+  });
+
+  it('should map lighthouse scores into label-value metrics', () => {
+    const metrics = spectator.component.lighthouseMetrics({
+      performance: 90,
+      accessibility: 88,
+      bestPractices: 84,
+      seo: 92,
+      measuredAt: '2026-04-01T12:00:00.000Z',
+    } as LighthouseScores);
+
+    expect(metrics).toEqual([
+      { label: 'Performance', value: 90 },
+      { label: 'Accessibility', value: 88 },
+      { label: 'Best Practices', value: 84 },
+      { label: 'SEO', value: 92 },
+    ]);
   });
 });

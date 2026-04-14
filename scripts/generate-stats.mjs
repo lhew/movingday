@@ -203,9 +203,6 @@ const assetsDir = resolve(ROOT, 'src/assets');
 mkdirSync(assetsDir, { recursive: true });
 const outPath = resolve(assetsDir, 'stats.json');
 
-// Preserve manually-set fields (e.g. Lighthouse scores) that aren't auto-generated.
-const existing = existsSync(outPath) ? JSON.parse(readFileSync(outPath, 'utf8')) : {};
-
 const stats = {
   generatedAt: new Date().toISOString(),
   build,
@@ -214,7 +211,6 @@ const stats = {
   unitTests,
   coverage,
   e2eTests,
-  lighthouse: existing.lighthouse ?? null,
 };
 
 writeFileSync(outPath, JSON.stringify(stats, null, 2));

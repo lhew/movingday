@@ -24,6 +24,14 @@ export interface CommitAuthor {
   count: number;
 }
 
+export interface LighthouseScores {
+  performance: number | null;
+  accessibility: number | null;
+  bestPractices: number | null;
+  seo: number | null;
+  measuredAt: string | null;
+}
+
 export interface Stats {
   generatedAt: string;
   build: BuildInfo | null;
@@ -62,13 +70,6 @@ export interface Stats {
     specFiles: number;
     estimatedTests: number;
   };
-  lighthouse: {
-    performance: number | null;
-    accessibility: number | null;
-    bestPractices: number | null;
-    seo: number | null;
-    measuredAt: string | null;
-  } | null;
 }
 
 @Component({
@@ -84,9 +85,16 @@ export interface Stats {
 export class StatsForNerdsComponent implements OnInit {
   private http = inject(HttpClient);
 
+  private readonly PSI_API = 'https://www.googleapis.com/pagespeedonline/v5/runPagespeed';
+  private readonly PAGESPEED_URL = 'https://movingday-ed444.web.app/showcase';
+
   readonly stats = signal<Stats | null>(null);
   readonly loading = signal(true);
   readonly error = signal<string | null>(null);
+
+  readonly lighthouse = signal<LighthouseScores | null>(null);
+  readonly lighthouseLoading = signal(false);
+  readonly lighthouseError = signal<string | null>(null);
 
   ngOnInit() {
     this.http.get<Stats>('/assets/stats.json').subscribe({
@@ -97,6 +105,43 @@ export class StatsForNerdsComponent implements OnInit {
       error: () => {
         this.error.set('Stats not found. Run `npm run stats` to generate them.');
         this.loading.set(false);
+      },
+    });
+
+    this.fetchLighthouse();
+  }
+
+  fetchLighthouse() {
+    this.lighthouseLoading.set(true);
+    this.lighthouseError.set(null);
+    this.lighthouse.set(null);
+
+    const url =
+      `${this.PSI_API}?url=${encodeURIComponent(this.PAGESPEED_URL)}` +
+      `&strategy=mobile&category=performance&category=accessibility` +
+      `&category=best-practices&category=seo`;
+
+    this.http.get<Record<string, unknown>>(url).subscribe({
+      next: (body) => {
+        const cats = (body['lighthouseResult'] as Record<string, unknown>)?.['categories'] as
+          | Record<string, { score?: number }>
+          | undefined;
+        const score = (cat: string) => {
+          const raw = cats?.[cat]?.score;
+          return raw != null ? Math.round(raw * 100) : null;
+        };
+        this.lighthouse.set({
+          performance: score('performance'),
+          accessibility: score('accessibility'),
+          bestPractices: score('best-practices'),
+          seo: score('seo'),
+          measuredAt: new Date().toISOString(),
+        });
+        this.lighthouseLoading.set(false);
+      },
+      error: () => {
+        this.lighthouseError.set('Could not reach PageSpeed Insights API.');
+        this.lighthouseLoading.set(false);
       },
     });
   }
@@ -139,7 +184,7 @@ export class StatsForNerdsComponent implements OnInit {
     return `${(ms / 1000).toFixed(1)}s`;
   }
 
-  lighthouseMetrics(lh: NonNullable<Stats['lighthouse']>): { label: string; value: number | null }[] {
+  lighthouseMetrics(lh: LighthouseScores): { label: string; value: number | null }[] {
     return [
       { label: 'Performance', value: lh.performance },
       { label: 'Accessibility', value: lh.accessibility },
