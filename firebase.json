@@ -31,14 +31,6 @@
     ],
     "rewrites": [
       {
-        "source": "/storybook",
-        "destination": "/storybook/index.html"
-      },
-      {
-        "source": "/storybook/**",
-        "destination": "/storybook/index.html"
-      },
-      {
         "source": "**",
         "function": "ssrApp"
       }

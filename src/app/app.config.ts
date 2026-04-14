@@ -1,9 +1,11 @@
-import { ApplicationConfig, provideZoneChangeDetection } from '@angular/core';
+import { APP_INITIALIZER, ApplicationConfig, ErrorHandler, provideZoneChangeDetection } from '@angular/core';
 import { provideRouter, withViewTransitions } from '@angular/router';
+import { Router } from '@angular/router';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideNgIconsConfig } from '@ng-icons/core';
+import * as Sentry from '@sentry/angular';
 
 import { appRoutes } from './app.routes';
 import { provideMockStatsInterceptor } from './e2e-mock-stats';
@@ -23,5 +25,19 @@ export const appConfig: ApplicationConfig = {
       ...(useInternalE2eMocks ? [withInterceptors([provideMockStatsInterceptor])] : [])
     ),
     provideNgIconsConfig({ size: '1.2em' }),
+    {
+      provide: ErrorHandler,
+      useValue: Sentry.createErrorHandler(),
+    },
+    {
+      provide: Sentry.TraceService,
+      deps: [Router],
+    },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: () => () => {},
+      deps: [Sentry.TraceService],
+      multi: true,
+    },
   ],
 };

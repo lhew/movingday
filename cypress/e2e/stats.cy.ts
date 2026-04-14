@@ -42,9 +42,4 @@ describe('Stats for Nerds page', () => {
     cy.contains('h2', 'E2E Tests').should('be.visible');
   });
 
-  it('should link to Storybook', () => {
-    cy.contains('a', 'View Storybook')
-      .should('have.attr', 'href', '/storybook/')
-      .and('have.attr', 'target', '_blank');
-  });
 });

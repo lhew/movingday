@@ -22,7 +22,7 @@ module.exports = tseslint.config(
     plugins: { '@angular-eslint': angular },
     languageOptions: {
       parserOptions: {
-        project: ['tsconfig.eslint.json', '.storybook/tsconfig.json'],
+        project: ['tsconfig.eslint.json'],
         tsconfigRootDir: __dirname,
       },
     },

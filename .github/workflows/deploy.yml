@@ -69,6 +69,10 @@ jobs:
             echo "All placeholders replaced successfully"
           fi
 
+      - name: Generate stats.json
+        if: github.event_name == 'workflow_dispatch'
+        run: npm run stats
+
       - name: Build Angular app (production)
         if: github.event_name == 'workflow_dispatch'
         run: npx nx build --configuration=production
@@ -76,14 +80,6 @@ jobs:
       - name: Inject modulepreload links
         if: github.event_name == 'workflow_dispatch'
         run: node scripts/add-preloads.mjs
-
-      - name: Build Storybook
-        if: github.event_name == 'workflow_dispatch'
-        run: npx nx build-storybook --configuration=ci
-
-      - name: Merge Storybook into app dist
-        if: github.event_name == 'workflow_dispatch'
-        run: node scripts/merge-storybook.mjs
 
       # ── Build Functions ──────────────────────────────────────────────────────
       - name: Install Functions dependencies

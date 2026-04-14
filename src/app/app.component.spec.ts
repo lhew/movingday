@@ -36,5 +36,9 @@ describe('AppComponent', () => {
   it('should create', () => {
     expect(spectator.component).toBeTruthy();
   });
+
+  it('should throw a sentry test error', () => {
+    expect(() => spectator.component.throwTestError()).toThrowError('Sentry Test Error');
+  });
 });
 

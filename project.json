@@ -144,35 +144,6 @@
       "executor": "@nx/eslint:lint",
       "outputs": ["{options.outputFile}"]
     },
-    "storybook": {
-      "executor": "@storybook/angular:start-storybook",
-      "options": {
-        "port": 4400,
-        "configDir": "./.storybook",
-        "browserTarget": "movingday:build-storybook",
-        "compodoc": false
-      },
-      "configurations": {
-        "ci": {
-          "quiet": true
-        }
-      }
-    },
-    "build-storybook": {
-      "executor": "@storybook/angular:build-storybook",
-      "outputs": ["{options.outputDir}"],
-      "options": {
-        "outputDir": "dist/storybook/movingday",
-        "configDir": "./.storybook",
-        "browserTarget": "movingday:build-storybook",
-        "compodoc": false
-      },
-      "configurations": {
-        "ci": {
-          "quiet": true
-        }
-      }
-    },
     "e2e": {
       "executor": "@nx/cypress:cypress",
       "options": {
@@ -186,26 +157,6 @@
         },
         "ci": {
           "ciBaseUrl": "http://localhost:4200"
-        }
-      }
-    },
-    "test-storybook": {
-      "executor": "nx:run-commands",
-      "options": {
-        "command": "test-storybook -c ./.storybook --url=http://localhost:4400"
-      }
-    },
-    "static-storybook": {
-      "executor": "@nx/web:file-server",
-      "dependsOn": ["build-storybook"],
-      "options": {
-        "buildTarget": "movingday:build-storybook",
-        "staticFilePath": "dist/storybook/movingday",
-        "spa": true
-      },
-      "configurations": {
-        "ci": {
-          "buildTarget": "movingday:build-storybook:ci"
         }
       }
     }
