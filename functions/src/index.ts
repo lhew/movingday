@@ -1,9 +1,12 @@
 import { onRequest, onCall, HttpsError } from 'firebase-functions/v2/https';
+import { onDocumentUpdated } from 'firebase-functions/v2/firestore';
+import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { auth } from 'firebase-functions/v1';
 import * as admin from 'firebase-admin';
 import { FieldValue } from 'firebase-admin/firestore';
 import Anthropic from '@anthropic-ai/sdk';
 import sharp from 'sharp';
+import { createTransport } from 'nodemailer';
 
 export { ssrApp } from './ssr';
 
@@ -378,6 +381,153 @@ export const processUploadedImage = onCall(
     ]);
 
     return { sm, lg };
+  }
+);
+
+// ── onItemUpdate: create notification when dibs status changes ──────────────
+
+export const onItemUpdate = onDocumentUpdated('items/{itemId}', async (event) => {
+  if (!event.data) return;
+
+  const before = event.data.before.data();
+  const after = event.data.after.data();
+  const itemId = event.params.itemId;
+
+  if (before['status'] === after['status']) return;
+
+  // available → claimed
+  if (before['status'] === 'available' && after['status'] === 'claimed' && after['claimedBy']) {
+    await db.collection('notifications').add({
+      type: 'dibs_called',
+      itemId,
+      itemName: after['name'] ?? 'Unknown item',
+      userId: after['claimedBy']['uid'] ?? '',
+      userName: after['claimedBy']['name'] ?? 'Someone',
+      read: false,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  }
+
+  // claimed → available
+  if (before['status'] === 'claimed' && after['status'] === 'available' && before['claimedBy']) {
+    await db.collection('notifications').add({
+      type: 'dibs_released',
+      itemId,
+      itemName: before['name'] ?? 'Unknown item',
+      userId: before['claimedBy']['uid'] ?? '',
+      userName: before['claimedBy']['name'] ?? 'Someone',
+      read: false,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  }
+});
+
+// ── dailySnapshot: compare items against yesterday, email diff to admin ─────
+
+function formatDate(d: Date): string {
+  return d.toISOString().split('T')[0];
+}
+
+function buildDiffHtml(diff: {
+  added: Array<{ name: string }>;
+  removed: Array<{ name: string }>;
+  claimed: Array<{ name: string; claimedBy: string }>;
+  released: Array<{ name: string }>;
+}, date: string): string {
+  const section = (title: string, rows: string[]) =>
+    rows.length
+      ? `<h3 style="margin:16px 0 8px;color:#333">${title} (${rows.length})</h3><ul>${rows.map(r => `<li>${r}</li>`).join('')}</ul>`
+      : '';
+
+  const body = [
+    section('New items', diff.added.map(i => i.name)),
+    section('Removed items', diff.removed.map(i => i.name)),
+    section('Newly claimed', diff.claimed.map(i => `<strong>${i.name}</strong> — by ${i.claimedBy}`)),
+    section('Released', diff.released.map(i => i.name)),
+  ].filter(Boolean).join('');
+
+  if (!body) {
+    return `<p>No changes since the last snapshot.</p>`;
+  }
+
+  return `<h2 style="color:#333">Moving Day — Daily Snapshot (${date})</h2>${body}`;
+}
+
+export const dailySnapshot = onSchedule(
+  {
+    schedule: '0 7 * * *',
+    timeZone: 'UTC',
+    secrets: ['SMTP_USER', 'SMTP_PASS', 'ADMIN_NOTIFY_EMAIL'],
+  },
+  async () => {
+    const today = formatDate(new Date());
+    const yesterday = formatDate(new Date(Date.now() - 86_400_000));
+
+    // Snapshot current items
+    const itemsSnap = await db.collection('items').get();
+    const currentItems = itemsSnap.docs.map((d) => {
+      const data = d.data();
+      return {
+        id: d.id,
+        name: (data['name'] as string) ?? '',
+        status: (data['status'] as string) ?? 'available',
+        ...(data['claimedBy']?.['name'] ? { claimedBy: data['claimedBy']['name'] as string } : {}),
+      };
+    });
+
+    // Read yesterday's snapshot
+    const prevSnap = await db.collection('snapshots').doc(yesterday).get();
+    const prevItems: Array<{ id: string; name: string; status: string; claimedBy?: string }> =
+      prevSnap.exists ? (prevSnap.data()!['items'] ?? []) : [];
+
+    // Compute diff
+    const prevById = new Map(prevItems.map((i) => [i.id, i]));
+    const currById = new Map(currentItems.map((i) => [i.id, i]));
+
+    const added = currentItems.filter((i) => !prevById.has(i.id));
+    const removed = prevItems.filter((i) => !currById.has(i.id));
+    const claimed = currentItems.filter(
+      (i) => i.status === 'claimed' && prevById.get(i.id)?.status !== 'claimed' && i.claimedBy
+    ) as Array<{ id: string; name: string; status: string; claimedBy: string }>;
+    const released = currentItems.filter(
+      (i) => i.status === 'available' && prevById.get(i.id)?.status === 'claimed'
+    );
+
+    const diff = { added, removed, claimed, released };
+
+    // Write today's snapshot
+    await db.collection('snapshots').doc(today).set({
+      date: today,
+      items: currentItems,
+      diff,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    // Send email if there are changes
+    const hasChanges = added.length || removed.length || claimed.length || released.length;
+    const adminEmail = process.env['ADMIN_NOTIFY_EMAIL'];
+    const smtpUser = process.env['SMTP_USER'];
+    const smtpPass = process.env['SMTP_PASS'];
+
+    if (hasChanges && adminEmail && smtpUser && smtpPass) {
+      const transporter = createTransport({
+        service: 'gmail',
+        auth: { user: smtpUser, pass: smtpPass },
+      });
+
+      await transporter.sendMail({
+        from: `"Moving Day" <${smtpUser}>`,
+        to: adminEmail,
+        subject: `Moving Day snapshot — ${today}`,
+        html: buildDiffHtml(diff, today),
+      });
+
+      console.log(`Daily snapshot email sent to ${adminEmail}`);
+    } else if (!hasChanges) {
+      console.log('Daily snapshot: no changes, skipping email.');
+    } else {
+      console.warn('Daily snapshot: SMTP secrets not configured, skipping email.');
+    }
   }
 );
 

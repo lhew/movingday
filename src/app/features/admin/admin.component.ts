@@ -1,14 +1,15 @@
 import { Component, inject, signal, ViewChild, PLATFORM_ID } from '@angular/core';
-import { AsyncPipe, SlicePipe, DOCUMENT, isPlatformBrowser } from '@angular/common';
+import { AsyncPipe, SlicePipe, DatePipe, DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { ItemsService } from '../../shared/services/items.service';
 import { UserService } from '../../shared/services/user.service';
 import { InviteService } from '../../shared/services/invite.service';
+import { NotificationService } from '../../shared/services/notification.service';
 import { Item } from '../../shared/models/item.model';
 import { UserProfile } from '../../shared/models/user.model';
 import { ItemFormComponent } from './item-form/item-form.component';
 import { CanDeactivateFn } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
-import { cssBox, cssLink, cssUser } from '@ng-icons/css.gg';
+import { cssBox, cssLink, cssUser, cssFeed } from '@ng-icons/css.gg';
 
 export const canDeactivateAdmin: CanDeactivateFn<AdminComponent> = (component) =>
   component.canDeactivate();
@@ -16,8 +17,8 @@ export const canDeactivateAdmin: CanDeactivateFn<AdminComponent> = (component) =
 @Component({
   selector: 'app-admin',
   standalone: true,
-  imports: [AsyncPipe, SlicePipe, ItemFormComponent, NgIcon],
-  providers: [provideIcons({ cssBox, cssLink, cssUser })],
+  imports: [AsyncPipe, SlicePipe, DatePipe, ItemFormComponent, NgIcon],
+  providers: [provideIcons({ cssBox, cssLink, cssUser, cssFeed })],
   templateUrl: './admin.component.html',
 })
 export class AdminComponent {
@@ -30,12 +31,15 @@ export class AdminComponent {
   readonly itemsService = inject(ItemsService);
   readonly userService = inject(UserService);
   readonly inviteService = inject(InviteService);
+  readonly notificationService = inject(NotificationService);
 
   readonly items$ = this.itemsService.getItems();
   readonly allUsers$ = this.userService.listAllUsers();
   readonly invitations$ = this.inviteService.listInvitations();
+  readonly recentNotifications$ = this.notificationService.getRecentNotifications(50);
+  readonly latestSnapshot$ = this.notificationService.getLatestSnapshot();
 
-  activeTab = signal<'items' | 'invitations' | 'users'>('items');
+  activeTab = signal<'items' | 'invitations' | 'users' | 'activity'>('items');
 
   showItemForm = signal(false);
   editingItem = signal<Item | null>(null);
@@ -44,7 +48,7 @@ export class AdminComponent {
   generatedLink = signal('');
   authorizingUid = signal<string | null>(null);
 
-  setTab(tab: 'items' | 'invitations' | 'users') {
+  setTab(tab: 'items' | 'invitations' | 'users' | 'activity') {
     this.activeTab.set(tab);
   }
 

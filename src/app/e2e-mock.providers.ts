@@ -13,6 +13,8 @@ import { MockUpdatesService } from './shared/services/mock-updates.service';
 import { MockUserService } from './shared/services/mock-user.service';
 import { MockInviteService } from './shared/services/mock-invite.service';
 import { MockImageUploadService } from './shared/services/mock-image-upload.service';
+import { NotificationService } from './shared/services/notification.service';
+import { MockNotificationService } from './shared/services/mock-notification.service';
 
 type CypressWindow = Window & { Cypress?: unknown };
 
@@ -33,6 +35,7 @@ export function provideInternalE2eMocks(): Provider[] {
     { provide: UserService, useClass: MockUserService },
     { provide: InviteService, useClass: MockInviteService },
     { provide: ImageUploadService, useClass: MockImageUploadService },
+    { provide: NotificationService, useClass: MockNotificationService },
     { provide: LazyAuthService, useValue: mockLazyAuth },
   ];
 }

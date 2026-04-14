@@ -18,6 +18,9 @@
     <a class="tab tab-lg" [class.tab-active]="activeTab() === 'users'" (click)="setTab('users')">
       <ng-icon name="cssUser" aria-hidden="true" /> Users
     </a>
+    <a class="tab tab-lg" [class.tab-active]="activeTab() === 'activity'" (click)="setTab('activity')">
+      <ng-icon name="cssFeed" aria-hidden="true" /> Activity
+    </a>
   </div>
 
   <!-- ── Items tab ──────────────────────────────────────────────── -->
@@ -202,6 +205,128 @@
                       >
                         Block
                       </button>
+                    }
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    } @else {
+      <div class="flex justify-center py-10">
+        <span class="loading loading-dots loading-lg text-primary"></span>
+      </div>
+    }
+  }
+
+  <!-- ── Activity tab ─────────────────────────────────────────────── -->
+  @if (activeTab() === 'activity') {
+
+    <!-- Daily Snapshot Diff -->
+    <h2 class="text-lg font-semibold mb-3">Today's Snapshot</h2>
+    @if (latestSnapshot$ | async; as snapshot) {
+      @if (snapshot.diff; as diff) {
+        @if (diff.added.length || diff.removed.length || diff.claimed.length || diff.released.length) {
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+            @if (diff.added.length) {
+              <div class="card bg-success/10 shadow-sm">
+                <div class="card-body py-4">
+                  <h3 class="card-title text-sm text-success">+ New items ({{ diff.added.length }})</h3>
+                  <ul class="text-sm">
+                    @for (item of diff.added; track item.id) {
+                      <li>{{ item.name }}</li>
+                    }
+                  </ul>
+                </div>
+              </div>
+            }
+            @if (diff.removed.length) {
+              <div class="card bg-error/10 shadow-sm">
+                <div class="card-body py-4">
+                  <h3 class="card-title text-sm text-error">− Removed items ({{ diff.removed.length }})</h3>
+                  <ul class="text-sm">
+                    @for (item of diff.removed; track item.id) {
+                      <li>{{ item.name }}</li>
+                    }
+                  </ul>
+                </div>
+              </div>
+            }
+            @if (diff.claimed.length) {
+              <div class="card bg-warning/10 shadow-sm">
+                <div class="card-body py-4">
+                  <h3 class="card-title text-sm text-warning">🤙 Claimed ({{ diff.claimed.length }})</h3>
+                  <ul class="text-sm">
+                    @for (item of diff.claimed; track item.id) {
+                      <li><strong>{{ item.name }}</strong> — by {{ item.claimedBy }}</li>
+                    }
+                  </ul>
+                </div>
+              </div>
+            }
+            @if (diff.released.length) {
+              <div class="card bg-info/10 shadow-sm">
+                <div class="card-body py-4">
+                  <h3 class="card-title text-sm text-info">↩ Released ({{ diff.released.length }})</h3>
+                  <ul class="text-sm">
+                    @for (item of diff.released; track item.id) {
+                      <li>{{ item.name }}</li>
+                    }
+                  </ul>
+                </div>
+              </div>
+            }
+          </div>
+        } @else {
+          <p class="text-base-content/50 text-sm mb-8">No changes since the last snapshot.</p>
+        }
+      } @else {
+        <p class="text-base-content/50 text-sm mb-8">Snapshot has no diff data yet.</p>
+      }
+    } @else {
+      <p class="text-base-content/50 text-sm mb-8">No snapshot for today. The daily snapshot runs at 9:00 AM CET.</p>
+    }
+
+    <!-- Recent notifications -->
+    <h2 class="text-lg font-semibold mb-3">Recent Notifications</h2>
+    @if (recentNotifications$ | async; as notifications) {
+      @if (notifications.length === 0) {
+        <p class="text-base-content/50 text-sm">No notifications yet.</p>
+      } @else {
+        <div class="overflow-x-auto">
+          <table class="table table-zebra w-full">
+            <thead>
+              <tr>
+                <th>Event</th>
+                <th>Item</th>
+                <th>User</th>
+                <th>Time</th>
+                <th>Read</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (n of notifications; track n.id) {
+                <tr [class.opacity-50]="n.read">
+                  <td>
+                    <span class="badge badge-sm"
+                          [class.badge-warning]="n.type === 'dibs_called'"
+                          [class.badge-info]="n.type === 'dibs_released'">
+                      {{ n.type === 'dibs_called' ? 'Dibs' : 'Released' }}
+                    </span>
+                  </td>
+                  <td class="text-sm font-medium">{{ n.itemName }}</td>
+                  <td class="text-sm">{{ n.userName }}</td>
+                  <td class="text-xs text-base-content/60">
+                    @if (n.createdAt) {
+                      {{ n.createdAt.toDate() | date:'short' }}
+                    }
+                  </td>
+                  <td>
+                    @if (n.read) {
+                      <span class="text-xs text-base-content/40">✓</span>
+                    } @else {
+                      <span class="badge badge-primary badge-xs">new</span>
                     }
                   </td>
                 </tr>

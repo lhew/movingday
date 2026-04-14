@@ -6,6 +6,7 @@ import { AdminComponent } from './admin.component';
 import { ItemsService } from '../../shared/services/items.service';
 import { UserService } from '../../shared/services/user.service';
 import { InviteService } from '../../shared/services/invite.service';
+import { NotificationService } from '../../shared/services/notification.service';
 import { UserProfile } from '../../shared/models/user.model';
 import { Item } from '../../shared/models/item.model';
 import { Timestamp } from '@angular/fire/firestore';
@@ -23,6 +24,7 @@ describe('AdminComponent', () => {
   let mockItemsService: Partial<ItemsService>;
   let mockUserService: Partial<UserService>;
   let mockInviteService: Partial<InviteService>;
+  let mockNotificationService: Partial<NotificationService>;
 
   const createComponent = createComponentFactory({
     component: AdminComponent,
@@ -49,11 +51,17 @@ describe('AdminComponent', () => {
       deauthorizeUser: vi.fn().mockResolvedValue(undefined),
     };
 
+    mockNotificationService = {
+      getRecentNotifications: vi.fn().mockReturnValue(of([])),
+      getLatestSnapshot: vi.fn().mockReturnValue(of(undefined)),
+    };
+
     spectator = createComponent({
       providers: [
         { provide: ItemsService, useValue: mockItemsService },
         { provide: UserService, useValue: mockUserService },
         { provide: InviteService, useValue: mockInviteService },
+        { provide: NotificationService, useValue: mockNotificationService },
       ],
     });
   });
@@ -135,6 +143,11 @@ describe('AdminComponent', () => {
     it('should switch to users tab', () => {
       spectator.component.setTab('users');
       expect(spectator.component.activeTab()).toBe('users');
+    });
+
+    it('should switch to activity tab', () => {
+      spectator.component.setTab('activity');
+      expect(spectator.component.activeTab()).toBe('activity');
     });
   });
 
