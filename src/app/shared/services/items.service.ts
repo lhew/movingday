@@ -50,6 +50,12 @@ export class ItemsService {
     return collection(this.firestore, 'items');
   }
 
+  private stripUndefined<T extends Record<string, unknown>>(data: T): Record<string, unknown> {
+    return Object.fromEntries(
+      Object.entries(data).filter(([, value]) => value !== undefined),
+    );
+  }
+
   /** Stream all items ordered by creation date */
   getItems(): Observable<Item[]> {
     if (!this.firestore) {
@@ -113,7 +119,7 @@ export class ItemsService {
       throw new Error('Firestore not available');
     }
     const ref = await addDoc(this.itemsRef, {
-      ...data,
+      ...this.stripUndefined(data as Record<string, unknown>),
       status: 'available',
       createdAt: serverTimestamp(),
     });
@@ -126,7 +132,7 @@ export class ItemsService {
       throw new Error('Firestore not available');
     }
     await updateDoc(doc(this.firestore, 'items', id), {
-      ...data,
+      ...this.stripUndefined(data as Record<string, unknown>),
       updatedAt: serverTimestamp(),
     });
   }

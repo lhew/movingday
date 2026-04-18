@@ -223,4 +223,51 @@ describe('AdminComponent', () => {
       expect(spectator.component.authorizingUid()).toBeNull();
     });
   });
+
+  describe('copyLink()', () => {
+    it('should write the link to clipboard on browser platform', async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText },
+        configurable: true,
+      });
+
+      await spectator.component.copyLink('https://example.com/invite/abc');
+
+      expect(writeText).toHaveBeenCalledWith('https://example.com/invite/abc');
+    });
+
+    it('should do nothing when not on browser platform', async () => {
+      const writeText = vi.fn().mockResolvedValue(undefined);
+      Object.defineProperty(navigator, 'clipboard', {
+        value: { writeText },
+        configurable: true,
+      });
+      (spectator.component as unknown as Record<string, unknown>)['platformId'] = 'server';
+
+      await spectator.component.copyLink('https://example.com/invite/abc');
+
+      expect(writeText).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('canDeactivate()', () => {
+    it('should ask confirmation when form is dirty and visible', () => {
+      spectator.component.showItemForm.set(true);
+      (spectator.component as unknown as Record<string, unknown>)['itemFormRef'] = { isDirty: true };
+      const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(false);
+
+      const canDeactivate = spectator.component.canDeactivate();
+
+      expect(confirmSpy).toHaveBeenCalledWith('You have unsaved changes. Leave anyway?');
+      expect(canDeactivate).toBe(false);
+    });
+
+    it('should return true when form is clean or hidden', () => {
+      spectator.component.showItemForm.set(false);
+      (spectator.component as unknown as Record<string, unknown>)['itemFormRef'] = { isDirty: true };
+
+      expect(spectator.component.canDeactivate()).toBe(true);
+    });
+  });
 });

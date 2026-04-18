@@ -32,7 +32,9 @@
 
       @if (filtered.length === 0) {
         <div class="text-center py-20 text-base-content/70">
-          <p class="text-5xl mb-4">🎉</p>
+          <div class="mb-4 flex justify-center">
+            <ng-icon name="cssCheckO" class="text-5xl" aria-hidden="true" />
+          </div>
           <p class="text-xl">Everything's been claimed! Check back soon.</p>
         </div>
       }
@@ -81,7 +83,7 @@
               <p class="text-sm text-base-content/70 line-clamp-2">{{ item.description }}</p>
 
                 <!-- Price tag -->
-                @if (item.price !== undefined) {
+                @if (!isFree(item.price)) {
                   <span class="badge badge-outline badge-sm self-start">€{{ formatPrice(item.price) }}</span>
                 } @else {
                   <span class="badge badge-success badge-sm self-start">Free</span>
@@ -127,7 +129,7 @@
 @defer (when selectedItem() !== null) {
   @if (selectedItem()) {
     @let detail = selectedItem()!;
-    <div class="modal modal-open">
+    <div class="modal modal-open" (window:keydown.escape)="onEscapeKey()">
       <div class="modal-box overflow-y-auto w-[calc(100vw-2rem)] sm:w-[calc(100vw-4rem)] max-w-3xl pt-12">
 
         <button class="btn btn-sm btn-circle btn-ghost absolute right-2 top-2 z-10"
@@ -161,7 +163,7 @@
         </div>
 
         <!-- Price -->
-        @if (detail.price !== undefined) {
+        @if (!isFree(detail.price)) {
           <p class="text-lg font-semibold text-primary mb-3">€{{ formatPrice(detail.price) }}</p>
         } @else {
           <span class="badge badge-success badge-outline mb-3">Free</span>

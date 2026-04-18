@@ -3,7 +3,7 @@ import { AsyncPipe, NgClass, DOCUMENT, isPlatformServer } from '@angular/common'
 import { Timestamp } from '@angular/fire/firestore';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ItemsService } from '../../shared/services/items.service';
-import { Item, CONDITION_LABELS, CONDITION_BADGE_CLASS, CONDITION_ICONS } from '../../shared/models/item.model';
+import { Item, CONDITION_LABELS, CONDITION_BADGE_CLASS, CONDITION_ICONS, isFreePrice } from '../../shared/models/item.model';
 import { ShowcaseCardActionsComponent } from './showcase-card-actions.component';
 import { of } from 'rxjs';
 import { catchError, take } from 'rxjs/operators';
@@ -99,12 +99,22 @@ export class ShowcaseComponent {
     return `${euros},${centsPart}`;
   }
 
+  isFree(price: number | null | undefined): boolean {
+    return isFreePrice(price);
+  }
+
   openDetail(item: Item): void {
     this.selectedItem.set(item);
   }
 
   closeDetail(): void {
     this.selectedItem.set(null);
+  }
+
+  onEscapeKey(): void {
+    if (this.selectedItem()) {
+      this.closeDetail();
+    }
   }
 
   formatDate(ts: Timestamp | undefined): string {

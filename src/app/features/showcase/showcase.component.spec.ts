@@ -42,6 +42,7 @@ describe('ShowcaseComponent', () => {
     ],
   });
 
+
   beforeEach(async () => {
     vi.clearAllMocks();
     const itemsGetItems = mockItemsService.getItems as unknown as ReturnType<typeof vi.fn>;
@@ -160,6 +161,22 @@ describe('ShowcaseComponent', () => {
     });
   });
 
+  describe('onEscapeKey()', () => {
+    it('should close the detail modal when an item is selected', () => {
+      spectator.component.openDetail(mockItem());
+
+      spectator.component.onEscapeKey();
+
+      expect(spectator.component.selectedItem()).toBeNull();
+    });
+
+    it('should do nothing when no item is selected', () => {
+      spectator.component.onEscapeKey();
+
+      expect(spectator.component.selectedItem()).toBeNull();
+    });
+  });
+
   describe('formatDate()', () => {
     it('should return "—" when timestamp is undefined', () => {
       expect(spectator.component.formatDate(undefined)).toBe('—');
@@ -190,9 +207,56 @@ describe('ShowcaseComponent', () => {
     });
   });
 
+  describe('isFree()', () => {
+    it('should treat nullish and zero values as free', () => {
+      expect(spectator.component.isFree(undefined)).toBe(true);
+      expect(spectator.component.isFree(null)).toBe(true);
+      expect(spectator.component.isFree(0)).toBe(true);
+    });
+
+    it('should treat positive prices as paid', () => {
+      expect(spectator.component.isFree(599)).toBe(false);
+    });
+  });
+
   describe('showDeferred signal', () => {
     it('should be true after component is rendered (afterNextRender trigger)', () => {
       expect(spectator.component.showDeferred()).toBe(true);
+    });
+  });
+
+  describe('first interaction activation', () => {
+    it('should enable live updates on first user interaction', () => {
+      (spectator.component as unknown as Record<string, () => void>)['listenForFirstInteraction']();
+
+      document.dispatchEvent(new Event('click'));
+
+      expect(mockItemsService.enableLiveUpdates).toHaveBeenCalled();
+    });
+  });
+
+  describe('items$ error handling', () => {
+    it('should set loadError and emit empty array when getItems throws', async () => {
+      const { throwError } = await import('rxjs');
+      vi.mocked(mockItemsService.getItems!).mockReturnValue(
+        throwError(() => new Error('Network error'))
+      );
+      spectator = createComponent();
+
+      const items = await firstValueFrom(spectator.component.items$);
+      expect(items).toEqual([]);
+      expect(spectator.component.loadError()).toBe('Network error');
+    });
+
+    it('should set a fallback loadError message for non-Error throws', async () => {
+      const { throwError } = await import('rxjs');
+      vi.mocked(mockItemsService.getItems!).mockReturnValue(
+        throwError(() => 'string error')
+      );
+      spectator = createComponent();
+
+      await firstValueFrom(spectator.component.items$);
+      expect(spectator.component.loadError()).toBe('Unable to load items. Please try again later.');
     });
   });
 });

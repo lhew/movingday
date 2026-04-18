@@ -17,15 +17,26 @@ import { AppNotification } from '../../models/notification.model';
   template: `
     @if (isAdmin$ | async) {
       <div class="dropdown dropdown-end">
-        <label tabindex="0" class="btn btn-ghost btn-circle">
+        <button
+          type="button"
+          tabindex="0"
+          class="btn btn-ghost btn-circle"
+          aria-label="Open notifications"
+          aria-haspopup="menu"
+        >
           <div class="indicator">
             <ng-icon name="cssBell" aria-hidden="true" />
             @if (unreadCount$ | async; as count) {
               <span class="badge badge-primary badge-xs indicator-item">{{ count > 9 ? '9+' : count }}</span>
             }
           </div>
-        </label>
-        <div tabindex="0" class="dropdown-content mt-3 z-[1] shadow bg-base-100 rounded-box w-80 max-h-96 overflow-y-auto">
+        </button>
+        <div
+          tabindex="0"
+          role="menu"
+          aria-label="Notifications"
+          class="dropdown-content mt-3 z-[1] shadow bg-base-100 rounded-box w-80 max-h-96 overflow-y-auto"
+        >
           <div class="flex items-center justify-between px-4 pt-3 pb-2 border-b border-base-300">
             <span class="text-sm font-semibold">Notifications</span>
             @if (unreadCount$ | async) {

@@ -130,4 +130,37 @@ describe('NotificationService', () => {
       expect(result).toEqual(mockSnapshot);
     });
   });
+
+  describe('when Firestore is not available', () => {
+    beforeEach(() => {
+      // Simulate optional Firestore being absent
+      (spectator.service as unknown as Record<string, unknown>)['firestore'] = null;
+    });
+
+    it('getRecentNotifications() returns empty array', () => {
+      let result: unknown;
+      spectator.service.getRecentNotifications().subscribe((v) => (result = v));
+      expect(result).toEqual([]);
+    });
+
+    it('getUnreadCount() returns 0', () => {
+      let result: unknown;
+      spectator.service.getUnreadCount().subscribe((v) => (result = v));
+      expect(result).toBe(0);
+    });
+
+    it('markAsRead() resolves without calling updateDoc', async () => {
+      await expect(spectator.service.markAsRead('id-1')).resolves.toBeUndefined();
+    });
+
+    it('markAllAsRead() resolves without calling getDocs', async () => {
+      await expect(spectator.service.markAllAsRead()).resolves.toBeUndefined();
+    });
+
+    it('getLatestSnapshot() returns undefined', () => {
+      let result: unknown = 'not-set';
+      spectator.service.getLatestSnapshot().subscribe((v) => (result = v));
+      expect(result).toBeUndefined();
+    });
+  });
 });

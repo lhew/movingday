@@ -98,5 +98,17 @@ describe('AuthMenuComponent', () => {
     const name = await firstValueFrom(spectator.component.displayName$);
     expect(name).toBe('Leo The Cat');
   });
+
+  it('should call getAuth via requestIdleCallback when it is available in browser', () => {
+    const mockRequestIdleCallback = vi.fn((cb: FrameRequestCallback) => { cb(0 as unknown as IdleDeadline); return 0; });
+    (globalThis as Record<string, unknown>).requestIdleCallback = mockRequestIdleCallback;
+
+    spectator.component.ngOnInit();
+
+    expect(mockRequestIdleCallback).toHaveBeenCalled();
+    expect(mockLazyAuth.getAuth).toHaveBeenCalled();
+
+    delete (globalThis as Record<string, unknown>).requestIdleCallback;
+  });
 });
 

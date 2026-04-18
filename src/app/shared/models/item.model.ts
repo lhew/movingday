@@ -11,8 +11,8 @@ export interface Item {
   imageUrl?: string;
   imageUrlLg?: string;
   status: ItemStatus;
-  /** Price in euro cents (e.g. 599 = €5,99). Absent or undefined means free. */
-  price?: number;
+  /** Price in euro cents (e.g. 599 = €5,99). Null/undefined/0 means free. */
+  price?: number | null;
   claimedBy?: {
     uid: string;
     name: string;
@@ -49,3 +49,7 @@ export const CONDITION_BADGE_CLASS: Record<ItemCondition, string> = {
   'fair': 'badge-warning',
   'worn': 'badge-neutral',
 };
+
+export function isFreePrice(price: number | null | undefined): boolean {
+  return price == null || price <= 0;
+}

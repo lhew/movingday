@@ -1,7 +1,7 @@
 # Moving Day App — Setup Guide
 
 A full-stack Angular app where people can claim donated items and follow Leo's move.
-Built with Angular 19, Firebase, Tailwind, DaisyUI, Nx, Vitest, Cypress, and Claude AI agents.
+Built with Angular 19, Firebase, Tailwind, DaisyUI, Nx, Vitest, and Cypress.
 
 ---
 
@@ -14,43 +14,20 @@ movingday/
 │   │   ├── features/
 │   │   │   ├── showcase/       # Public donation grid with dibs
 │   │   │   ├── updates/        # Moving updates / blog posts
-│   │   │   └── admin/          # Claude agent chat + item management
+│   │   │   └── admin/          # Item, invitation, user, and activity management
 │   │   └── shared/
 │   │       ├── models/         # TypeScript interfaces
-│   │       ├── services/       # Firebase + Agent services
+│   │       ├── services/       # Firebase services
 │   │       └── guards/         # Admin route protection
 │   └── environments/           # Dev + prod Firebase config
 ├── functions/                  # Firebase Cloud Functions (Node 20)
-│   └── src/index.ts            # Claude agentic loop lives here
+│   └── src/index.ts            # Callable functions, triggers, and image processing
 ├── cypress/                    # E2E tests
 ├── .github/workflows/          # CI + deploy pipelines
 ├── firebase.json               # Firebase hosting + functions config
 ├── firestore.rules             # Security rules
 └── tailwind.config.js          # DaisyUI theme "movingday"
 ```
-
-### How the AI agent works
-
-```
-You (browser) ──POST /agent──► Cloud Function
-                                    │
-                                    ▼
-                              Claude claude-opus-4-6
-                                    │
-                          ┌─────────┴──────────┐
-                          │  tool_use calls     │
-                          ▼                     │
-                    Firestore CRUD              │
-                    (create/list/               │
-                     update items)              │
-                          │                     │
-                          └─────────►  Final text reply
-                                         back to browser
-```
-
-The Anthropic API key **never** touches the browser — it lives in Firebase Functions secrets.
-
----
 
 ## Step 1 — Prerequisites
 
@@ -123,21 +100,7 @@ adminEmail: 'leo@gmail.com',  // <-- your Google email
 
 ---
 
-## Step 5 — Set the Anthropic API key as a Firebase secret
-
-```bash
-firebase login
-
-# Store your Anthropic key securely (never committed to git)
-firebase functions:secrets:set ANTHROPIC_API_KEY
-# Paste your key when prompted: sk-ant-...
-```
-
-Get your key from [console.anthropic.com](https://console.anthropic.com).
-
----
-
-## Step 6 — Run locally
+## Step 5 — Run locally
 
 ```bash
 # Start the Angular dev server
@@ -151,7 +114,7 @@ The app will be at `http://localhost:4200`.
 
 ---
 
-## Step 7 — Deploy to Firebase
+## Step 6 — Deploy to Firebase
 
 ```bash
 # Build production app for Firebase Hosting
@@ -168,7 +131,7 @@ Your app will be live at `https://YOUR_PROJECT_ID.web.app`.
 
 ---
 
-## Step 7.5 — Enable Cloud Storage CORS for browser image loads
+## Step 6.5 — Enable Cloud Storage CORS for browser image loads
 
 If production logs errors like `No 'Access-Control-Allow-Origin' header is present`
 for `https://firebasestorage.googleapis.com/...`, the fix is on the Cloud Storage
@@ -202,7 +165,7 @@ If you later add a custom domain, add that origin to `storage.cors.json` and re-
 
 ---
 
-## Step 8 — Set up GitHub CI/CD
+## Step 7 — Set up GitHub CI/CD
 
 1. Push the repo to GitHub
 2. In GitHub → **Settings** → **Secrets and variables** → **Actions**, add:
@@ -217,7 +180,6 @@ If you later add a custom domain, add that origin to `storage.cors.json` and re-
 | `FIREBASE_APP_ID` | Firebase project settings |
 | `FIREBASE_SERVICE_ACCOUNT` | Firebase Console → Project Settings → Service accounts → Generate key |
 | `FIREBASE_TOKEN` | Run `firebase login:ci` in terminal |
-| `ANTHROPIC_API_KEY` | console.anthropic.com |
 | `ADMIN_EMAIL` | Your Google email |
 
 3. Push to `main` — the deploy workflow fires automatically.
@@ -239,37 +201,10 @@ npx cypress open
 
 ---
 
-## Using the AI agent
-
-1. Sign in with your Google account (admin email)
-2. Navigate to `/admin`
-3. Type instructions in the chat, for example:
-   - *"Add a new item: large blue sofa, good condition, free to anyone who can pick up"*
-   - *"Write an update announcing we found a moving truck"*
-   - *"List all items that have been claimed"*
-   - *"Mark the bookcase as gone — it was picked up yesterday"*
-
-The agent uses Claude claude-opus-4-6 with these tools: `create_item`, `update_item`, `delete_item`, `list_items`, `create_update`, `delete_update`.
-
----
-
-## Adding more agent tools
-
-To give the agent new capabilities, add an entry to `AGENT_TOOLS` in `src/app/shared/services/agent.service.ts` AND add the execution logic to the `executeTool` switch in `functions/src/index.ts`.
-
-Example ideas:
-- `send_email` — email a notification to the person who called dibs
-- `upload_image` — generate a signed upload URL so the agent can associate photos
-- `list_dibs` — who's claimed what and their contact info
-
----
-
 ## GCP / Firebase cost estimate
 
 For a personal moving app with ~50-100 users, costs are essentially zero:
 - **Firestore**: Free tier covers ~50K reads/day, 20K writes/day
-- **Functions**: Free tier covers 2M invocations/month (agent calls)
+- **Functions**: Free tier covers 2M invocations/month
 - **Hosting**: 10 GB/month free
 - **Storage**: 5 GB free
-
-The Anthropic API is the main cost (~$0.01-0.05 per agent conversation depending on length).

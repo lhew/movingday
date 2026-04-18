@@ -49,28 +49,19 @@ firebase: {
   // ...
 },
 adminEmail: 'your@email.com',
-agentEndpointUrl: 'http://localhost:5001/your-project-id/us-central1/agent',
 ```
 
 Also update `firestore.rules`, `storage.rules`, and `.firebaserc` with your project ID and admin email.
 
 > Full setup instructions (Firebase project creation, auth, Functions, CI/CD): see [SETUP.md](SETUP.md)
 
-### 3. Set the Anthropic API key
+### 3. Start the app
 
 ```bash
-firebase login
-firebase functions:secrets:set ANTHROPIC_API_KEY
-# paste your key from console.anthropic.com
-```
-
-### 4. Start the app
-
-```bash
-# Angular dev server only (no AI agent)
+# Angular dev server only
 npm start
 
-# With Firebase emulators + Angular together (enables the AI agent locally)
+# With Firebase emulators + Angular together
 npm run dev
 ```
 
@@ -98,14 +89,14 @@ firebase deploy                         # Deploy everything
 src/app/features/
   showcase/     # Item grid + dibs
   updates/      # Moving blog
-  admin/        # Agent chat + item table
+  admin/        # Item, invitation, user, and activity management
 
 src/app/shared/
   models/       # TypeScript interfaces
-  services/     # Firebase + Agent HTTP services
+  services/     # Firebase services
   guards/       # Admin route guard
 
-functions/src/index.ts   # Claude agentic loop (Cloud Function)
+functions/src/index.ts   # Firebase Cloud Functions
 firestore.rules          # Firestore security rules
 tailwind.config.js       # DaisyUI 'movingday' theme
 ```
@@ -115,4 +106,4 @@ tailwind.config.js       # DaisyUI 'movingday' theme
 Pushes to `main` auto-deploy via Firebase. PRs get a Claude code review automatically.
 Add these secrets to GitHub Actions (Settings → Secrets → Actions):
 
-`FIREBASE_API_KEY` · `FIREBASE_AUTH_DOMAIN` · `FIREBASE_PROJECT_ID` · `FIREBASE_STORAGE_BUCKET` · `FIREBASE_MESSAGING_SENDER_ID` · `FIREBASE_APP_ID` · `FIREBASE_SERVICE_ACCOUNT` · `FIREBASE_TOKEN` · `ANTHROPIC_API_KEY` · `ADMIN_EMAIL`
+`FIREBASE_API_KEY` · `FIREBASE_AUTH_DOMAIN` · `FIREBASE_PROJECT_ID` · `FIREBASE_STORAGE_BUCKET` · `FIREBASE_MESSAGING_SENDER_ID` · `FIREBASE_APP_ID` · `FIREBASE_SERVICE_ACCOUNT` · `FIREBASE_TOKEN` · `ADMIN_EMAIL`

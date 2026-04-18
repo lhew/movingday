@@ -27,9 +27,9 @@
 
 ## Project Overview
 
-This is a personal moving-day app for Leo. It has three public sections (Showcase, Updates, Admin) and a Claude-powered agentic backend running in a Firebase Cloud Function.
+This is a personal moving-day app for Leo. It has three public sections (Showcase, Updates, Admin) backed by Firebase services and Cloud Functions.
 
-**Stack**: Angular 19 + AngularFire + DaisyUI 4 + Tailwind CSS + Firebase (Hosting, Firestore, Auth, Functions) + Anthropic SDK
+**Stack**: Angular 19 + AngularFire + DaisyUI 4 + Tailwind CSS + Firebase (Hosting, Firestore, Auth, Functions)
 
 ## Available Agents
 
@@ -40,7 +40,6 @@ Specialized agents live in `.github/agents/`. Use them for their designated task
 | Template Validator | `template-validator.agent.md` | After editing any `.html` template — verify all bindings, events, and trackBy functions exist in the `.ts` class |
 | Security Reviewer | `security-reviewer.agent.md` | Before any production deploy — checks Cloud Function auth, Firestore rules, and placeholder secrets |
 | Unit Test Writer | `unit-test-writer.agent.md` | When adding or modifying services, models, or guards |
-| Agent Tool Scaffolder | `agent-tool-scaffolder.agent.md` | When adding a new tool to the Claude agentic loop in `functions/src/index.ts` |
 | DaisyUI Component Writer | `daisyui-component-writer.agent.md` | When creating new Angular components — ensures consistent use of the `movingday` theme |
 | Cypress E2E Writer | `cypress-e2e-writer.agent.md` | When writing E2E tests for the showcase, updates, or admin flows |
 | CI Monitor | `ci-monitor-subagent.agent.md` | CI status checks and auto-fix of lint/type/test failures |
@@ -92,11 +91,9 @@ docs: update README with local dev quickstart
 - **DaisyUI theme**: Always use the `movingday` theme tokens (`primary`, `secondary`, `accent`, `base-*`). Never hardcode hex colors.
 - **Angular signals**: Use `signal()` for local UI state. Access in templates with `value()` call syntax.
 - **Standalone components**: All components are standalone. Add imports explicitly to the `imports: []` array.
-- **Firestore tools**: New Firestore operations go in the `executeTool` switch in `functions/src/index.ts`.
-- **No secrets in frontend**: The Anthropic API key lives only in Firebase Functions secrets. The `environment.ts` files hold only Firebase config.
+- **No secrets in frontend**: The `environment.ts` files hold only Firebase config.
 
 ## Known Issues (fix before production)
 
-1. **Cloud Function auth is commented out** — `functions/src/index.ts` lines 96-107 must be uncommented before production deploy
-2. **`firestore.rules`** contains `YOUR_ADMIN_EMAIL@gmail.com` placeholder — replace with real admin email
-3. **`environment.ts`** contains placeholder Firebase config — fill in from Firebase Console per `SETUP.md`
+1. **`firestore.rules`** contains `YOUR_ADMIN_EMAIL@gmail.com` placeholder — replace with real admin email
+2. **`environment.ts`** contains placeholder Firebase config — fill in from Firebase Console per `SETUP.md`

@@ -5,16 +5,6 @@ import { ItemsService } from '../../../shared/services/items.service';
 import { ImageUploadService } from '../../../shared/services/image-upload.service';
 import { Item } from '../../../shared/models/item.model';
 import { Timestamp } from '@angular/fire/firestore';
-import * as firestore from 'firebase/firestore';
-
-vi.mock('firebase/firestore', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('firebase/firestore')>();
-  return {
-    ...actual,
-    deleteField: vi.fn().mockReturnValue('__DELETE_FIELD__'),
-  };
-});
-
 const mockItem: Item = {
   id: 'item-1',
   name: 'Test Chair',
@@ -374,7 +364,7 @@ describe('ItemFormComponent', () => {
       await spectator.component.save();
 
       const call = vi.mocked(mockItemsService.createItem!).mock.calls[0][0] as Item;
-      expect(call.price).toBeUndefined();
+      expect(call.price).toBeNull();
     });
 
     it('should set an error and not emit saved when createItem throws', async () => {
@@ -412,7 +402,7 @@ describe('ItemFormComponent', () => {
       expect(savedSpy).toHaveBeenCalled();
     });
 
-    it('should send deleteField sentinel when switching priced item to free', async () => {
+    it('should persist null when switching a priced item to free', async () => {
       spectator = createComponent({ props: { item: mockPricedItem } });
       mockItemsService = spectator.inject(ItemsService) as Partial<ItemsService>;
       spectator.component.onPricingChange('free');
@@ -421,9 +411,8 @@ describe('ItemFormComponent', () => {
 
       expect(mockItemsService.updateItem).toHaveBeenCalledWith(
         'item-2',
-        expect.objectContaining({ price: '__DELETE_FIELD__' })
+        expect.objectContaining({ price: null })
       );
-      expect(firestore.deleteField).toHaveBeenCalled();
     });
   });
 
@@ -472,6 +461,15 @@ describe('ItemFormComponent', () => {
       spectator.component.cancelled.subscribe(cancelledSpy);
 
       spectator.component.cancel();
+
+      expect(cancelledSpy).toHaveBeenCalled();
+    });
+
+    it('should emit cancelled when Escape is pressed', () => {
+      const cancelledSpy = vi.fn();
+      spectator.component.cancelled.subscribe(cancelledSpy);
+
+      spectator.component.onEscapeKey();
 
       expect(cancelledSpy).toHaveBeenCalled();
     });

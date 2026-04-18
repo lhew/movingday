@@ -34,21 +34,13 @@ Test:
 
 Mock `@angular/fire/firestore` using `vi.mock`.
 
-### 3. `src/app/shared/services/agent.service.ts`
-Test:
-- `send(messages, tools)` POSTs to `agentEndpointUrl` from environment
-- Returns parsed `{ reply, toolsExecuted }` on success
-- Throws on non-200 response
-
-Mock `HttpClient` with `vi.fn()`.
-
-### 4. `src/app/shared/guards/admin.guard.ts`
+### 3. `src/app/shared/guards/admin.guard.ts`
 Test:
 - Returns `true` when signed-in user email matches `adminEmail`
 - Returns `UrlTree` (redirect to `/`) when user is not admin
 - Returns `UrlTree` when user is not signed in
 
-### 5. `src/app/shared/models/moving-update.model.ts` (if helpers exist)
+### 4. `src/app/shared/models/moving-update.model.ts` (if helpers exist)
 Test any exported pure functions.
 
 ## How to Generate a Test

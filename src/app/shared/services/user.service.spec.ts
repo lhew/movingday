@@ -82,4 +82,41 @@ describe('UserService', () => {
       expect(fs.where).toHaveBeenCalledWith('authorized', '==', false);
     });
   });
+
+  describe('listAllUsers()', () => {
+    it('should return all users via collectionData', async () => {
+      const users = [{ uid: 'uid-1', authorized: true }, { uid: 'uid-2', authorized: false }];
+      vi.mocked(fs.collectionData).mockReturnValue(of(users) as unknown as ReturnType<typeof fs.collectionData>);
+
+      const result = await firstValueFrom(spectator.service.listAllUsers());
+
+      expect(result).toEqual(users);
+      expect(fs.collection).toHaveBeenCalledWith({}, 'users');
+    });
+  });
+
+  describe('when Firestore is not available', () => {
+    beforeEach(() => {
+      (spectator.service as unknown as Record<string, unknown>)['firestore'] = null;
+    });
+
+    it('getProfile() returns null', async () => {
+      await expect(spectator.service.getProfile('uid-1')).resolves.toBeNull();
+    });
+
+    it('streamProfile() returns undefined', async () => {
+      const result = await firstValueFrom(spectator.service.streamProfile('uid-1'));
+      expect(result).toBeUndefined();
+    });
+
+    it('listPendingUsers() returns empty array', async () => {
+      const result = await firstValueFrom(spectator.service.listPendingUsers());
+      expect(result).toEqual([]);
+    });
+
+    it('listAllUsers() returns empty array', async () => {
+      const result = await firstValueFrom(spectator.service.listAllUsers());
+      expect(result).toEqual([]);
+    });
+  });
 });

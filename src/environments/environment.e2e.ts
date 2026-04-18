@@ -20,6 +20,5 @@ export const environment = {
     storageHost: '',
     storagePort: 0,
   },
-  agentEndpointUrl: 'http://localhost:4200/__unused_e2e_agent__',
   adminEmail: 'e2e-admin@movingday.test',
 };

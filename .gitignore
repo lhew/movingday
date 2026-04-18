@@ -15,6 +15,7 @@ coverage/
 
 # Credentials — never commit
 service-account.json
+infra/iam-policy.json
 
 # Environment files
 .env

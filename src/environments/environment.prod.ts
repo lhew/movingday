@@ -22,6 +22,5 @@ export const environment = {
     appId: '%%FIREBASE_APP_ID%%',
     measurementId: '%%FIREBASE_MEASUREMENT_ID%%',
   },
-  agentEndpointUrl: 'https://us-central1-%%FIREBASE_PROJECT_ID%%.cloudfunctions.net/agent',
   adminEmail: '%%ADMIN_EMAIL%%',
 };

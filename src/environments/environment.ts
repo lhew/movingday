@@ -23,7 +23,5 @@ export const environment = {
     storageHost: 'localhost',
     storagePort: 9199,
   },
-  // The agent endpoint is a Cloud Function — never put the Anthropic key in the frontend
-  agentEndpointUrl: 'http://localhost:5001/demo-movingday/us-central1/agent',
   adminEmail: 'YOUR_ADMIN_EMAIL@gmail.com',
 };

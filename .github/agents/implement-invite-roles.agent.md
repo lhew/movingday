@@ -133,7 +133,7 @@ exports.onUserCreate = functions.auth.user().onCreate(async (user) => {
   3. `await db.collection('users').doc(uid).update({ authorized: true })`.
   4. Return `{ success: true }`.
 
-> These callable functions do NOT need `runWith({ secrets: ... })` — those are only required for the `agent` function that uses the Anthropic key.
+> These callable functions do NOT need `runWith({ secrets: ... })`.
 
 ---
 

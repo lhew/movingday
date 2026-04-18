@@ -169,6 +169,26 @@ describe('ItemsService', () => {
         }),
       );
     });
+
+    it('should omit undefined fields but preserve null price values', async () => {
+      await spectator.service.createItem({
+        name: 'Table',
+        description: 'A nice table',
+        condition: 'good',
+        status: 'available',
+        imageUrl: undefined,
+        price: null,
+      });
+
+      expect(fs.addDoc).toHaveBeenCalledWith(
+        'mock-collection',
+        expect.not.objectContaining({ imageUrl: undefined }),
+      );
+      expect(fs.addDoc).toHaveBeenCalledWith(
+        'mock-collection',
+        expect.objectContaining({ price: null }),
+      );
+    });
   });
 
   describe('updateItem()', () => {
@@ -182,6 +202,15 @@ describe('ItemsService', () => {
         expect.objectContaining({ name: 'Updated Table', updatedAt: 'SERVER_TS' }),
       );
       expect(fs.doc).toHaveBeenCalledWith({}, 'items', 'item-1');
+    });
+
+    it('should omit undefined fields from update payloads', async () => {
+      await spectator.service.updateItem('item-1', { name: 'Updated Table', imageUrl: undefined });
+
+      expect(fs.updateDoc).toHaveBeenCalledWith(
+        'mock-doc',
+        expect.not.objectContaining({ imageUrl: undefined }),
+      );
     });
   });
 
@@ -307,6 +336,32 @@ describe('ItemsService', () => {
 
       expect(fs.deleteDoc).toHaveBeenCalledWith('mock-doc');
       expect(fs.doc).toHaveBeenCalledWith({}, 'items', 'item-1');
+    });
+  });
+
+  describe('when Firestore is not available', () => {
+    beforeEach(() => {
+      (spectator.service as unknown as Record<string, unknown>)['firestore'] = null;
+    });
+
+    it('createItem() throws', async () => {
+      await expect(spectator.service.createItem({ name: 'Chair', description: '', condition: 'good' } as never)).rejects.toThrow('Firestore not available');
+    });
+
+    it('updateItem() throws', async () => {
+      await expect(spectator.service.updateItem('id', {})).rejects.toThrow('Firestore not available');
+    });
+
+    it('callDibs() throws', async () => {
+      await expect(spectator.service.callDibs('id')).rejects.toThrow('Firestore not available');
+    });
+
+    it('releaseDibs() throws', async () => {
+      await expect(spectator.service.releaseDibs('id')).rejects.toThrow('Firestore not available');
+    });
+
+    it('deleteItem() throws', async () => {
+      await expect(spectator.service.deleteItem('id')).rejects.toThrow('Firestore not available');
     });
   });
 });

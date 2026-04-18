@@ -60,6 +60,60 @@ describe('InviteComponent (unauthenticated)', () => {
     spectator = createComponent({ providers: [{ provide: Router, useValue: mockRouter }] });
   });
 
+  it('should mark nickname as taken and suggest a suffix when nickname doc exists', async () => {
+    vi.useFakeTimers();
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    vi.mocked(fs.doc).mockImplementation((_: unknown, collection: string, id: string) =>
+      `${collection}/${id}` as unknown as ReturnType<typeof fs.doc>
+    );
+    vi.mocked(fs.docData).mockImplementation((ref: unknown) => {
+      const path = String(ref);
+      if (path.startsWith('invitations/')) {
+        return of(INVITE_DOC) as unknown as ReturnType<typeof fs.docData>;
+      }
+      if (path.startsWith('nicknames/')) {
+        return of({ uid: 'taken' }) as unknown as ReturnType<typeof fs.docData>;
+      }
+      return of(undefined) as unknown as ReturnType<typeof fs.docData>;
+    });
+
+    spectator.component.ngOnInit();
+    spectator.component.onNicknameChange('cool-leo');
+    vi.advanceTimersByTime(301);
+    await Promise.resolve();
+
+    expect(spectator.component.nicknameTaken()).toBe(true);
+    expect(spectator.component.nicknameSuggestion()).toBe('cool-leo-1000');
+    vi.useRealTimers();
+  });
+
+  it('should clear nickname suggestion when nickname is available', async () => {
+    vi.useFakeTimers();
+    vi.mocked(fs.doc).mockImplementation((_: unknown, collection: string, id: string) =>
+      `${collection}/${id}` as unknown as ReturnType<typeof fs.doc>
+    );
+    vi.mocked(fs.docData).mockImplementation((ref: unknown) => {
+      const path = String(ref);
+      if (path.startsWith('invitations/')) {
+        return of(INVITE_DOC) as unknown as ReturnType<typeof fs.docData>;
+      }
+      if (path.startsWith('nicknames/')) {
+        return of(undefined) as unknown as ReturnType<typeof fs.docData>;
+      }
+      return of(undefined) as unknown as ReturnType<typeof fs.docData>;
+    });
+
+    spectator.component['nicknameSuggestion'].set('old-suggestion');
+    spectator.component.ngOnInit();
+    spectator.component.onNicknameChange('free-name');
+    vi.advanceTimersByTime(301);
+    await Promise.resolve();
+
+    expect(spectator.component.nicknameTaken()).toBe(false);
+    expect(spectator.component.nicknameSuggestion()).toBe('');
+    vi.useRealTimers();
+  });
+
   it('should create', () => {
     expect(spectator.component).toBeTruthy();
   });
@@ -171,5 +225,17 @@ describe('InviteComponent (authenticated)', () => {
     expect(spectator.component.nicknameTaken()).toBe(true);
     expect(spectator.component.nicknameSuggestion()).toBe('taken-name-5678');
     expect(spectator.component.step()).toBe('nickname');
+  });
+
+  it('should set generic error message when submitNickname throws non-Error', async () => {
+    spectator.component.nicknameInput.set('cool-leo');
+    spectator.component['invitation'].set(INVITE_DOC);
+    mockAcceptFn.mockRejectedValueOnce('boom');
+
+    await spectator.component.submitNickname();
+
+    expect(spectator.component.step()).toBe('error');
+    expect(spectator.component.errorMessage()).toBe('Something went wrong.');
+    expect(spectator.component.submitting()).toBe(false);
   });
 });

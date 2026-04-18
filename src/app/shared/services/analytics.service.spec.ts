@@ -103,6 +103,41 @@ describe('AnalyticsService', () => {
 
     expect(document.head.querySelectorAll('script[data-analytics-id="G-TEST123"]')).toHaveLength(1);
   });
+
+  it('resets initialized flag and does not throw when the analytics script fails to load', async () => {
+    spectator.service.init();
+
+    const script = document.head.querySelector<HTMLScriptElement>('script[data-analytics-id="G-TEST123"]');
+    expect(script).toBeTruthy();
+
+    script?.dispatchEvent(new Event('error'));
+    await Promise.resolve();
+
+    // initialized should be reset so a retry is possible
+    expect((spectator.service as unknown as Record<string, unknown>)['initialized']).toBe(false);
+  });
+
+  it('resolves immediately when an already-loaded script exists', async () => {
+    // Simulate a script that was already loaded (e.g. by a previous page)
+    const existingScript = document.createElement('script');
+    existingScript.dataset.analyticsId = 'G-TEST123';
+    existingScript.dataset.loaded = 'true';
+    document.head.appendChild(existingScript);
+
+    spectator.service.init();
+    await Promise.resolve();
+    await Promise.resolve();
+
+    // Config should have been called (dataLayer has 'js' and 'config' entries)
+    expect(window.dataLayer?.some((entry) => Array.isArray(entry) && entry[0] === 'config')).toBe(true);
+  });
+
+  it('does not track page views when measurementId is not set', () => {
+    (environment.firebase as Record<string, unknown>).measurementId = '';
+
+    expect(() => spectator.service.init()).not.toThrow();
+    expect(window.dataLayer).toBeUndefined();
+  });
 });
 
 

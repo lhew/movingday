@@ -1,9 +1,8 @@
 import { Component, inject, input, output, signal, OnInit, HostListener } from '@angular/core';
 import { ReactiveFormsModule, FormBuilder, Validators } from '@angular/forms';
-import { deleteField } from 'firebase/firestore';
 import { ItemsService } from '../../../shared/services/items.service';
 import { ImageUploadService } from '../../../shared/services/image-upload.service';
-import { Item, ItemCondition, ItemStatus } from '../../../shared/models/item.model';
+import { Item, ItemCondition, ItemStatus, isFreePrice } from '../../../shared/models/item.model';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { cssClose, cssCamera } from '@ng-icons/css.gg';
 
@@ -53,7 +52,7 @@ export class ItemFormComponent implements OnInit {
   ngOnInit() {
     const existing = this.item();
     if (existing) {
-      const hasPricing = existing.price !== undefined;
+      const hasPricing = !isFreePrice(existing.price);
       this.form.patchValue({
         name:        existing.name,
         description: existing.description,
@@ -88,6 +87,11 @@ export class ItemFormComponent implements OnInit {
     if (this.isDirty) {
       event.preventDefault();
     }
+  }
+
+  @HostListener('window:keydown.escape')
+  onEscapeKey(): void {
+    this.cancel();
   }
 
   // Convenience getters for template error access
@@ -179,20 +183,19 @@ export class ItemFormComponent implements OnInit {
       };
       const priceInCents = raw.pricing === 'priced' && raw.price
         ? this.parseDisplayToCents(raw.price)
-        : undefined;
+        : null;
 
       const existing = this.item();
       if (existing) {
-        // updateDoc rejects `undefined` — use deleteField() to remove the field
         const updatePayload: Record<string, unknown> = {
           ...base,
-          price: priceInCents ?? deleteField(),
+          price: priceInCents,
         };
         await this.itemsService.updateItem(existing.id, updatePayload as Partial<Item>);
       } else {
         await this.itemsService.createItem({
           ...base,
-          ...(priceInCents !== undefined ? { price: priceInCents } : {}),
+          price: priceInCents,
         } as Omit<Item, 'id' | 'createdAt'>);
       }
 

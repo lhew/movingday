@@ -173,4 +173,38 @@ describe('UpdatesService', () => {
       expect(fs.deleteDoc).toHaveBeenCalledWith('mock-doc');
     });
   });
+
+  describe('when Firestore is not available', () => {
+    beforeEach(() => {
+      (spectator.service as unknown as Record<string, unknown>)['firestore'] = null;
+    });
+
+    it('getUpdates() returns empty array', async () => {
+      const result = await firstValueFrom(spectator.service.getUpdates());
+      expect(result).toEqual([]);
+    });
+
+    it('getUpdate() returns undefined', async () => {
+      const result = await firstValueFrom(spectator.service.getUpdate('id'));
+      expect(result).toBeUndefined();
+    });
+
+    it('createUpdate() throws', async () => {
+      await expect(
+        spectator.service.createUpdate({ title: 't', content: 'c', author: 'a' })
+      ).rejects.toThrow('Firestore not available');
+    });
+
+    it('updateUpdate() throws', async () => {
+      await expect(
+        spectator.service.updateUpdate('id', { title: 'x' })
+      ).rejects.toThrow('Firestore not available');
+    });
+
+    it('deleteUpdate() throws', async () => {
+      await expect(
+        spectator.service.deleteUpdate('id')
+      ).rejects.toThrow('Firestore not available');
+    });
+  });
 });
