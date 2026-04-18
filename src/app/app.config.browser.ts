@@ -1,4 +1,6 @@
-import { ApplicationConfig } from '@angular/core';
+import { APP_INITIALIZER, ApplicationConfig, ErrorHandler } from '@angular/core';
+import { Router } from '@angular/router';
+import * as Sentry from '@sentry/angular';
 import { getApp } from 'firebase/app';
 import { initializeApp, provideFirebaseApp } from '@angular/fire/app';
 import { getFirestore, provideFirestore, connectFirestoreEmulator, initializeFirestore } from '@angular/fire/firestore';
@@ -22,9 +24,12 @@ export const browserConfig: ApplicationConfig = {
               // to complete HTTP responses. Cypress's proxy buffers chunked streams, so
               // snapshots never arrive without this — each long-poll response is a full,
               // non-streaming HTTP response that Cypress can proxy correctly.
-              const firestore = initializeFirestore(getApp(), {
-                experimentalForceLongPolling: true,
-              });
+              // Only enable it when actually running inside Cypress to avoid slowing
+              // down regular dev with HTTP polling instead of WebSocket streaming.
+              const isCypress = typeof window !== 'undefined' && !!(window as any)['Cypress'];
+              const firestore = isCypress
+                ? initializeFirestore(getApp(), { experimentalForceLongPolling: true })
+                : getFirestore();
               connectFirestoreEmulator(
                 firestore,
                 environment.emulators.firestoreHost,
@@ -62,5 +67,21 @@ export const browserConfig: ApplicationConfig = {
       : []),
 
     ...(useInternalE2eMocks ? provideInternalE2eMocks() : []),
+
+    // Sentry: browser-only — TraceService creates zone-tracked XHR that blocks SSR stabilization
+    {
+      provide: ErrorHandler,
+      useValue: Sentry.createErrorHandler(),
+    },
+    {
+      provide: Sentry.TraceService,
+      deps: [Router],
+    },
+    {
+      provide: APP_INITIALIZER,
+      useFactory: () => () => {},
+      deps: [Sentry.TraceService],
+      multi: true,
+    },
   ],
 };
