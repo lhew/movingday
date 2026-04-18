@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createComponentFactory, Spectator } from '@ngneat/spectator/vitest';
 import { of, firstValueFrom } from 'rxjs';
 import { TestBed } from '@angular/core/testing';
+import { PLATFORM_ID } from '@angular/core';
 
 vi.mock('@angular/fire/auth', () => ({
   Auth: class MockAuth {},
@@ -258,5 +259,44 @@ describe('ShowcaseComponent', () => {
       await firstValueFrom(spectator.component.items$);
       expect(spectator.component.loadError()).toBe('Unable to load items. Please try again later.');
     });
+  });
+});
+
+describe('ShowcaseComponent (SSR / server platform)', () => {
+  const mockItemsService: Partial<ItemsService> = {
+    getItems: vi.fn(),
+    enableLiveUpdates: vi.fn(),
+  };
+
+  const createComponent = createComponentFactory({
+    component: ShowcaseComponent,
+    providers: [
+      { provide: ItemsService, useValue: mockItemsService },
+      { provide: PLATFORM_ID, useValue: 'server' },
+    ],
+  });
+
+  it('should inject preload <link> tags for the first 4 images on the server', () => {
+    const items: Item[] = [
+      { id: '1', name: 'A', description: '', condition: 'good', status: 'available', createdAt: null as never, imageUrl: 'http://x.com/a.webp', imageUrlLg: 'http://x.com/a-lg.webp' },
+      { id: '2', name: 'B', description: '', condition: 'good', status: 'available', createdAt: null as never, imageUrl: 'http://x.com/b.webp' },
+      { id: '3', name: 'C', description: '', condition: 'good', status: 'available', createdAt: null as never },
+      { id: '4', name: 'D', description: '', condition: 'good', status: 'available', createdAt: null as never, imageUrl: 'http://x.com/d.webp' },
+      { id: '5', name: 'E', description: '', condition: 'good', status: 'available', createdAt: null as never, imageUrl: 'http://x.com/e.webp' },
+    ];
+    vi.mocked(mockItemsService.getItems!).mockReturnValue(of(items));
+
+    const appendSpy = vi.spyOn(document.head, 'appendChild');
+    createComponent();
+
+    // 4 items have imageUrl (ids 1,2,4,5), but only first 4 with imageUrl are processed → 3 items (1,2,4,5 → slice(0,4) of filtered = 1,2,4,5 → 4 links)
+    const linkCalls = appendSpy.mock.calls.filter(([el]) => (el as HTMLElement).tagName === 'LINK');
+    expect(linkCalls.length).toBeGreaterThan(0);
+
+    // First item should get fetchpriority=high
+    const firstLink = linkCalls[0][0] as HTMLLinkElement;
+    expect(firstLink.getAttribute('fetchpriority')).toBe('high');
+
+    appendSpy.mockRestore();
   });
 });

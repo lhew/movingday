@@ -26,7 +26,7 @@ export const browserConfig: ApplicationConfig = {
               // non-streaming HTTP response that Cypress can proxy correctly.
               // Only enable it when actually running inside Cypress to avoid slowing
               // down regular dev with HTTP polling instead of WebSocket streaming.
-              const isCypress = typeof window !== 'undefined' && !!(window as any)['Cypress'];
+              const isCypress = typeof window !== 'undefined' && !!(window as Record<string, unknown>)['Cypress'];
               const firestore = isCypress
                 ? initializeFirestore(getApp(), { experimentalForceLongPolling: true })
                 : getFirestore();

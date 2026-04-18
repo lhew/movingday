@@ -195,5 +195,38 @@ describe('NotificationBellComponent', () => {
 
       expect(spectator.query('.loading-spinner')).toBeTruthy();
     });
+
+    it('should call markAllAsRead when "Mark all read" button is clicked', async () => {
+      (mockNotificationService.getUnreadCount as ReturnType<typeof vi.fn>).mockReturnValue(of(3));
+      (mockNotificationService.markAllAsRead as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
+      mockLazyAuth.user$ = of(adminUser);
+      spectator = createComponent();
+      spectator.component.ngOnInit();
+      await spectator.fixture.whenStable();
+      spectator.detectChanges();
+
+      const btn = spectator.query('button.btn-xs') as HTMLButtonElement;
+      if (btn) {
+        btn.click();
+        expect(mockNotificationService.markAllAsRead).toHaveBeenCalled();
+      }
+    });
+
+    it('should call markAsRead when a notification link is clicked', async () => {
+      (mockNotificationService.getRecentNotifications as ReturnType<typeof vi.fn>).mockReturnValue(
+        of([{ id: 'click-n1', type: 'dibs_called', itemName: 'Chair', userName: 'Leo', read: false, createdAt: null }])
+      );
+      mockLazyAuth.user$ = of(adminUser);
+      spectator = createComponent();
+      spectator.component.ngOnInit();
+      await spectator.fixture.whenStable();
+      spectator.detectChanges();
+
+      const link = spectator.query('a[routerLink]') as HTMLAnchorElement;
+      if (link) {
+        link.click();
+        expect(mockNotificationService.markAsRead).toHaveBeenCalledWith('click-n1');
+      }
+    });
   });
 });

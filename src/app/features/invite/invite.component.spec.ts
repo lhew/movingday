@@ -159,6 +159,23 @@ describe('InviteComponent (unauthenticated)', () => {
     spectator.component.useSuggestion();
     expect(spectator.component.nicknameInput()).toBe('cool-leo-1234');
   });
+
+  it('should short-circuit nicknameCheck$ when nickname is empty string', async () => {
+    vi.useFakeTimers();
+    vi.mocked(fs.docData).mockReturnValue(of(INVITE_DOC) as unknown as ReturnType<typeof fs.docData>);
+    spectator.component.ngOnInit();
+
+    // Seed a non-empty check first so we can verify the empty one resets state
+    spectator.component.nicknameTaken.set(true);
+    spectator.component.onNicknameChange('');
+    vi.advanceTimersByTime(301);
+    await Promise.resolve();
+
+    // Empty nickname short-circuits to of(undefined) → taken=false, suggestion=''
+    expect(spectator.component.nicknameTaken()).toBe(false);
+    expect(spectator.component.nicknameSuggestion()).toBe('');
+    vi.useRealTimers();
+  });
 });
 
 // ── Tests with an authenticated user ─────────────────────────────────────────
@@ -237,5 +254,38 @@ describe('InviteComponent (authenticated)', () => {
     expect(spectator.component.step()).toBe('error');
     expect(spectator.component.errorMessage()).toBe('Something went wrong.');
     expect(spectator.component.submitting()).toBe(false);
+  });
+
+  it('should use err.message when submitNickname throws an Error instance', async () => {
+    spectator.component.nicknameInput.set('cool-leo');
+    spectator.component['invitation'].set(INVITE_DOC);
+    mockAcceptFn.mockRejectedValueOnce(new Error('CF quota exceeded'));
+
+    await spectator.component.submitNickname();
+
+    expect(spectator.component.step()).toBe('error');
+    expect(spectator.component.errorMessage()).toBe('CF quota exceeded');
+    expect(spectator.component.submitting()).toBe(false);
+  });
+
+  it('should return early from submitNickname when already submitting', async () => {
+    spectator.component.nicknameInput.set('cool-leo');
+    spectator.component['invitation'].set(INVITE_DOC);
+    spectator.component.submitting.set(true);
+
+    await spectator.component.submitNickname();
+
+    expect(mockAcceptFn).not.toHaveBeenCalled();
+  });
+
+  it('should default suggestion to empty string when CF returns taken without a suggestion', async () => {
+    spectator.component.nicknameInput.set('taken-name');
+    spectator.component['invitation'].set(INVITE_DOC);
+    mockAcceptFn.mockResolvedValueOnce({ data: { taken: true } }); // no suggestion field
+
+    await spectator.component.submitNickname();
+
+    expect(spectator.component.nicknameTaken()).toBe(true);
+    expect(spectator.component.nicknameSuggestion()).toBe('');
   });
 });
