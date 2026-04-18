@@ -4,6 +4,9 @@ import * as fs from 'fs';
 const VIOLATIONS_FILE = 'cypress/a11y-violations.json';
 
 export default defineConfig({
+  // Stabilize headless runs under CI and lower renderer memory pressure.
+  numTestsKeptInMemory: 0,
+  experimentalMemoryManagement: true,
   e2e: {
     baseUrl: 'http://localhost:4200',
     specPattern: 'cypress/e2e/**/*.cy.ts',

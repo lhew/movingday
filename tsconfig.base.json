@@ -12,10 +12,7 @@
     "module": "ES2022",
     "lib": ["ES2022", "dom"],
     "skipLibCheck": true,
-    "skipDefaultLibCheck": true,
-    "baseUrl": ".",
-    "ignoreDeprecations": "5.0",
-    "paths": {}
+    "skipDefaultLibCheck": true
   },
   "exclude": ["node_modules", "tmp"]
 }

@@ -39,6 +39,9 @@ storage-debug.log*
 # Cloud Functions build output
 functions/lib/
 
+# Local notes
+KNOWN-ISSUES.md
+
 # Editor
 .idea/
 .vscode/

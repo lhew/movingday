@@ -149,6 +149,7 @@
       "options": {
         "cypressConfig": "cypress.config.ts",
         "devServerTarget": "movingday:serve-e2e",
+        "browser": "chrome",
         "testingType": "e2e"
       },
       "configurations": {

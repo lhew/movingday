@@ -14,70 +14,7 @@ import { AppNotification } from '../../models/notification.model';
   standalone: true,
   imports: [AsyncPipe, DatePipe, RouterLink, NgIcon],
   providers: [provideIcons({ cssBell })],
-  template: `
-    @if (isAdmin$ | async) {
-      <div class="dropdown dropdown-end">
-        <button
-          type="button"
-          tabindex="0"
-          class="btn btn-ghost btn-circle"
-          aria-label="Open notifications"
-          aria-haspopup="menu"
-        >
-          <div class="indicator">
-            <ng-icon name="cssBell" aria-hidden="true" />
-            @if (unreadCount$ | async; as count) {
-              <span class="badge badge-primary badge-xs indicator-item">{{ count > 9 ? '9+' : count }}</span>
-            }
-          </div>
-        </button>
-        <div
-          tabindex="0"
-          role="menu"
-          aria-label="Notifications"
-          class="dropdown-content mt-3 z-[1] shadow bg-base-100 rounded-box w-80 max-h-96 overflow-y-auto"
-        >
-          <div class="flex items-center justify-between px-4 pt-3 pb-2 border-b border-base-300">
-            <span class="text-sm font-semibold">Notifications</span>
-            @if (unreadCount$ | async) {
-              <button class="btn btn-ghost btn-xs" (click)="markAllRead()">Mark all read</button>
-            }
-          </div>
-          @if (notifications$ | async; as notifications) {
-            @if (notifications.length === 0) {
-              <p class="text-sm text-base-content/50 p-4 text-center">No notifications yet.</p>
-            } @else {
-              <ul class="menu menu-sm p-2 gap-1">
-                @for (n of notifications; track n.id) {
-                  <li>
-                    <a routerLink="/showcase"
-                       class="flex flex-col items-start gap-0.5"
-                       [class.bg-primary/5]="!n.read"
-                       (click)="markRead(n)">
-                      <span class="text-sm">
-                        @if (n.type === 'dibs_called') {
-                          <strong>{{ n.userName }}</strong> called dibs on <strong>{{ n.itemName }}</strong>
-                        } @else {
-                          <strong>{{ n.userName }}</strong> released <strong>{{ n.itemName }}</strong>
-                        }
-                      </span>
-                      @if (n.createdAt) {
-                        <span class="text-xs text-base-content/50">{{ n.createdAt.toDate() | date:'short' }}</span>
-                      }
-                    </a>
-                  </li>
-                }
-              </ul>
-            }
-          } @else {
-            <div class="flex justify-center p-4">
-              <span class="loading loading-spinner loading-sm"></span>
-            </div>
-          }
-        </div>
-      </div>
-    }
-  `,
+  templateUrl: './notification-bell.component.html',
 })
 export class NotificationBellComponent implements OnInit {
   private notificationService = inject(NotificationService);
