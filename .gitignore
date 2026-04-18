@@ -17,6 +17,9 @@ coverage/
 service-account.json
 infra/iam-policy.json
 
+# Local infra scripts/docs should never be committed
+infra/
+
 # Environment files
 .env
 .env.local
