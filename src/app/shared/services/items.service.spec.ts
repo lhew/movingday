@@ -1,6 +1,8 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createServiceFactory, SpectatorService } from '@ngneat/spectator/vitest';
 import { of, firstValueFrom } from 'rxjs';
+import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { REQUEST } from '@angular/core';
 
 // Mock AngularFire Firestore module — must be before any service imports
 vi.mock('@angular/fire/firestore', () => ({
@@ -18,9 +20,6 @@ vi.mock('@angular/fire/firestore', () => ({
   serverTimestamp: vi.fn().mockReturnValue('SERVER_TS'),
 }));
 
-vi.mock('firebase/firestore', () => ({
-  getDocs: vi.fn().mockResolvedValue({ docs: [] }),
-}));
 
 vi.mock('@angular/common', async (importOriginal) => {
   const original = await importOriginal<typeof import('@angular/common')>();
@@ -30,7 +29,6 @@ vi.mock('@angular/common', async (importOriginal) => {
 import { ItemsService } from './items.service';
 import { Firestore } from '@angular/fire/firestore';
 import * as fs from '@angular/fire/firestore';
-import * as firestore from 'firebase/firestore';
 import * as common from '@angular/common';
 import { UserService } from './user.service';
 import { LazyAuthService } from './lazy-auth.service';
@@ -45,7 +43,11 @@ describe('ItemsService', () => {
 
   const createService = createServiceFactory({
     service: ItemsService,
-    providers: [{ provide: Firestore, useValue: {} }],
+    imports: [HttpClientTestingModule],
+    providers: [
+      { provide: Firestore, useValue: {} },
+      { provide: REQUEST, useValue: null },
+    ],
   });
 
   beforeEach(() => {
@@ -80,24 +82,30 @@ describe('ItemsService', () => {
 
       expect(result).toEqual(items);
       expect(fs.orderBy).toHaveBeenCalledWith('createdAt', 'desc');
-      expect(firestore.getDocs).not.toHaveBeenCalled();
       expect(mockTransferState.set).not.toHaveBeenCalled();
     });
 
-    it('should use getDocs on the server and store items in TransferState', async () => {
+    it('should call /api/items via HttpClient on the server and store items in TransferState', async () => {
       vi.mocked(common.isPlatformServer).mockReturnValue(true);
-      const mockDocs = [{ id: 'item-1', data: () => ({ name: 'Sofa', status: 'available' }) }];
-      vi.mocked(firestore.getDocs).mockResolvedValue({ docs: mockDocs } as unknown as Awaited<ReturnType<typeof firestore.getDocs>>);
+      const mockItems = [{ id: 'item-1', name: 'Sofa', status: 'available' }];
 
-      const result = await firstValueFrom(spectator.service.getItems());
+      // REQUEST is null (no origin), so the URL becomes '/api/items'
+      const httpMock = spectator.inject(HttpTestingController);
+      let result: unknown[];
+      firstValueFrom(spectator.service.getItems()).then(r => { result = r; });
 
-      expect(result).toEqual([{ id: 'item-1', name: 'Sofa', status: 'available' }]);
-      expect(firestore.getDocs).toHaveBeenCalledWith('mock-query');
+      const req = httpMock.expectOne('/api/items');
+      req.flush(mockItems);
+      await Promise.resolve();
+
+      expect(result!).toEqual(mockItems);
       expect(fs.collectionData).not.toHaveBeenCalled();
       expect(mockTransferState.set).toHaveBeenCalledWith(
-        expect.any(String),
-        [{ id: 'item-1', name: 'Sofa', status: 'available' }],
+        expect.anything(),
+        mockItems,
       );
+
+      httpMock.verify();
     });
 
     it('should emit cached items from TransferState first, then live items after enableLiveUpdates()', () => {
@@ -120,7 +128,6 @@ describe('ItemsService', () => {
 
       expect(results).toHaveLength(2);
       expect(results[1]).toEqual(live);
-      expect(firestore.getDocs).not.toHaveBeenCalled();
     });
   });
 

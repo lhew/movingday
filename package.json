@@ -40,6 +40,7 @@
     "@ng-icons/css.gg": "^33.2.0",
     "@sentry/angular": "^10.48.0",
     "compression": "^1.7.5",
+    "dotenv": "^17.4.2",
     "express": "^5.2.1",
     "firebase": "^11.0.0",
     "rxjs": "~7.8.0",

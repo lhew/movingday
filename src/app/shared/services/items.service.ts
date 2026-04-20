@@ -1,4 +1,4 @@
-import { Injectable, inject, PLATFORM_ID, TransferState, makeStateKey, Injector } from '@angular/core';
+import { Injectable, inject, PLATFORM_ID, TransferState, makeStateKey, Injector, REQUEST } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
 import {
   Firestore,
@@ -14,9 +14,9 @@ import {
   where,
   serverTimestamp,
 } from '@angular/fire/firestore';
-import { getDocs } from 'firebase/firestore';
-import { Observable, of, from, concat, BehaviorSubject } from 'rxjs';
-import { map, tap, timeout, catchError, filter, take, switchMap } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
+import { Observable, of, concat, BehaviorSubject } from 'rxjs';
+import { tap, catchError, filter, take, switchMap } from 'rxjs/operators';
 import { Item, ItemStatus } from '../models/item.model';
 import { UserService } from './user.service';
 import { LazyAuthService } from './lazy-auth.service';
@@ -26,6 +26,8 @@ const ITEMS_STATE_KEY = makeStateKey<Item[]>('items');
 @Injectable({ providedIn: 'root' })
 export class ItemsService {
   private firestore = inject(Firestore, { optional: true });
+  private http = inject(HttpClient);
+  private request = inject(REQUEST, { optional: true });
   private injector = inject(Injector);
   private platformId = inject(PLATFORM_ID);
   private transferState = inject(TransferState);
@@ -65,24 +67,20 @@ export class ItemsService {
 
   /** Stream all items ordered by creation date */
   getItems(): Observable<Item[]> {
-    if (!this.firestore) {
-      return of([]);
-    }
-    const q = query(this.itemsRef, orderBy('createdAt', 'desc'));
-
     if (isPlatformServer(this.platformId)) {
-      // One-shot fetch on server; store result in TransferState for the browser.
-      // 5 s timeout guards against a hanging Firestore connection in CI/CD where
-      // the real Firebase backend may be unreachable (e.g. no emulators).
-      return from(getDocs(q)).pipe(
-        timeout(5000),
-        map(snap => snap.docs.map(d => ({ id: d.id, ...d.data() } as Item))),
+      // Server: fetch via the Express /api/items endpoint (uses Firebase Admin SDK).
+      // HttpClient produces a completing Observable so Angular's zone stays stable.
+      const origin = this.request ? new URL(this.request.url).origin : '';
+      return this.http.get<Item[]>(`${origin}/api/items`).pipe(
         tap(items => this.transferState.set(ITEMS_STATE_KEY, items)),
         catchError(() => of([] as Item[])),
       );
     }
 
-    // Browser: seed from TransferState if available, then switch to live listener
+    if (!this.firestore) {
+      return of([]);
+    }
+    const q = query(this.itemsRef, orderBy('createdAt', 'desc'));
     const live$ = collectionData(q, { idField: 'id' }) as Observable<Item[]>;
     if (this.transferState.hasKey(ITEMS_STATE_KEY)) {
       const cached = this.transferState.get(ITEMS_STATE_KEY, []);

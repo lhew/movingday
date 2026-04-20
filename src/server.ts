@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import {
   AngularNodeAppEngine,
   createNodeRequestHandler,
@@ -9,6 +10,7 @@ import express from 'express';
 import { dirname, join } from 'node:path';
 import { readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
+import type * as AdminTypes from 'firebase-admin';
 
 const serverDistFolder = dirname(fileURLToPath(import.meta.url));
 const browserDistFolder = join(serverDistFolder, '../browser');
@@ -19,6 +21,38 @@ function getCsrIndexHtml(): string {
     cachedCsrIndexHtml = readFileSync(join(browserDistFolder, 'index.csr.html'), 'utf-8');
   }
   return cachedCsrIndexHtml;
+}
+
+// Firebase Admin is imported dynamically so the prerender/route-extraction worker
+// (which imports this file at module evaluation time) never touches firebase-admin
+// before the actual server starts handling requests.
+let adminDb: AdminTypes.firestore.Firestore | null = null;
+
+async function getAdminDb(): Promise<AdminTypes.firestore.Firestore> {
+  if (!adminDb) {
+    // firebase-admin is a CJS module; when loaded via ESM dynamic import all
+    // exports live under `.default`.
+    const adminModule = await import('firebase-admin');
+    const admin = (adminModule.default ?? adminModule) as typeof AdminTypes;
+    if (!admin.apps.length) {
+      const projectId = process.env['GCLOUD_PROJECT'] ?? process.env['FIREBASE_PROJECT_ID'] ?? 'demo-movingday';
+      const isProduction = process.env['NODE_ENV'] === 'production' && !process.env['FIRESTORE_EMULATOR_HOST'];
+      if (isProduction) {
+        admin.initializeApp(); // production: use Application Default Credentials
+      } else {
+        admin.initializeApp({ projectId }); // dev/emulator: explicit project ID
+      }
+    }
+    adminDb = admin.firestore();
+  }
+  return adminDb;
+}
+
+/** Convert an admin Firestore Timestamp to the plain {seconds, nanoseconds}
+ *  shape that the AngularFire client SDK uses, so TransferState hydration works. */
+function serializeTimestamp(ts: AdminTypes.firestore.Timestamp | null | undefined): { seconds: number; nanoseconds: number } | null {
+  if (!ts) return null;
+  return { seconds: ts.seconds, nanoseconds: ts.nanoseconds };
 }
 
 const app = express();
@@ -38,6 +72,30 @@ app.use(
     redirect: false,
   }),
 );
+
+// ── API: items ────────────────────────────────────────────────────────────────
+// Fetched via Firebase Admin SDK (no Zone.js involvement) so Angular SSR can
+// use HttpClient to get a completing Observable and stay stable.
+app.get('/api/items', async (_req, res) => {
+  try {
+    const db = await getAdminDb();
+    const snap = await db.collection('items').orderBy('createdAt', 'desc').get();
+    const items = snap.docs.map(d => {
+      const data = d.data();
+      return {
+        ...data,
+        id: d.id,
+        createdAt: serializeTimestamp(data['createdAt'] as AdminTypes.firestore.Timestamp),
+        updatedAt: serializeTimestamp(data['updatedAt'] as AdminTypes.firestore.Timestamp),
+        claimedAt: serializeTimestamp(data['claimedAt'] as AdminTypes.firestore.Timestamp),
+      };
+    });
+    res.json(items);
+  } catch (err) {
+    console.error('[/api/items] Error fetching items:', err);
+    res.status(500).json([]);
+  }
+});
 
 // All other requests are rendered by Angular SSR
 app.use((req, res, next) => {
