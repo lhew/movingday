@@ -4,6 +4,11 @@ export const environment = {
   production: true,
   useEmulators: false,
   useInternalMocks: false,
+  enableSentry: true,
+  enableSentryTracing: true,
+  sentryDsn: '%%SENTRY_DSN%%',
+  sentryTracingIdleDelayMs: 1000,
+  authRestoreDelayAfterIdleMs: 1500,
   emulators: {
     firestoreHost: '',
     firestorePort: 0,

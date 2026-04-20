@@ -139,24 +139,20 @@ describe('NotificationBellComponent', () => {
     });
 
     it('should initialise notifications and unreadCount when admin is detected', async () => {
-      // Trigger ngOnInit subscription by running the lifecycle
-      spectator.component.ngOnInit();
-      await spectator.fixture.whenStable();
-      spectator.detectChanges();
+      spectator.component.onBellInteraction();
+      await Promise.resolve();
 
       expect(mockNotificationService.getRecentNotifications).toHaveBeenCalled();
       expect(mockNotificationService.getUnreadCount).toHaveBeenCalled();
     });
 
     it('should not reinitialise if already initialized', async () => {
-      // First ngOnInit call marks initialized
-      spectator.component.ngOnInit();
+      spectator.component.onBellInteraction();
       await spectator.fixture.whenStable();
 
       const callCount = (mockNotificationService.getRecentNotifications as ReturnType<typeof vi.fn>).mock.calls.length;
 
-      // Second call should not re-initialise
-      spectator.component.ngOnInit();
+      spectator.component.onBellInteraction();
       await spectator.fixture.whenStable();
 
       expect((mockNotificationService.getRecentNotifications as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callCount);
@@ -177,7 +173,7 @@ describe('NotificationBellComponent', () => {
       );
 
       spectator = createComponent();
-      spectator.component.ngOnInit();
+      spectator.component.onBellInteraction();
       await spectator.fixture.whenStable();
       spectator.detectChanges();
 
@@ -189,7 +185,7 @@ describe('NotificationBellComponent', () => {
       (mockNotificationService.getRecentNotifications as ReturnType<typeof vi.fn>).mockReturnValue(NEVER);
 
       spectator = createComponent();
-      spectator.component.ngOnInit();
+      spectator.component.onBellInteraction();
       await spectator.fixture.whenStable();
       spectator.detectChanges();
 
@@ -201,7 +197,7 @@ describe('NotificationBellComponent', () => {
       (mockNotificationService.markAllAsRead as ReturnType<typeof vi.fn>).mockResolvedValue(undefined);
       mockLazyAuth.user$ = of(adminUser);
       spectator = createComponent();
-      spectator.component.ngOnInit();
+      spectator.component.onBellInteraction();
       await spectator.fixture.whenStable();
       spectator.detectChanges();
 
@@ -218,7 +214,7 @@ describe('NotificationBellComponent', () => {
       );
       mockLazyAuth.user$ = of(adminUser);
       spectator = createComponent();
-      spectator.component.ngOnInit();
+      spectator.component.onBellInteraction();
       await spectator.fixture.whenStable();
       spectator.detectChanges();
 

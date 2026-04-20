@@ -1,12 +1,11 @@
 import { Component, inject, signal, afterNextRender, PLATFORM_ID, DestroyRef, NgZone } from '@angular/core';
-import { AsyncPipe, NgClass, DOCUMENT, isPlatformServer } from '@angular/common';
+import { AsyncPipe, NgClass, DOCUMENT } from '@angular/common';
 import { Timestamp } from '@angular/fire/firestore';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ItemsService } from '../../shared/services/items.service';
 import { Item, CONDITION_LABELS, CONDITION_BADGE_CLASS, CONDITION_ICONS, isFreePrice } from '../../shared/models/item.model';
 import { ShowcaseCardActionsComponent } from './showcase-card-actions.component';
 import { of } from 'rxjs';
-import { catchError, take } from 'rxjs/operators';
+import { catchError } from 'rxjs/operators';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { cssCheckO, cssProfile, cssClose, cssTrophy, cssSmileMouthOpen, cssSmile, cssSmileNeutral, cssSmileSad } from '@ng-icons/css.gg';
 
@@ -49,34 +48,7 @@ export class ShowcaseComponent {
       this.listenForFirstInteraction();
     });
 
-    // On the server, inject <link rel="preload"> for the first 4 item images
-    // so they appear in the SSR HTML and are discovered by the browser preload
-    // scanner before any JS executes — maximising Lighthouse LCP score.
-    if (isPlatformServer(this.platformId)) {
-      this.itemsService.getItems().pipe(
-        take(1),
-        takeUntilDestroyed(),
-      ).subscribe(items => {
-        items
-          .filter(item => item.imageUrl)
-          .slice(0, 4)
-          .forEach((item, index) => {
-            const link = this.doc.createElement('link');
-            link.rel = 'preload';
-            link.as = 'image';
-
-            link.href = item.imageUrlLg ?? item.imageUrl!;
-            const srcset = item.imageUrl + ' 370w' + (item.imageUrlLg ? ', ' + item.imageUrlLg + ' 450w' : '');
-            link.setAttribute('imagesrcset', srcset);
-            link.setAttribute('imagesizes', '(min-width: 496px) 450px, 370px');
-            if (index === 0) {
-              link.setAttribute('fetchpriority', 'high');
-              link.as = 'image';
-            }
-            this.doc.head.appendChild(link);
-          });
-      });
-    }
+   
   }
 
   filterItems(items: Item[]): Item[] {

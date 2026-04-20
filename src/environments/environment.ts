@@ -5,6 +5,11 @@ export const environment = {
   production: false,
   useEmulators: true,   // set to false to point at real Firebase in dev
   useInternalMocks: false,
+  enableSentry: false,
+  enableSentryTracing: false,
+  sentryDsn: '',
+  sentryTracingIdleDelayMs: 1000,
+  authRestoreDelayAfterIdleMs: 1500,
   firebase: {
     apiKey: 'fake-api-key-emulator-only',
     authDomain: 'demo-movingday.firebaseapp.com',

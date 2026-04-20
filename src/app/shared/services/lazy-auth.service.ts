@@ -3,6 +3,22 @@ import { ReplaySubject, Observable } from 'rxjs';
 import type { Auth, User } from 'firebase/auth';
 import { environment } from '../../../environments/environment';
 
+const DEFAULT_AUTH_IDLE_TIMEOUT_MS = 5000;
+const DEFAULT_AUTH_INTERACTION_TIMEOUT_MS = 20000;
+const DEFAULT_AUTH_INTERACTION_EVENTS = ['pointerdown', 'keydown', 'scroll'] as const;
+
+type IdleWindow = Window & {
+  requestIdleCallback?: (callback: () => void, options?: IdleRequestOptions) => number;
+  cancelIdleCallback?: (handle: number) => void;
+};
+
+type AuthRestoreOptions = {
+  idleTimeoutMs?: number;
+  delayAfterIdleMs?: number;
+  interactionTimeoutMs?: number;
+  interactionEvents?: ReadonlyArray<string>;
+};
+
 /**
  * Lazily loads the Firebase Auth SDK on first demand (sign-in click or guarded
  * route navigation). For anonymous visitors the SDK — and its associated
@@ -16,6 +32,7 @@ export class LazyAuthService {
   private readonly _user = new ReplaySubject<User | null>(1);
   private _initPromise: Promise<Auth> | null = null;
   private _auth: Auth | null = null;
+  private _restoreCleanup: (() => void) | null = null;
 
   /** Emits the current user or null. Pre-seeded with null so async-pipe consumers
    *  render the "signed out" state immediately without waiting for auth to load. */
@@ -46,6 +63,7 @@ export class LazyAuthService {
 
   /** Sign in with Google (triggers Auth SDK download if not yet loaded). */
   async signIn(): Promise<void> {
+    this.cancelScheduledAuthRestore();
     const { signInWithPopup, GoogleAuthProvider } = await import('firebase/auth');
     const auth = await this.getAuth();
     await signInWithPopup(auth, new GoogleAuthProvider());
@@ -53,9 +71,96 @@ export class LazyAuthService {
 
   /** Sign out (triggers Auth SDK download if not yet loaded). */
   async signOut(): Promise<void> {
+    this.cancelScheduledAuthRestore();
     const { signOut } = await import('firebase/auth');
     const auth = await this.getAuth();
     await signOut(auth);
+  }
+
+  scheduleAuthRestore(options: AuthRestoreOptions = {}): () => void {
+    this.cancelScheduledAuthRestore();
+
+    if (typeof window === 'undefined' || this.currentUser) {
+      return () => {};
+    }
+
+    const idleWindow = window as IdleWindow;
+    const interactionEvents = options.interactionEvents ?? DEFAULT_AUTH_INTERACTION_EVENTS;
+    const delayAfterIdleMs = options.delayAfterIdleMs ?? environment.authRestoreDelayAfterIdleMs;
+    const idleTimeoutMs = options.idleTimeoutMs ?? DEFAULT_AUTH_IDLE_TIMEOUT_MS;
+    const interactionTimeoutMs = options.interactionTimeoutMs ?? DEFAULT_AUTH_INTERACTION_TIMEOUT_MS;
+
+    let idleHandle: number | undefined;
+    let idleDelayTimerId: number | undefined;
+    // eslint-disable-next-line prefer-const
+    let interactionTimeoutId: number | undefined;
+    let started = false;
+    let cancelled = false;
+
+    const cleanupCallbacks: Array<() => void> = [];
+
+    const cleanup = () => {
+      cancelled = true;
+
+      if (typeof idleDelayTimerId === 'number') {
+        window.clearTimeout(idleDelayTimerId);
+      }
+
+      if (typeof interactionTimeoutId === 'number') {
+        window.clearTimeout(interactionTimeoutId);
+      }
+
+      if (typeof idleHandle === 'number' && typeof idleWindow.cancelIdleCallback === 'function') {
+        idleWindow.cancelIdleCallback(idleHandle);
+      }
+
+      for (const callback of cleanupCallbacks) {
+        callback();
+      }
+
+      cleanupCallbacks.length = 0;
+      if (this._restoreCleanup === cleanup) {
+        this._restoreCleanup = null;
+      }
+    };
+
+    const startRestore = () => {
+      if (cancelled || started || this.currentUser) {
+        return;
+      }
+
+      started = true;
+      cleanup();
+      void this.getAuth().catch(() => {});
+    };
+
+    const scheduleAfterIdle = () => {
+      idleDelayTimerId = window.setTimeout(startRestore, delayAfterIdleMs);
+    };
+
+    if (typeof idleWindow.requestIdleCallback === 'function') {
+      idleHandle = idleWindow.requestIdleCallback(scheduleAfterIdle, { timeout: idleTimeoutMs });
+    } else {
+      scheduleAfterIdle();
+    }
+
+    for (const eventName of interactionEvents) {
+      const listener = () => startRestore();
+      window.addEventListener(eventName, listener, { once: true, passive: true });
+      cleanupCallbacks.push(() => window.removeEventListener(eventName, listener));
+    }
+
+    interactionTimeoutId = window.setTimeout(startRestore, interactionTimeoutMs);
+
+    this._restoreCleanup = cleanup;
+    return cleanup;
+  }
+
+  cancelScheduledAuthRestore(): void {
+    if (this._restoreCleanup) {
+      this._restoreCleanup();
+      this._restoreCleanup = null;
+    }
   }
 
   private async _initializeAuth(): Promise<Auth> {

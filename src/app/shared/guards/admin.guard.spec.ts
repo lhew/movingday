@@ -1,4 +1,5 @@
-import { TestBed } from '@angular/core/testing';
+import { createServiceFactory, SpectatorService } from '@ngneat/spectator/vitest';
+import { Injectable, Injector, runInInjectionContext } from '@angular/core';
 import { Router } from '@angular/router';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { firstValueFrom, Observable, of } from 'rxjs';
@@ -6,34 +7,42 @@ import { ActivatedRouteSnapshot, RouterStateSnapshot } from '@angular/router';
 import { adminGuard } from './admin.guard';
 import { LazyAuthService } from '../services/lazy-auth.service';
 
+@Injectable({ providedIn: 'root' })
+class GuardTestHost {}
+
 describe('adminGuard', () => {
-  let mockRouter: { navigate: ReturnType<typeof vi.fn> };
-  let mockLazyAuth: Partial<LazyAuthService>;
+  const mockRouter = { navigate: vi.fn() };
+  const mockLazyAuth: Partial<LazyAuthService> = {
+    user$: of(null) as LazyAuthService['user$'],
+    getAuth: vi.fn().mockResolvedValue({}),
+  };
+
+  const createEnv = createServiceFactory({
+    service: GuardTestHost,
+    providers: [
+      { provide: LazyAuthService, useValue: mockLazyAuth },
+      { provide: Router, useValue: mockRouter },
+    ],
+  });
+
+  let spectator: SpectatorService<GuardTestHost>;
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockRouter = { navigate: vi.fn() };
-    mockLazyAuth = {
-      user$: of(null),
-      getAuth: vi.fn().mockResolvedValue({}),
-    };
-
-    TestBed.configureTestingModule({
-      providers: [
-        { provide: LazyAuthService, useValue: mockLazyAuth },
-        { provide: Router, useValue: mockRouter },
-      ],
-    });
+    mockRouter.navigate = vi.fn();
+    mockLazyAuth.user$ = of(null) as LazyAuthService['user$'];
+    mockLazyAuth.getAuth = vi.fn().mockResolvedValue({});
+    spectator = createEnv();
   });
 
   function runGuard(): Observable<boolean> {
-    return TestBed.runInInjectionContext(() =>
+    return runInInjectionContext(spectator.inject(Injector), () =>
       adminGuard({} as ActivatedRouteSnapshot, {} as RouterStateSnapshot)
     ) as Observable<boolean>;
   }
 
   it('should redirect and return false when no user is signed in', async () => {
-    mockLazyAuth.user$ = of(null);
+    mockLazyAuth.user$ = of(null) as LazyAuthService['user$'];
 
     const result = await firstValueFrom(runGuard());
 
@@ -77,4 +86,3 @@ describe('adminGuard', () => {
     expect(mockRouter.navigate).toHaveBeenCalledWith(['/']);
   });
 });
-

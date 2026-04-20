@@ -2,7 +2,6 @@ import { createComponentFactory, Spectator } from '@ngneat/spectator/vitest';
 import { describe, it, expect, beforeEach } from 'vitest';
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
-import { TestBed } from '@angular/core/testing';
 import { StatsForNerdsComponent, Stats, LighthouseScores } from './stats-for-nerds.component';
 
 const mockStats: Stats = {
@@ -77,7 +76,7 @@ describe('StatsForNerdsComponent', () => {
 
   beforeEach(() => {
     spectator = createComponent();
-    httpMock = TestBed.inject(HttpTestingController);
+    httpMock = spectator.inject(HttpTestingController);
   });
 
   it('should create', () => {

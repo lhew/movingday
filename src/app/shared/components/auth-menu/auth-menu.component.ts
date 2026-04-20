@@ -1,12 +1,14 @@
-import { Component, inject, PLATFORM_ID, OnInit } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Component, inject, PLATFORM_ID, OnDestroy, OnInit } from '@angular/core';
+import { NavigationEnd, NavigationStart, Router, RouterLink } from '@angular/router';
 import { AsyncPipe, DOCUMENT, isPlatformBrowser } from '@angular/common';
 import { from, of } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { map, switchMap } from 'rxjs/operators';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { cssOptions, cssPen, cssLogOut } from '@ng-icons/css.gg';
 import { UserService } from '../../services/user.service';
 import { LazyAuthService } from '../../services/lazy-auth.service';
+import { DestroyRef } from '@angular/core';
 
 @Component({
   selector: 'app-auth-menu',
@@ -15,11 +17,15 @@ import { LazyAuthService } from '../../services/lazy-auth.service';
   providers: [provideIcons({ cssOptions, cssPen, cssLogOut })],
   templateUrl: './auth-menu.component.html',
 })
-export class AuthMenuComponent implements OnInit {
+export class AuthMenuComponent implements OnInit, OnDestroy {
   private lazyAuth = inject(LazyAuthService);
   private userService = inject(UserService);
   private doc = inject(DOCUMENT);
   private platformId = inject(PLATFORM_ID);
+  private router = inject(Router);
+  private destroyRef = inject(DestroyRef);
+
+  private restoreCleanup: (() => void) | null = null;
 
   readonly user$ = this.lazyAuth.user$;
   readonly isSignedIn$ = this.user$.pipe(map((u) => !!u));
@@ -42,15 +48,27 @@ export class AuthMenuComponent implements OnInit {
   );
 
   ngOnInit(): void {
-    // Proactively restore auth state after the browser is idle.
-    // This recognises returning signed-in users without blocking the critical
-    // rendering path, so `/__/auth/iframe.js` never loads during initial paint.
-    if (isPlatformBrowser(this.platformId) && typeof requestIdleCallback !== 'undefined') {
-      requestIdleCallback(() => this.lazyAuth.getAuth().catch(() => {}), { timeout: 5000 });
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
     }
+
+    this.startDeferredAuthRestore();
+
+    this.router.events
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe((event) => {
+        if (event instanceof NavigationStart) {
+          this.cancelDeferredAuthRestore();
+        }
+
+        if (event instanceof NavigationEnd) {
+          this.startDeferredAuthRestore();
+        }
+      });
   }
 
   signIn(): void {
+    this.cancelDeferredAuthRestore();
     this.lazyAuth.signIn();
   }
 
@@ -59,5 +77,20 @@ export class AuthMenuComponent implements OnInit {
     if (isPlatformBrowser(this.platformId)) {
       this.doc.defaultView?.location.reload();
     }
+  }
+
+  ngOnDestroy(): void {
+    this.cancelDeferredAuthRestore();
+  }
+
+  private startDeferredAuthRestore(): void {
+    this.cancelDeferredAuthRestore();
+    this.restoreCleanup = this.lazyAuth.scheduleAuthRestore();
+  }
+
+  private cancelDeferredAuthRestore(): void {
+    this.restoreCleanup?.();
+    this.restoreCleanup = null;
+    this.lazyAuth.cancelScheduledAuthRestore();
   }
 }

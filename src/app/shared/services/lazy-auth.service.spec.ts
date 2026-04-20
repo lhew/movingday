@@ -16,7 +16,10 @@ vi.mock('firebase/app', () => ({
 }));
 
 vi.mock('../../../environments/environment', () => ({
-  environment: { useEmulators: false },
+  environment: {
+    useEmulators: false,
+    authRestoreDelayAfterIdleMs: 0,
+  },
 }));
 
 import { LazyAuthService } from './lazy-auth.service';
@@ -110,6 +113,46 @@ describe('LazyAuthService', () => {
     it('should initialise auth before signing out', async () => {
       await spectator.service.signOut();
       expect(firebaseAuth.getAuth).toHaveBeenCalled();
+    });
+  });
+
+  describe('scheduleAuthRestore()', () => {
+    it('should start auth restore after idle and delay', async () => {
+      vi.useFakeTimers();
+
+      const requestIdleCallback = vi.fn((callback: () => void) => {
+        callback();
+        return 1;
+      });
+
+      Object.defineProperty(window, 'requestIdleCallback', {
+        configurable: true,
+        value: requestIdleCallback,
+      });
+
+      const getAuthSpy = vi.spyOn(spectator.service, 'getAuth').mockResolvedValue({} as never);
+
+      spectator.service.scheduleAuthRestore({ delayAfterIdleMs: 50, interactionTimeoutMs: 5000 });
+      await vi.advanceTimersByTimeAsync(49);
+      expect(getAuthSpy).not.toHaveBeenCalled();
+
+      await vi.advanceTimersByTimeAsync(1);
+      expect(getAuthSpy).toHaveBeenCalledTimes(1);
+
+      vi.useRealTimers();
+    });
+
+    it('should cancel scheduled restore', async () => {
+      vi.useFakeTimers();
+      const getAuthSpy = vi.spyOn(spectator.service, 'getAuth').mockResolvedValue({} as never);
+
+      spectator.service.scheduleAuthRestore({ delayAfterIdleMs: 100, interactionTimeoutMs: 5000 });
+      spectator.service.cancelScheduledAuthRestore();
+
+      await vi.advanceTimersByTimeAsync(500);
+      expect(getAuthSpy).not.toHaveBeenCalled();
+
+      vi.useRealTimers();
     });
   });
 });

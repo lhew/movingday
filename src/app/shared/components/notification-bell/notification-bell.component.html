@@ -7,6 +7,8 @@
           class="btn btn-ghost btn-circle"
           aria-label="Open notifications"
           aria-haspopup="menu"
+          (click)="onBellInteraction()"
+          (focus)="onBellInteraction()"
         >
           <div class="indicator">
             <ng-icon name="cssBell" aria-hidden="true" />

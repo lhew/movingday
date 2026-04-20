@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { createComponentFactory, Spectator } from '@ngneat/spectator/vitest';
 import { of, BehaviorSubject } from 'rxjs';
-import { TestBed } from '@angular/core/testing';
 
 import { ShowcaseCardActionsComponent } from './showcase-card-actions.component';
 import { InlineAlertComponent } from '../../shared/components/inline-alert/inline-alert.component';
@@ -46,7 +45,7 @@ describe('ShowcaseCardActionsComponent', () => {
     ],
   });
 
-  beforeEach(async () => {
+  beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(mockItemsService.callDibs!).mockResolvedValue(undefined);
     vi.mocked(mockItemsService.releaseDibs!).mockResolvedValue(undefined);
@@ -59,7 +58,6 @@ describe('ShowcaseCardActionsComponent', () => {
       getAuth: vi.fn().mockResolvedValue({}),
     };
 
-    await TestBed.compileComponents();
     spectator = createComponent({
       props: { item: mockItem() },
       providers: [{ provide: LazyAuthService, useValue: mockLazyAuth }],

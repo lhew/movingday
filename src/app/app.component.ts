@@ -1,9 +1,11 @@
 import {
   Component,
+  DestroyRef,
   EnvironmentInjector,
   inject,
   PLATFORM_ID,
   runInInjectionContext,
+  signal,
 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { RouterOutlet, RouterLink, RouterLinkActive } from '@angular/router';
@@ -23,8 +25,48 @@ const SLOGANS = [
 
 const ANALYTICS_FALLBACK_DELAY_MS = 30000;
 const ANALYTICS_TRIGGER_EVENTS = ['pointerdown', 'keydown', 'scroll'] as const;
+const NOTIFICATION_BELL_IDLE_DELAY_MS = 1000;
 
 let analyticsLoadScheduled = false;
+
+function scheduleNotificationBellLoad(onReady: () => void): () => void {
+  const idleWindow = window as Window & {
+    requestIdleCallback?: (callback: () => void) => number;
+    cancelIdleCallback?: (handle: number) => void;
+  };
+
+  let timeoutId: number | undefined;
+  let idleHandle: number | undefined;
+  let cancelled = false;
+
+  const scheduleDelayedLoad = () => {
+    timeoutId = window.setTimeout(() => {
+      if (!cancelled) {
+        onReady();
+      }
+    }, NOTIFICATION_BELL_IDLE_DELAY_MS);
+  };
+
+  if (typeof idleWindow.requestIdleCallback === 'function') {
+    idleHandle = idleWindow.requestIdleCallback(() => {
+      scheduleDelayedLoad();
+    });
+  } else {
+    scheduleDelayedLoad();
+  }
+
+  return () => {
+    cancelled = true;
+
+    if (typeof timeoutId === 'number') {
+      window.clearTimeout(timeoutId);
+    }
+
+    if (typeof idleHandle === 'number' && typeof idleWindow.cancelIdleCallback === 'function') {
+      idleWindow.cancelIdleCallback(idleHandle);
+    }
+  };
+}
 
 function scheduleAnalyticsLoad(injector: EnvironmentInjector): void {
   if (analyticsLoadScheduled) return;
@@ -77,11 +119,19 @@ function scheduleAnalyticsLoad(injector: EnvironmentInjector): void {
 export class AppComponent {
   readonly slogan = SLOGANS[Math.floor(Math.random() * SLOGANS.length)];
   readonly showSentryTestButton = !environment.production;
+  readonly shouldLoadNotificationBell = signal(false);
+  private readonly destroyRef = inject(DestroyRef);
   private readonly injector = inject(EnvironmentInjector);
   private readonly isBrowser = isPlatformBrowser(inject(PLATFORM_ID));
 
   constructor() {
     if (!this.isBrowser) return;
+
+    const cleanupNotificationBellLoad = scheduleNotificationBellLoad(() => {
+      this.shouldLoadNotificationBell.set(true);
+    });
+    this.destroyRef.onDestroy(cleanupNotificationBellLoad);
+
     if (!environment.production) return;
     if (!environment.firebase.measurementId) return;
 

@@ -1,4 +1,5 @@
-import { Injectable, inject } from '@angular/core';
+import { Injectable, inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import {
   Firestore,
   collection,
@@ -18,9 +19,14 @@ import { AppNotification, DailySnapshot } from '../models/notification.model';
 @Injectable({ providedIn: 'root' })
 export class NotificationService {
   private firestore = inject(Firestore, { optional: true });
+  private platformId = inject(PLATFORM_ID);
+
+  private get isBrowser(): boolean {
+    return isPlatformBrowser(this.platformId);
+  }
 
   getRecentNotifications(limit = 20): Observable<AppNotification[]> {
-    if (!this.firestore) return of([]);
+    if (!this.firestore || !this.isBrowser) return of([]);
     const q = query(
       collection(this.firestore, 'notifications'),
       orderBy('createdAt', 'desc'),
@@ -30,7 +36,7 @@ export class NotificationService {
   }
 
   getUnreadCount(): Observable<number> {
-    if (!this.firestore) return of(0);
+    if (!this.firestore || !this.isBrowser) return of(0);
     const q = query(
       collection(this.firestore, 'notifications'),
       where('read', '==', false),
@@ -42,12 +48,12 @@ export class NotificationService {
   }
 
   async markAsRead(id: string): Promise<void> {
-    if (!this.firestore) return;
+    if (!this.firestore || !this.isBrowser) return;
     await updateDoc(doc(this.firestore, 'notifications', id), { read: true });
   }
 
   async markAllAsRead(): Promise<void> {
-    if (!this.firestore) return;
+    if (!this.firestore || !this.isBrowser) return;
     const q = query(
       collection(this.firestore, 'notifications'),
       where('read', '==', false),
@@ -61,7 +67,7 @@ export class NotificationService {
   }
 
   getLatestSnapshot(): Observable<DailySnapshot | undefined> {
-    if (!this.firestore) return of(undefined);
+    if (!this.firestore || !this.isBrowser) return of(undefined);
     const today = new Date().toISOString().split('T')[0];
     return docData(doc(this.firestore, 'snapshots', today), { idField: 'id' }) as Observable<DailySnapshot | undefined>;
   }

@@ -1,4 +1,4 @@
-import { APP_INITIALIZER, ApplicationConfig, ErrorHandler } from '@angular/core';
+import { ApplicationConfig, ErrorHandler } from '@angular/core';
 import { Router } from '@angular/router';
 import * as Sentry from '@sentry/angular';
 import { getApp } from 'firebase/app';
@@ -68,20 +68,22 @@ export const browserConfig: ApplicationConfig = {
 
     ...(useInternalE2eMocks ? provideInternalE2eMocks() : []),
 
-    // Sentry: browser-only — TraceService creates zone-tracked XHR that blocks SSR stabilization
-    {
-      provide: ErrorHandler,
-      useValue: Sentry.createErrorHandler(),
-    },
-    {
-      provide: Sentry.TraceService,
-      deps: [Router],
-    },
-    {
-      provide: APP_INITIALIZER,
-      useFactory: () => () => {},
-      deps: [Sentry.TraceService],
-      multi: true,
-    },
+    ...(environment.enableSentry
+      ? [
+          {
+            provide: ErrorHandler,
+            useValue: Sentry.createErrorHandler(),
+          },
+        ]
+      : []),
+
+    ...(environment.enableSentryTracing
+      ? [
+          {
+            provide: Sentry.TraceService,
+            deps: [Router],
+          },
+        ]
+      : []),
   ],
 };

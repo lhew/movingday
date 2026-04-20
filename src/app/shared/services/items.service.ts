@@ -1,4 +1,4 @@
-import { Injectable, inject, PLATFORM_ID, TransferState, makeStateKey } from '@angular/core';
+import { Injectable, inject, PLATFORM_ID, TransferState, makeStateKey, Injector } from '@angular/core';
 import { isPlatformServer } from '@angular/common';
 import {
   Firestore,
@@ -26,8 +26,7 @@ const ITEMS_STATE_KEY = makeStateKey<Item[]>('items');
 @Injectable({ providedIn: 'root' })
 export class ItemsService {
   private firestore = inject(Firestore, { optional: true });
-  private lazyAuth = inject(LazyAuthService);
-  private userService = inject(UserService);
+  private injector = inject(Injector);
   private platformId = inject(PLATFORM_ID);
   private transferState = inject(TransferState);
 
@@ -54,6 +53,14 @@ export class ItemsService {
     return Object.fromEntries(
       Object.entries(data).filter(([, value]) => value !== undefined),
     );
+  }
+
+  private get lazyAuth(): LazyAuthService {
+    return this.injector.get(LazyAuthService);
+  }
+
+  private get userService(): UserService {
+    return this.injector.get(UserService);
   }
 
   /** Stream all items ordered by creation date */

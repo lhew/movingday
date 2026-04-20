@@ -1,10 +1,10 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { AsyncPipe, DatePipe } from '@angular/common';
+import { Component, inject, PLATFORM_ID, signal } from '@angular/core';
+import { AsyncPipe, DatePipe, isPlatformBrowser } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { cssBell } from '@ng-icons/css.gg';
 import { map } from 'rxjs/operators';
-import { from, of, switchMap } from 'rxjs';
+import { from, of, switchMap, take } from 'rxjs';
 import { NotificationService } from '../../services/notification.service';
 import { LazyAuthService } from '../../services/lazy-auth.service';
 import { AppNotification } from '../../models/notification.model';
@@ -16,9 +16,10 @@ import { AppNotification } from '../../models/notification.model';
   providers: [provideIcons({ cssBell })],
   templateUrl: './notification-bell.component.html',
 })
-export class NotificationBellComponent implements OnInit {
+export class NotificationBellComponent {
   private notificationService = inject(NotificationService);
   private lazyAuth = inject(LazyAuthService);
+  private platformId = inject(PLATFORM_ID);
 
   readonly isAdmin$ = this.lazyAuth.user$.pipe(
     switchMap((u) => (u ? from(u.getIdTokenResult()) : of(null))),
@@ -30,14 +31,22 @@ export class NotificationBellComponent implements OnInit {
 
   private initialized = signal(false);
 
-  ngOnInit() {
-    // Only subscribe to Firestore once we know user is admin
+  onBellInteraction(): void {
+    if (this.initialized() || !isPlatformBrowser(this.platformId)) {
+      return;
+    }
+
+    // Only subscribe to Firestore once we know user is admin and the user has
+    // interacted with the bell UI.
     this.isAdmin$.pipe(
+      take(1),
       switchMap((admin) => {
         if (!admin || this.initialized()) return of(null);
-        this.initialized.set(true);
-        this.notifications$ = this.notificationService.getRecentNotifications(20);
-        this.unreadCount$ = this.notificationService.getUnreadCount();
+        queueMicrotask(() => {
+          this.initialized.set(true);
+          this.notifications$ = this.notificationService.getRecentNotifications(20);
+          this.unreadCount$ = this.notificationService.getUnreadCount();
+        });
         return of(null);
       }),
     ).subscribe();

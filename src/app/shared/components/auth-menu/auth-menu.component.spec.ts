@@ -7,13 +7,16 @@ import { AuthMenuComponent } from './auth-menu.component';
 import { LazyAuthService } from '../../services/lazy-auth.service';
 import { UserService } from '../../services/user.service';
 
-// Module-level singleton — tests mutate the subject instead of re-creating TestBed
+// Module-level singleton — tests mutate the subject instead of re-creating the component
 const userSubject = new BehaviorSubject<unknown>(null);
+const scheduleAuthRestoreMock = vi.fn().mockReturnValue(vi.fn());
 const mockLazyAuth: Partial<LazyAuthService> = {
   get user$() { return userSubject.asObservable() as LazyAuthService['user$']; },
   getAuth: vi.fn().mockResolvedValue({}),
   signIn: vi.fn().mockResolvedValue(undefined),
   signOut: vi.fn().mockResolvedValue(undefined),
+  scheduleAuthRestore: scheduleAuthRestoreMock,
+  cancelScheduledAuthRestore: vi.fn(),
 };
 
 describe('AuthMenuComponent', () => {
@@ -34,6 +37,7 @@ describe('AuthMenuComponent', () => {
     vi.mocked(mockLazyAuth.getAuth!).mockResolvedValue({} as never);
     vi.mocked(mockLazyAuth.signIn!).mockResolvedValue(undefined);
     vi.mocked(mockLazyAuth.signOut!).mockResolvedValue(undefined);
+    scheduleAuthRestoreMock.mockReturnValue(vi.fn());
     userSubject.next(null);
     spectator = createComponent();
   });
@@ -99,16 +103,15 @@ describe('AuthMenuComponent', () => {
     expect(name).toBe('Leo The Cat');
   });
 
-  it('should call getAuth via requestIdleCallback when it is available in browser', () => {
-    const mockRequestIdleCallback = vi.fn((cb: FrameRequestCallback) => { cb(0 as unknown as IdleDeadline); return 0; });
-    (globalThis as Record<string, unknown>).requestIdleCallback = mockRequestIdleCallback;
-
+  it('should schedule deferred auth restore on init', () => {
     spectator.component.ngOnInit();
+    expect(scheduleAuthRestoreMock).toHaveBeenCalled();
+  });
 
-    expect(mockRequestIdleCallback).toHaveBeenCalled();
-    expect(mockLazyAuth.getAuth).toHaveBeenCalled();
-
-    delete (globalThis as Record<string, unknown>).requestIdleCallback;
+  it('should cancel pending restore before signIn', () => {
+    spectator.component.signIn();
+    expect(mockLazyAuth.cancelScheduledAuthRestore).toHaveBeenCalled();
+    expect(mockLazyAuth.signIn).toHaveBeenCalled();
   });
 });
 
