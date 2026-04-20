@@ -1,11 +1,12 @@
-import { Component, inject, signal, afterNextRender, PLATFORM_ID, DestroyRef, NgZone } from '@angular/core';
-import { AsyncPipe, NgClass, DOCUMENT } from '@angular/common';
+import { Component, inject, signal, afterNextRender, PLATFORM_ID, DestroyRef } from '@angular/core';
+import { AsyncPipe, NgClass, DOCUMENT, isPlatformServer } from '@angular/common';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Timestamp } from '@angular/fire/firestore';
 import { ItemsService } from '../../shared/services/items.service';
 import { Item, CONDITION_LABELS, CONDITION_BADGE_CLASS, CONDITION_ICONS, isFreePrice } from '../../shared/models/item.model';
 import { ShowcaseCardActionsComponent } from './showcase-card-actions.component';
 import { of } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, take } from 'rxjs/operators';
 import { NgIcon, provideIcons } from '@ng-icons/core';
 import { cssCheckO, cssProfile, cssClose, cssTrophy, cssSmileMouthOpen, cssSmile, cssSmileNeutral, cssSmileSad } from '@ng-icons/css.gg';
 
@@ -40,7 +41,6 @@ export class ShowcaseComponent {
   private readonly doc = inject(DOCUMENT);
   private readonly platformId = inject(PLATFORM_ID);
   private readonly destroyRef = inject(DestroyRef);
-  private readonly zone = inject(NgZone);
 
   constructor() {
     afterNextRender(() => {
@@ -48,7 +48,29 @@ export class ShowcaseComponent {
       this.listenForFirstInteraction();
     });
 
-   
+    // On the server, inject <link rel="preload"> for the first 4 item images
+    // so they appear in the SSR HTML and are discovered by the browser preload
+    // scanner before any JS executes — maximising Lighthouse LCP score.
+    if (isPlatformServer(this.platformId)) {
+      this.itemsService.getItems().pipe(
+        take(1),
+        takeUntilDestroyed(),
+      ).subscribe(items => {
+        items
+          .filter(item => item.imageUrl)
+          .slice(0, 4)
+          .forEach((item, index) => {
+            const link = this.doc.createElement('link');
+            link.setAttribute('rel', 'preload');
+            link.setAttribute('as', 'image');
+            link.setAttribute('href', item.imageUrl!);
+            if (index === 0) {
+              link.setAttribute('fetchpriority', 'high');
+            }
+            this.doc.head.appendChild(link);
+          });
+      });
+    }
   }
 
   filterItems(items: Item[]): Item[] {
@@ -104,7 +126,7 @@ export class ShowcaseComponent {
 
     const activate = () => {
       ac.abort();
-      this.zone.run(() => this.itemsService.enableLiveUpdates());
+      this.itemsService.enableLiveUpdates();
     };
 
     events.forEach(evt =>
