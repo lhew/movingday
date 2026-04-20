@@ -32,7 +32,8 @@
           }
         ],
         "styles": ["src/styles.css"],
-        "scripts": []
+        "scripts": [],
+        "externalDependencies": ["firebase-admin"]
       },
       "configurations": {
         "production": {
@@ -86,6 +87,7 @@
         ],
         "styles": ["src/styles.css"],
         "scripts": [],
+        "externalDependencies": ["firebase-admin"],
         "optimization": false,
         "extractLicenses": false,
         "sourceMap": true,
@@ -101,7 +103,7 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "npx nx run movingday:build:development",
+          "npx nx run movingday:build:development --skipNxCache",
           "node dist/movingday/server/server.mjs"
         ],
         "parallel": false
@@ -115,7 +117,7 @@
         },
         "development": {
           "commands": [
-            "npx nx run movingday:build:development",
+            "npx nx run movingday:build:development --skipNxCache",
             "node dist/movingday/server/server.mjs"
           ]
         }
@@ -126,7 +128,7 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": [
-          "npx nx run movingday:build-e2e",
+          "npx nx run movingday:build-e2e --skipNxCache",
           "node dist/movingday/server/server.mjs"
         ],
         "parallel": false

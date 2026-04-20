@@ -1,4 +1,4 @@
-import 'zone.js/plugins/task-tracking';
+import 'zone.js';
 import { mergeApplicationConfig } from '@angular/core';
 import { bootstrapApplication } from '@angular/platform-browser';
 import * as Sentry from '@sentry/angular';

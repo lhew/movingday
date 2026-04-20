@@ -1,4 +1,4 @@
-import { Injectable } from '@angular/core';
+import { Injectable, NgZone, inject } from '@angular/core';
 import { ReplaySubject, Observable } from 'rxjs';
 import type { Auth, User } from 'firebase/auth';
 import { environment } from '../../../environments/environment';
@@ -30,6 +30,7 @@ type AuthRestoreOptions = {
 @Injectable({ providedIn: 'root' })
 export class LazyAuthService {
   private readonly _user = new ReplaySubject<User | null>(1);
+  private readonly _ngZone = inject(NgZone);
   private _initPromise: Promise<Auth> | null = null;
   private _auth: Auth | null = null;
   private _restoreCleanup: (() => void) | null = null;
@@ -135,13 +136,15 @@ export class LazyAuthService {
     };
 
     const scheduleAfterIdle = () => {
-      idleDelayTimerId = window.setTimeout(startRestore, delayAfterIdleMs);
+      idleDelayTimerId = this._ngZone.runOutsideAngular(() =>
+        window.setTimeout(startRestore, delayAfterIdleMs)
+      );
     };
 
     if (typeof idleWindow.requestIdleCallback === 'function') {
       idleHandle = idleWindow.requestIdleCallback(scheduleAfterIdle, { timeout: idleTimeoutMs });
     } else {
-      scheduleAfterIdle();
+      this._ngZone.runOutsideAngular(scheduleAfterIdle);
     }
 
     for (const eventName of interactionEvents) {
@@ -150,7 +153,9 @@ export class LazyAuthService {
       cleanupCallbacks.push(() => window.removeEventListener(eventName, listener));
     }
 
-    interactionTimeoutId = window.setTimeout(startRestore, interactionTimeoutMs);
+    interactionTimeoutId = this._ngZone.runOutsideAngular(() =>
+      window.setTimeout(startRestore, interactionTimeoutMs)
+    );
 
     this._restoreCleanup = cleanup;
     return cleanup;
@@ -170,23 +175,27 @@ export class LazyAuthService {
     ]);
     const { getAuth, connectAuthEmulator, onAuthStateChanged } = authModule;
 
-    const auth = getAuth(getApp());
+    return this._ngZone.runOutsideAngular(() => {
+      const auth = getAuth(getApp());
 
-    if (environment.useEmulators) {
-      connectAuthEmulator(auth, environment.emulators.authUrl, { disableWarnings: true });
-    }
+      if (environment.useEmulators) {
+        connectAuthEmulator(auth, environment.emulators.authUrl, { disableWarnings: true });
+      }
 
-    this._auth = auth;
+      this._auth = auth;
 
-    // Resolve only after the first auth state event so that callers of getAuth()
-    // see the real user value in user$ immediately after awaiting — not the
-    // pre-seeded null.
-    return new Promise<Auth>((resolve) => {
-      onAuthStateChanged(auth, (user) => {
-        this._user.next(user);
-        resolve(auth);
-        // Note: we intentionally never unsubscribe — subsequent sign-in/sign-out
-        // events must keep updating user$. resolve() is a no-op after first call.
+      // Resolve only after the first auth state event so that callers of getAuth()
+      // see the real user value in user$ immediately after awaiting — not the
+      // pre-seeded null.
+      return new Promise<Auth>((resolve) => {
+        onAuthStateChanged(auth, (user) => {
+          // Re-enter the zone so downstream signal/async-pipe consumers get a
+          // change-detection tick when auth state changes.
+          this._ngZone.run(() => this._user.next(user));
+          resolve(auth);
+          // Note: we intentionally never unsubscribe — subsequent sign-in/sign-out
+          // events must keep updating user$. resolve() is a no-op after first call.
+        });
       });
     });
   }
