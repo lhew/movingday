@@ -2,6 +2,11 @@ export const environment = {
   production: false,
   useEmulators: false,
   useInternalMocks: true,
+  enableSentry: false,
+  enableSentryTracing: false,
+  sentryDsn: '',
+  sentryTracingIdleDelayMs: 1000,
+  authRestoreDelayAfterIdleMs: 1500,
   firebase: {
     apiKey: 'e2e-internal-mocks',
     authDomain: 'e2e-internal-mocks.local',
